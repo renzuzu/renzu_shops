@@ -103,6 +103,8 @@ if not IsDuplicityVersion() then
 			end)
 		end
 	end
+	Shops.Playerloaded()
+	Shops.SetJob()
 	Shops.Handlers()
 	Shops.StartUp()
 	exports('Shops', function ()

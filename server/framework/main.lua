@@ -1,15 +1,13 @@
-function Initialized()
-	if config.framework == 'ESX' then
-		vehicletable = 'owned_vehicles'
-		vehiclemod = 'vehicle'
-	elseif config.framework == 'QBCORE' then
-		vehicletable = 'player_vehicles '
-		vehiclemod = 'mods'
-		owner = 'license'
-		stored = 'state'
-		garage_id = 'garage'
-		type_ = 'vehicle'
-	end
+if config.framework == 'ESX' then
+	vehicletable = 'owned_vehicles'
+	vehiclemod = 'vehicle'
+elseif config.framework == 'QBCORE' then
+	vehicletable = 'player_vehicles '
+	vehiclemod = 'mods'
+	owner = 'license'
+	stored = 'state'
+	garage_id = 'garage'
+	type_ = 'vehicle'
 end
 
 function GetPlayerFromId(src)
