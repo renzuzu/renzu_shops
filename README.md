@@ -30,6 +30,7 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - Shipping Jobs - Store Owner Bulk Orders will be redirected to Shipping Job. its mean this script does not do Self Delivery like the other stock shops script. while owner can still do shipping job on their own. as shipping job is open for all and no job requirement at the moment.)
 - Cashier System - All New Sales income money will be redirected to Cashier. Store Owner or Any OnDuty Clerk can Withdraw the money from Cashier.
 - Store Robbery - a Simple store robbery with Skill Check. Every Cashier can be Robbed with a default 30minutes cooldown.
+- Item Custom Effects on use. ( from item customisation or Preconfigured Metadatas ex.status)
 - and more.
 
 # Preconfigured Shops
@@ -50,5 +51,53 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - some features might change or break in future as this is WIP.
 - All Codes used here is Written by me from Scratch. you cannot use any of the code for your own release or for money income purpose without my permission.
 - you can remove the '@renzu_shield/init.lua' from fxmanifest.lua. its my AC that i am currently working when i have a free time.
+- Shop Images Used from \ox_inventory\web\images/{$item}.png
+- TO use Item Effects from Customisation @ data/item-customisation.lua
+- You need to Insert the export , `export = 'renzu_shops.ItemUse'`
+
+- Example
+
+```
+['burger'] = {
+		label = 'Burger',
+		weight = 0,
+		client = {
+			anim = 'eating',
+			prop = 'burger',
+			usetime = 2500,
+			notification = 'You ate a delicious burger',
+			export = 'renzu_shops.ItemUse'
+		},
+	},
+```
 
 # DEMO IMAGES
+- General Store
+
+![image](https://user-images.githubusercontent.com/82306584/200500266-2028d8f3-bc95-4131-888f-0d07935f90be.png)
+![image](https://user-images.githubusercontent.com/82306584/200500357-fde259cd-e5ab-4111-9d93-74de8e95e2b4.png)
+- Ammunation
+![image](https://user-images.githubusercontent.com/82306584/200500508-37c12934-b17a-4fd9-a63d-2cc1a665e670.png)
+- Vehicle Shop
+![image](https://user-images.githubusercontent.com/82306584/200500777-eeaed626-675b-43ca-94cd-9857d929b06e.png)
+
+- Ondemand Selling
+- Store
+
+![image](https://user-images.githubusercontent.com/82306584/200501623-bdcdd9f4-ce8d-455e-b5a0-06c8c0a56af2.png)
+
+- Movable Shop
+
+![image](https://user-images.githubusercontent.com/82306584/200501834-de161c46-08ca-4065-9bfa-4094828dd05f.png)
+
+- Store Manage
+
+![image](https://user-images.githubusercontent.com/82306584/200500860-ab032c2a-5829-47f8-a4ce-eb9685117767.png)
+![image](https://user-images.githubusercontent.com/82306584/200500891-19074f78-e7ed-42f5-8a3e-0f641a2564ab.png)
+![image](https://user-images.githubusercontent.com/82306584/200500940-37377f39-41e5-436e-880b-ea5992db000d.png)
+![image](https://user-images.githubusercontent.com/82306584/200500995-621bee56-dc22-4c49-a36c-c7acee96d1ad.png)
+![image](https://user-images.githubusercontent.com/82306584/200501383-3cedc4e9-8c29-4b35-97c2-db818e35b9e6.png)
+
+
+
+
