@@ -46,6 +46,7 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - ESX Legacy only for now.
 
 # Note
+- this resource will overide/disable ox inventory shops
 - if you want to fully test the resource. you need to install all the items required here. to ox_inventory/data/items.lua by your self.
 - this resource is currently semi WIP as i have still some tasks left before releasing on CFX.
 - some features might change or break in future as this is WIP.
