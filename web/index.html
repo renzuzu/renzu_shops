@@ -1,0 +1,141 @@
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <title>renzu_shops</title>
+  <script src="https://kit.fontawesome.com/e2ac9cc532.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="style.css" id="css_default">
+</head>
+
+<body translate="no" style="background: #0e101200;">
+  <main style="display: none;" id ="shop">
+    <ro class="container">
+    <section class="hero">
+      <img src="https://forum.cfx.re/uploads/default/original/4X/b/1/9/b196908c7e5dfcd60aa9dca0020119fa55e184cb.png" style="height: 60px;position: absolute;margin-top: -5px; width: unset !important;">
+      <header>
+        <h1 id="shopname">
+          - Store 24/7
+        </h1>
+        <div class="nav">
+          <ul>
+            <li>
+              <a href="#"><i class="fas fa-wallet" aria-hidden="true"></i> Money: <span id="money">121,121,441</span> $</a>
+            </li>
+            
+          </ul>
+        </div>
+        
+      </header>
+    </section>
+    <section>
+      
+      <div class="categories" id="cat">
+      </div>
+    </section>
+    <section style="position: absolute;" id="vehicle">
+      <div id="primary-content" class="primary-content" style="top: 10vh;width: 60vw;">
+        <div id="cp-background-color" class="color-picker">
+          <div onclick="changeColor(this,'64');" class="color bg-primary"></div>
+          <div onclick="changeColor(this,'59');" class="color bg-success"></div>
+          <div onclick="changeColor(this,'89');" class="color bg-warning"></div>
+          <div onclick="changeColor(this,'29');" class="color bg-danger"></div>
+          <div onclick="changeColor(this,'112');" class="color bg-light"></div>
+          <div onclick="changeColor(this,'3');" class="color bg-dark active"></div>
+          <div onclick="changeColor(this,'68');" class="color bg-info"></div>
+          <div onclick="changeColor(this,'111');" class="color bg-white"></div>
+          <div onclick="changeColor(this,'8');" class="color bg-secondary"></div>
+        </div>
+        <div id="liveryid" class='btn-spn btn-spn-xl input-group' style="position: absolute;top: 2.5vh;right: 1vw;opacity: 0.7;">
+          <span class='input-group-btn'>
+          <button
+            class='btn btn-secondary btn-spn-down' 
+            type='button'><i class="fa fa-minus" style="font-size: 1.1vh;"></i></button>
+          </span>
+          <input id="livery" value='Default' min='-1' max='20' class='btn-spn-input form-control text-center' style="background: #1a2e46;height: 2.85vh;color: #cad4df;font-variant-caps: all-petite-caps;border-style: hidden;">
+          <span class='input-group-btn'>
+          <button        
+            class='btn btn-secondary btn-spn-up'
+            type='button'><i class="fa fa-plus" style="font-size: 1.1vh;"></i></button>
+          </span>
+        </div>
+      </div>
+    </section>
+    <section id="mainshop" style="overflow-y: scroll;height: 80vh;width: 60vw; position: relative;">
+      <div class="overflow featured " id="shopbox"></div>
+      <div id="unggoy">
+        <div class="previous"></div>
+        <div class="next"></div>
+      </div>
+    </section>
+  </ro>
+
+
+
+  <div id="carts">
+      <div class="row justify-content-center m-0">
+          <div class="col-md-8 mt-5 mb-5">
+              <div class="card">
+                  <div class="card-header bg-dark p-3">
+                      <div class="card-header-flex">
+                          <h5 class="text-white m-0">Total in Cart (<span id="totalitem">0</span>)</h5>
+                          <button class="btn btn-danger mt-0 btn-sm" onclick="removeall()">
+                              <i class="fa fa-trash-alt mr-2" aria-hidden="true"></i>
+                              <span>Empty Cart </span>
+                          </button>
+                      </div>
+                  </div>
+                  <div class="card-body p-0">
+                      <table class="table cart-table mb-0">
+                          <thead>
+                              <tr>
+                                  <th>Action </th>
+                                  <th>Product </th>
+                                  <th>Name </th>
+                                  <th>Price </th>
+                                  <th>Qty </th>
+                                  <th class="text-right">
+                                      <span id="amount" class="amount">Total Amount </span>
+                                  </th>
+                              </tr>
+                          </thead>
+                          <tbody id="cart" class="droppable">
+                          </tbody>
+                      </table>
+                      <div class="card-header bg-dark p-3">
+                        <div class="card-header-flex" style="justify-content: space-evenly;">
+                            <h5 class="text-white m-0">Total <span id="totalamount"></span></h5>
+                            <button class="btn btn-success mt-0 btn-sm" onclick="pay('Wallet')">
+                                <i class="fa fa-wallet mr-2" aria-hidden="true"></i>
+                                <span> Pay in Wallet </span>
+                            </button>
+                              <button id="bank" class="btn btn-success mt-0 btn-sm" onclick="pay('Bank')">
+                                <i aria-hidden="true" class="fa fa-credit-card mr-2"></i>
+                                <span> Pay in Bank </span>
+                            </button>
+                        </div>
+                    </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <div class="metacontainer" style="display: none;" id="metadatas">
+    <h1 class="h1meta">Customise Shopping <button id="customize"><i onclick="CloseModal();" aria-hidden="true" class="fas fa-window-close"></i></button></h1>
+    <div id="${iddiv}_main" class="featured-item" style="    margin: auto;">
+    <img class="aso" style="height: 12vh;" id="metaimg" src="https://z8games.akamaized.net/cfna/web/inventory/weapons/540_400/C9978.png">
+    </div>
+    <div class="items" id="metacontent">
+      <h2 class="done" aria-hidden="true">Installed</h2>
+      <h2 class="undone" aria-hidden="true">Not Install</h2>
+    </div>
+    <div id="${iddiv}_main" class="featured-item" style="position:relative;margin: auto;width: max-content;">
+      <form style="display: inline-flex;" id="customiseitems">
+        <input id="amountcustomize" name="amount" placeholder="1" type="number" max="10" min="1">
+        <button onclick="event.preventDefault();CustomiseItem()" id="cartcustomize"><i aria-hidden="true" class="fas fa-shopping-cart"></i>Submit Customise</button>
+      </form>
+    </div>
+  </div>
+</main>
+<div class="bubbledata" id="bubble"></div>
+<script src="script.js"></script>
+</body></html>

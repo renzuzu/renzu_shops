@@ -1,0 +1,664 @@
+
+
+ async function SendData(data,cb) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState == XMLHttpRequest.DONE) {
+            if (data.msg == 'buy') {
+                removeall()
+            }
+            if (cb) {
+                cb(xhr.responseText)
+            }
+        }
+    }
+    xhr.open("POST", 'https://renzu_shops/nuicb', true)
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.send(JSON.stringify(data))
+}
+let getEl = function( id ) { return document.getElementById( id )}
+let metadatas = {}
+let itemids = {}
+let uiopen = false
+let position = 1;
+let items = {}
+let cart = {}
+let shoptype = null
+let show = false
+let colorid = 1
+let moneytype = 'money'
+var content = {}
+let lastshop = ''
+window.addEventListener('message', function (table) {
+    let event = table.data;
+    if (event.data.type == 'bubble' && content[event.data.id] == undefined) {
+        let ui = `<div class="bubble-speech bubble-left" id="${event.data.id}" style=" position: absolute; left:`+event.data.x * 100+`%;top:`+event.data.y * 100+`%; ">
+        <div class="progresscustomer" id="prog_${event.data.id}"></div>
+		<h2 class="author">
+		${event.data.title}
+		</h2>
+		<div class="message">
+			${event.data.message}
+		</div>
+		</div>`
+        content[event.data.id] = ui
+        document.querySelector('.bubbledata').insertAdjacentHTML("beforeend", content[event.data.id])
+    } else if (event.data.type == 'bubble') {
+        getEl(event.data.id).style.left = ''+event.data.x * 100+'%';
+        getEl(event.data.id).style.top = ''+event.data.y * 100+'%';
+        getEl('prog_'+event.data.id).style.width = 100 - event.data.wait+'%'
+    } else if ( event.data.type == 'bubbleremove') {
+        getEl(event.data.id).remove()
+        delete content[event.data.id]
+    }
+    if (event.data.open) {
+        getEl('shop').style.display = 'block'
+        uiopen = true
+        getEl('shopname').innerHTML = event.data.label
+        if (lastshop !== event.data.label) { removeall() }
+        lastshop = event.data.label
+        moneytype = event.data.moneytype || 'money'
+        if (moneytype == 'black_money') {
+            getEl('bank').style.display = 'none'
+        }
+        getEl('metadatas').style.display = 'none'
+        getEl('money').innerHTML = event.data.wallet[moneytype]
+        shoptype = event.data.type
+        position = 1
+        if (event.data.type == 'VehicleShop') {
+            getEl('shopbox').style.display = 'flex'
+            getEl('mainshop').style.height = 'unset'
+            getEl('shopbox').style.height = 'unset'
+            getEl('mainshop').style.bottom = '0'
+            getEl('mainshop').style.overflowY = 'unset'
+            getEl('mainshop').style.overflowX = 'hidden'
+            getEl('mainshop').style.position = 'absolute'
+            getEl('shop').style.background = '#0e101200'
+            getEl('vehicle').style.display = 'block'
+            getEl('unggoy').style.display = 'block'
+            show = false
+            SendData({type:1, items:1, msg : 'vehicle'})
+        } else {
+            getEl('shopbox').style.display = 'grid'
+            getEl('shopbox').style.height = '80vh'
+            getEl('shopbox').style.transform = 'translateX(0px)'
+            getEl('mainshop').style.bottom = 'unset'
+            getEl('mainshop').style.overflowX = 'unset'
+            getEl('mainshop').style.overflowY = 'scroll'
+            getEl('mainshop').style.position = 'unset'
+            getEl('shop').style.background = '#0e1012c7'
+            getEl('vehicle').style.display = 'none'
+            getEl('unggoy').style.display = 'none'
+        }
+        LoadCategory(event.data.shop)
+        ShopItems(event.data.shop)
+    } else if (event.data.open == false) {
+        getEl('shop').style.display = 'none'
+        uiopen = false
+    }
+})
+
+let totalamount = 0
+
+function totalitem() {
+    var total = 0
+    for (const i in cart) {
+        total += cart[i].count
+    }
+    getEl('totalitem').innerHTML = total
+}
+
+function totalitemprice(item) {
+    var total = 0
+    for (const i in cart) {
+        total += Number(cart[i].count) * Number(cart[i].data.price)
+    }
+    return total
+}
+
+function remove(cartid,item) {
+    getEl(cartid+"_cart").remove()
+    totalamount -= items[item].price * cart[cartid].count
+    getEl('totalamount').innerHTML = totalamount
+    cart[cartid] = undefined
+    delete cart[cartid];
+    totalitem()
+}
+
+function removeall(item) {
+    getEl("cart").innerHTML = ''
+    totalamount = 0
+    getEl('totalamount').innerHTML = totalamount
+    cart = {}
+    totalitem()
+}
+
+function minus(cartid,item) {
+    cart[cartid].count -= 1
+    getEl(cartid+'_amount').value = cart[cartid].count
+    getEl(cartid+'_total').innerHTML = cart[cartid].count * items[item].price
+    totalamount -= items[item].price
+    getEl('totalamount').innerHTML = totalamount
+    totalitem()
+}
+
+function plus(cartid,item) {
+    cart[cartid].count += 1
+    getEl(cartid+'_amount').value = cart[cartid].count
+    getEl(cartid+'_total').innerHTML = cart[cartid].count * items[item].price
+    totalamount += items[item].price
+    getEl('totalamount').innerHTML = totalamount
+    totalitem()
+}
+
+function pay(type) {
+    SendData({type:type, items:cart, msg : 'buy'})
+}
+
+function CloseModal() {
+    getEl('metadatas').style.display = 'none'
+    metadatas = {}
+}
+
+let liveries = {}
+let liverymod = false
+let itemcustomise = undefined
+function ItemCallback(model,index) {
+    liveryid = -1
+    if (shoptype == 'VehicleShop') {
+        SendData({model:model, msg : 'vehicleview'}, function(cb){
+            let data = JSON.parse(cb)
+            liveries = data.livery
+            colorid = data.color
+            liverymod = data.liverymod
+            getEl('liveryid').style.display = 'inline-flex'
+            getEl('livery').value = 'Default'
+            let max = 0
+            liveries[-1] = 'Default'
+            for (const i in liveries) {
+                max = max + 1
+            }
+            if (max == 1) {
+                getEl('liveryid').style.display = 'none'
+            }
+            getEl('livery').setAttribute("max",max); // set a new value;
+        })
+    } else if (shoptype == 'BlackMarketArms' || shoptype == 'Ammunation') {
+        getEl('metacontent').innerHTML = ''
+        getEl('metaimg').src = `https://cfx-nui-ox_inventory/web/images/${model}.png`
+        SendData({item:model, msg : 'getAvailableAttachments'}, function(cb){
+            let data = JSON.parse(cb)
+            getEl('metadatas').style.display = 'block'
+            itemcustomise = index
+            metadatas = {}
+            let metas = {}
+            let c = 0
+            for (const i in data) {
+                var ui = `<input class="metainput" id="${data[i].name}" name="${data[i].name}" type="checkbox">
+                <label class="metalabel" for="${data[i].name}">${data[i].label}</label>`
+                getEl('metacontent').insertAdjacentHTML("beforeend", ui)
+                var checkbox = document.querySelector(`input[name=${data[i].name}]`);
+                checkbox.addEventListener('change', function() {
+                    c += 1
+                    if (this.checked) {
+                        metadatas[itemids[data[i].name]] = data[i].name
+                    } else {
+                        delete metadatas[itemids[data[i].name]]
+                    }
+                });
+            }
+        })
+    } else {
+        getEl('metacontent').innerHTML = ''
+        getEl('metaimg').src = `https://cfx-nui-ox_inventory/web/images/${model}.png`
+        getEl('metadatas').style.display = 'block'
+        itemcustomise = index
+        metadatas = {}
+        let metas = {}
+        let c = 0
+        if (items[index].customise) {
+            for (const i in items[index].customise) {
+                var name = items[index].customise[i]
+                var ui = `<input class="metainput" id="${name}" name="${name}" type="checkbox">
+                <label class="metalabel" for="${name}">${name}</label>`
+                getEl('metacontent').insertAdjacentHTML("beforeend", ui)
+                var checkbox = document.querySelector(`input[name=${name}]`);
+                checkbox.addEventListener('change', function() {
+                    c += 1
+                    if (this.checked) {
+                        metadatas[itemids[items[index].customise[i]]] = items[index].customise[i]
+                    } else {
+                        delete metadatas[itemids[items[index].customise[i]]]
+                    }
+                });
+            }
+        }
+    }
+}
+
+async function CustomiseItem(data) {
+    let meta = metadatas
+    let myForm = getEl('customiseitems')
+    let formData = new FormData(myForm);
+    let gag = Object.fromEntries(formData)
+    for (const i in gag) {
+        if (i == 'amount') {
+            amount = gag[i]
+        }
+    }
+    const qty = await AddtoCart(itemcustomise,amount)
+    for( var key in meta ) {
+        await AddtoCart(key,qty)
+    }
+    metadatas = {}
+    CloseModal()
+}
+
+var cartid = 0
+async function AddtoCart(item,qty) {
+    var amount = 0
+    let myForm = getEl(item)
+    if (!qty) {
+        let formData = new FormData(myForm);
+        let gag = Object.fromEntries(formData)
+        for (const i in gag) {
+            if (i == 'amount') {
+                amount = gag[i]
+            }
+        }
+    }
+    if (qty>0) { amount = qty }
+    if (items[item].stock <= 0) { delete metadatas[item]; return SendData({item:items[item].name, amount:amount, msg : 'outofstock'}) }
+    if (amount == 0 || !Number(amount)) { amount = 1 }
+    if (amount > items[item].stock) { delete metadatas[item]; return SendData({item:items[item].name, amount:amount, msg : 'limitreached'}) }
+    cartid += 1
+    cart[cartid] = {slotid: item, count : parseInt(amount), data : items[item], vehicle: {livery: liveryid, color: colorid, liverymod: liverymod}, metadatas: metadatas}
+    metadatas = {}
+    var totalprice = items[item].price * parseInt(cart[cartid].count)
+    totalamount = totalitemprice(item)
+    getEl('totalamount').innerHTML = totalamount
+    if (getEl(cartid+'_cart')) {
+        getEl(cartid+"_cart").remove()
+    }
+    totalitem()
+    var ui = `
+            <tr class="cartitem" id="${cartid}_cart">
+                <td>
+                    <button class="prdct-delete" onclick="remove('${cartid}','${item}')">
+                        <i class="fa fa-trash-alt" aria-hidden="true"></i>
+                    </button>
+                </td>
+                <td>
+                    <div class="product-img">
+                        <img id="${cartid}_cartimg" src="https://cfx-nui-ox_inventory/web/images/${items[item].name}.png" alt="" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+items[item].name+`.jpg';this.onerror=defaultimg(this)">
+                    </div>
+                </td>
+                <td>
+                    <div class="product-name">
+                        <p>${items[item].label}</p>
+                    </div>
+                </td>
+                <td>${items[item].price} $</td>
+                <td>
+                    <div class="prdct-qty-container">
+                        <button class="prdct-qty-btn" type="button" onclick="minus('${cartid}','${item}')">
+                            <i class="fa fa-minus" aria-hidden="true"></i>
+                        </button>
+                        <input id = "${cartid}_amount" type="text" name="qty" class="qty-input-box" disabled="" value="${amount}">
+                        <button class="prdct-qty-btn" type="button">
+                            <i class="fa fa-plus" aria-hidden="true" onclick="plus('${cartid}','${item}')"></i>
+                        </button>
+                    </div>
+                </td>
+                <td id="${cartid}_total" class="text-right">${totalprice} $</td>
+            </tr>
+     `
+    getEl('cart').insertAdjacentHTML("beforeend", ui)
+    SendData({item:cart[cartid].data.name, amount:amount, msg : 'cart'})
+    return amount
+}
+
+function fadeIn(el, time) {
+    el.style.opacity = 0;
+  
+    var last = +new Date();
+    var tick = function() {
+      el.style.opacity = +el.style.opacity + (new Date() - last) / time+0.01;
+      last = +new Date();
+  
+      if (+el.style.opacity < 1) {
+        (window.requestAnimationFrame && requestAnimationFrame(tick)) || setTimeout(tick, 16)
+      }
+    };
+  
+    tick();
+}
+
+const delay = n => new Promise(r => setTimeout(r, n));
+let shopdata = {}
+async function ShopCats(cat) {
+    getEl('shopbox').style.transform = 'translateX(0px)'
+    position = 1
+    return ShopItems(shopdata, cat)
+}
+
+let catimg = {}
+async function ShowCats(i) {
+    //for (const i in cats) {
+        if (!getEl('all')) {
+            let all = `<div id="all" class="category">
+            <a href="#" onclick="ShopCats()" style="position: relative;
+            top: 20px;"><i style="font-size: 2.5vh;" class="fa fa-store mr-2" aria-hidden="true"></i><br>
+              <h2 style="padding: 20px;">
+                All
+              </h2>
+            </a>
+          </div>`
+          getEl('cat').insertAdjacentHTML("beforeend", all)
+        }
+        var ui = `
+        <div id="${i}_main" class="category">
+            <a href="#" onclick="ShopCats('${i}')"><img id="${i}_cat" src="https://cfx-nui-ox_inventory/web/images/${catimg[i]}.png" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+catimg[i]+`.jpg';this.onerror=defaultimg(this)">
+                <h2>
+                    ${i} 
+                </h2>
+            </a>
+        </div>
+        `
+        getEl('cat').insertAdjacentHTML("beforeend", ui)
+        fadeIn(getEl(i+'_main'), 3000)
+        await delay(100)
+    //}
+}
+
+function makeid(length) {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+      result += characters.charAt(Math.floor(Math.random() * 
+ charactersLength));
+   }
+   return result;
+}
+
+let validimage = {}
+async function getImageSize(url,name) {
+    const img = new Image();
+    img.src = url;
+    img.onload = function(){
+        var height = img.height;
+        var width = img.width;
+        validimage[name] = img.src
+        return width
+        // code here to use the dimensions
+    }
+    var height = img.height;
+    var width = img.width;
+    return width
+}
+
+async function defaultimg(e,imgname) {
+    const img = new Image();
+    img.onerror = function() {
+        if (getEl(e.id)) {
+            getEl(e.id).src = shoptype == 'VehicleShop' && 'https://www.freeiconspng.com/uploads/vehicle-icon-png-car-sedan-4.png' || 'https://westerrands.websites.co.in/e-store/img/defaults/product-default.png'
+        }
+    }
+    img.src = e.src;
+}
+
+let lastcat = null
+
+async function LoadCategory(shop, cat) {
+    await delay(100)
+    for (const i in shop.inventory) {
+        var data = shop.inventory[i]
+        var imgname = data.name
+        if (data.metadata) {
+            imgname = data.metadata.image || data.name
+        }
+        if (data.category && !catimg[data.category]) {
+            catimg[data.category] = imgname
+            ShowCats(data.category)
+        }
+    }
+}
+
+async function ShopItems(shop, cat) {
+    if (cat == undefined) {
+        lastcat = null
+        shopdata = shop
+        btnNext.style.opacity = "1";
+        for (const i in shop.inventory) { // preload datas
+            if (!uiopen) { break }
+            var data = shop.inventory[i]
+            items[i] = data
+        }
+    } else {
+        lastcat = cat
+    }
+    getEl('shopbox').innerHTML = ''
+    await delay(100)
+    for (const i in shop.inventory) {
+        if (!uiopen) { break }
+        if (lastcat !== null && lastcat !== cat) { return }
+        var data = shop.inventory[i]
+        var enable = data.disable == false && cat == undefined
+        var label = data.label
+        var imgname = data.name
+        var stock = data.stock
+        if (stock == undefined) {
+            stock = 'ꝏ'
+        }
+        if (data.metadata) {
+            imgname = data.metadata.image || data.name
+            label = data.metadata.label || data.label
+        }
+        itemids[data.name] = i
+        if (enable || data.disable !== true && cat == data.category) {
+            var iddiv = makeid(10)
+            // items[i] = data
+            let image = validimage[imgname] || `https://cfx-nui-ox_inventory/web/images/${imgname}.png`
+            if (!show && shoptype == 'VehicleShop') { show = true; ItemCallback(data.name) }
+            var ui = `
+                <div id="${iddiv}_main" class="featured-item" style="position:relative;">
+                <span><img class="aso" onclick="ItemCallback('${data.name}','${i}')" id="${iddiv}_img" src="${image}" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+imgname+`.jpg';this.onerror = defaultimg(this,'${imgname}');">
+                    <h2>
+                    ${label}
+                    </h2>
+                    <h3 style="color:lime;">
+                    ${data.price}$
+                    </h3>
+                    <h3 id="stock">
+                    Stock: <span>${stock}</span>
+                    </h3>
+                    <form style="display: inline-flex;" id="${i}">
+                    <input id="amount" name="amount" placeholder="1" style="
+                    width: 2.2vw;
+                    text-align: center;
+                    background: #4e5866;
+                    color: #fff !important;
+                    border-style: none;" type="number" max="${stock}" min="1">
+                    <button onclick="event.preventDefault();AddtoCart('${i}')"><i class="fas fa-shopping-cart" aria-hidden="true"></i>Add</button>
+                    </form>
+                </span>
+                </div>
+            `
+            getEl('shopbox').insertAdjacentHTML("beforeend", ui)
+            getEl(iddiv+"_main").style.margin = '10px';
+            getEl(iddiv+"_main").style.padding = '15px 20px';
+            //getEl(iddiv+"_main").style.minWidth = '10vw';
+            //getEl(iddiv+"_main").style.width = '10vw';
+            if (shoptype == 'VehicleShop') {
+                getEl(iddiv+'_img').style.width = '100%'
+            } else {
+                getEl(iddiv+'_img').style.width = '-webkit-fill-available'
+            }
+            fadeIn(getEl(iddiv+'_main'), 3000)
+            await delay(100)
+            let img = await getEl(iddiv+'_img') && getEl(iddiv+'_img').src || ''
+            var imgwidth = await getImageSize(img,imgname)
+            if (shoptype == 'VehicleShop' && imgwidth < 140 && getEl(iddiv+"_img")) {
+                getEl(iddiv+"_img").style.minWidth = '7vw';
+            }
+        }
+    }
+    overflow = document.querySelector('.overflow');
+    block = document.querySelector('.featured-item');
+    allBlocks = document.querySelectorAll('.featured-item');
+    if (block) {
+        blockWidth = block.offsetWidth;
+        maxWidth = overflow.offsetWidth;
+        allBlocksWidth = allBlocks.length*blockWidth;
+        if(allBlocksWidth+30 < maxWidth){
+            btnPrevious.style.opacity = "0";
+            btnNext.style.opacity = "0";
+        } else {
+            btnNext.style.opacity = "1";
+        }
+    } else {
+        btnNext.style.opacity = "1";
+    }
+}
+
+let btnNext = document.querySelector('.next');
+let btnPrevious = document.querySelector('.previous');
+let overflow = document.querySelector('.overflow');
+let block = document.querySelector('.featured-item');
+let allBlocks = document.querySelectorAll('.featured-item');
+let blockWidth = 0
+let maxWidth = 0;
+let allBlocksWidth = 0
+maxWidth = overflow.offsetWidth;
+allBlocksWidth = allBlocks.length*blockWidth;
+if(allBlocksWidth < maxWidth){
+    btnPrevious.style.opacity = "0";
+    btnNext.style.opacity = "0";
+}
+
+function togglePrev(position){
+        overflow = document.querySelector('.overflow');
+        block = document.querySelector('.featured-item');
+        allBlocks = document.querySelectorAll('.featured-item');
+        blockWidth = block.offsetWidth;
+
+
+        maxWidth = overflow.offsetWidth;
+        allBlocksWidth = allBlocks.length*blockWidth;
+    if(position >= blockWidth){
+        btnPrevious.style.opacity = "1";
+    } else {
+        btnPrevious.style.opacity = "0";
+    }
+}
+
+function toggleNext(position){
+        overflow = document.querySelector('.overflow');
+        block = document.querySelector('.featured-item');
+        allBlocks = document.querySelectorAll('.featured-item');
+        blockWidth = block.offsetWidth;
+
+        maxWidth = overflow.offsetWidth;
+        allBlocksWidth = allBlocks.length*blockWidth*1.1;
+    if((allBlocksWidth-position) > maxWidth){
+        btnNext.style.opacity = "1";
+    } else {
+        btnNext.style.opacity = "0";
+    }
+}
+btnNext.onclick = function(){
+    if((allBlocksWidth-position) > maxWidth){
+        position = position+blockWidth;
+        overflow.style.transform = `translateX(-${position}px)`;
+    }
+    togglePrev(position);
+    toggleNext(position);
+}
+
+btnPrevious.onclick = function(){
+    if(position >= blockWidth){
+    position = position-blockWidth;
+    overflow.style.transform = `translateX(-${position}px)`;
+    }
+    togglePrev(position);
+    toggleNext(position);
+}
+document.onkeyup = function (data) {
+    if (data.keyCode == '27') {
+        SendData({msg: 'close'})
+        uiopen = false
+        catimg = {}
+        getEl('cat').innerHTML = ''
+    }
+    if (data.keyCode == '121') {
+        SendData({msg: 'close'})
+        uiopen = false
+        catimg = {}
+        getEl('cat').innerHTML = ''
+    }
+}
+
+//document.body.className = "bg-dark";
+var backgroundInfo = getEl("background-info");
+var cpBackgroundColor = getEl("cp-background-color");
+var cpBackgroundColors = cpBackgroundColor.getElementsByTagName("div");
+var primaryContent = getEl("primary-content");
+function changeColor(sender,color) {
+    for (var i = 0; i < cpBackgroundColors.length; i++)
+    cpBackgroundColors[i].classList.remove("active");
+    SendData({color:color, msg: 'changecolor'})
+    colorid = color
+    sender.classList.add("active");
+}
+function rgbToHex(rgb) { 
+    var hex = Number(rgb).toString(16);
+    if (hex.length < 2)
+        hex = "0" + hex;
+    return hex;
+}
+
+
+addEventListenerAll('.btn-spn-up', 'click', event => this.spinUp(event))
+addEventListenerAll('.btn-spn-down', 'click', event => this.spinDown(event))
+  
+let liveryid = -1
+function spinUp(event) {
+    var spinRoot = event.currentTarget.parentElement.parentElement  // .btn-spn
+    var spinInput = spinRoot.children[1]    
+    if (!spinInput.value || spinInput.value==="" || isNaN(parseInt(spinInput.value)))
+    spinInput.value = 0
+    var spinValue = parseInt(spinInput.value)
+    var max = spinInput.getAttribute('max')
+    if (!max || liveryid < max-2) {
+        liveryid = liveryid+1
+        spinInput.value = liveries[liveryid]
+    } else {
+        spinInput.value = liveries[liveryid]
+    }
+    SendData({livery:liveryid, msg: 'changelivery'})
+}
+
+function spinDown(event) {
+    var spinRoot = event.currentTarget.parentElement.parentElement  // .btn-spn
+    var spinInput = spinRoot.children[1]
+    if (!spinInput.value || spinInput.value==="" || isNaN(parseInt(spinInput.value)))
+    spinInput.value = 0
+    var spinValue = parseInt(spinInput.value)
+
+    var min = spinInput.getAttribute('min')
+    if (!min || liveryid > min && liveries[liveryid] !== 0) {
+        liveryid = liveryid-1
+        spinInput.value = liveries[liveryid]
+    } else {
+        spinInput.value = 'Default'
+    }
+    SendData({livery:liveryid, msg: 'changelivery'})
+}
+
+function addEventListenerAll(selector, eventName, eventHandler) {
+  var elements = document.querySelectorAll(selector)
+  for(var i = 0; i<elements.length; i++) {
+      elements[i].addEventListener(eventName, eventHandler) 
+  }
+}
