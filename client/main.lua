@@ -20,9 +20,6 @@ self.StartUp = function()
 		for k,shop in pairs(config.Shops) do
 			if shop.locations then
 				for shopindex,v in ipairs(shop.locations) do
-					for k,v in pairs(shop.inventory) do
-						shop.inventory[k].label = self.Items[v.name] or v.label
-					end
 					shop.shoptype = k
 					if not config.target then
 						self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
@@ -301,6 +298,7 @@ self.Cashier = function(data)
 end
 
 self.StoreManage = function(store)
+	self.adminmode = false
 	local options = {
 		{
 			title = 'Manage Store',
@@ -365,7 +363,7 @@ self.ManageStoreMenu = function(store)
 		}
 	}
 	local stores = GlobalState.Stores
-	if stores[store].owner == self.PlayerData.identifier then
+	if stores[store].owner == self.PlayerData.identifier or self.adminmode then
 		table.insert(options,{
 			title = 'Employee Management',
 			description = 'Here you can add employee to help you manage your store',
@@ -376,7 +374,7 @@ self.ManageStoreMenu = function(store)
 	lib.registerContext({
 		id = 'manage_store',
 		title = 'Manage Store',
-		menu = 'storeowner',
+		menu = self.adminmode and 'storeadminlist' or 'storeowner',
 		onExit = function()
 		end,
 		options = options
@@ -565,11 +563,53 @@ self.FinanceManage = function(store,money)
 	})
 end
 
+self.getShopTypeAndIndex = function(store)
+	for type,shop in pairs(config.OwnedShops) do
+		for index,v in pairs(shop) do
+			if v.label == store then
+				return type,index
+			end
+		end
+	end
+	return false
+end
+
 self.EditItem = function(data, store, cat)
 	local data = data
 	local item = data.label
-	local options = {
-		{
+	local options = {}
+	if self.adminmode then
+		table.insert(options,{
+			title = 'Add / Remove '..item..'',
+			description = 'Add Supply '..item..' to this Store',
+			arrow = true,
+			onSelect = function(args)
+				local input = lib.inputDialog('How Many :'..item..'   \n Min: -999 Max 999', {'Value can be Positive or Negative:'})
+				if not input then return end
+				local amount = tonumber(input[1])
+				if amount < -1000 then return end
+				if amount > 1000 then return end
+				local confirm = lib.alertDialog({
+					header = 'Confirm',
+					content = 'Do you really want to Add this '..item..'? \n Total : '..amount..' $',
+					centered = true,
+					cancel = true
+				})
+				if confirm ~= 'cancel' then
+					local shop, index = self.getShopTypeAndIndex(store)
+					local data = lib.callback.await('renzu_shops:addstock', false, {shop = shop, index = index, count = amount, item = data.nameindex})
+					if data then
+						self.SetNotify({
+							title = 'Store Business',
+							description = 'Item Supply has been Added to this Store',
+							type = 'success'
+						})
+					end
+				end
+			end
+		})
+	else
+		table.insert(options,{
 			title = 'Order '..item..' from Supplier',
 			description = 'Create a Order for 100x '..item..'',
 			arrow = true,
@@ -612,8 +652,9 @@ self.EditItem = function(data, store, cat)
 					end
 				end
 			end
-		},
-		{
+		})
+	end
+		table.insert(options,{
 			title = 'Change Price of '..item,
 			description = 'Modify the Value of '..item..'',
 			arrow = true,
@@ -634,8 +675,8 @@ self.EditItem = function(data, store, cat)
 
 				end
 			end
-		},
-		{
+		})
+		table.insert(options,{
 			title = 'Deposit '..item,
 			description = 'Deposit '..item..' from your inventory',
 			arrow = true,
@@ -652,8 +693,8 @@ self.EditItem = function(data, store, cat)
 					})
 				end
 			end
-		},
-		{
+		})
+		table.insert(options,{
 			title = 'Withdraw '..item,
 			description = 'Withdraw '..item..' to your inventory',
 			arrow = true,
@@ -670,8 +711,8 @@ self.EditItem = function(data, store, cat)
 					})
 				end
 			end
-		},
-	}
+		})
+
 	if data.disable then
 		table.insert(options, {
 			title = 'Enable '..item,
@@ -751,7 +792,7 @@ self.ManageInventory = function(store)
 	local stocks = {}
 	local prices = {}
 	local disable = {}
-	local store = self.currentstore
+	local store = store
 	for shoptype,v in pairs(config.OwnedShops) do
 		for k,v in pairs(v) do
 			if v.label == store then
@@ -778,6 +819,7 @@ self.ManageInventory = function(store)
 		local disable = itemdata?.disable
 		local label = self.Items[item.name] or item.label or item.name
 		local metadata = item.metadata
+		local name = item.name
 		if item.metadata and item.metadata.name then
 			label = metadata.label or label
 			itemdata = storeitems.custom[metadata.name]
@@ -785,9 +827,11 @@ self.ManageInventory = function(store)
 			category = itemdata?.category or item.category or 'No Category'
 			pricing = {original = originalprice, shop = itemdata?.price or originalprice}
 			disable = itemdata?.disable
+			name = item.metadata.name
 		end
 		--local item = self.Items[v.name]
 		if item then
+			item.nameindex = name
 			item.disable = false
 			item.label = label
 			if disable then item.disable = true end
@@ -1186,6 +1230,7 @@ self.OpenShop = function(data)
 	local stores = GlobalState.Stores
 	-- shop data of defaults shops
 	if not self.Active or  not self.Active.shop then return end
+	data.shop.inventory = data.shop.inventory or config.Storeitems[data.type]
 	self.Active.shop.inventory = data.shop.inventory
 	self.Active.shop.type = data.type
 	for k,v in pairs(data.shop.inventory) do
@@ -1322,6 +1367,30 @@ self.Handlers = function()
 		loaded = true
 	end)
 
+	AddStateBagChangeHandler("CreateShop", "global", function(bagName, key, value)
+		Wait(1000)
+		config.OwnedShops = request('config/ownedshops/init')
+		if value then
+			local data = {shop = value.shop, index = value.index, type = value.type, coord = value.loc}
+			if not config.target then
+				self.Add(value.loc,value.label,self.OpenShop,false,data)
+				local spheres = self.Add(value.coord,'Buy '..value.type..' #'..value.index,self.BuyStore,false,value.shop)
+				self.temporalspheres[value.label] = {spheres = spheres, coord = value.coord, shop = value.shop, label = 'My Store '..value.label}
+			else
+				self.addTarget(value.loc,value.label,self.OpenShop,false,data)
+				self.addTarget(value.coord,'Buy '..value.type..' #'..value.index,self.BuyStore,false,value.shop)
+			end
+			value.shop.index = value.index
+			value.shop.type = value.type
+			value.shop.offset = config.Shops[value.type].locations[value.index]
+			if not config.target then
+				self.Add(value.cashier,'Cashier '..value.label,self.Cashier,false,value.shop)
+			else
+				self.addTarget(value.cashier,'Cashier '..value.label,self.Cashier,false,value.shop)
+			end
+		end
+	end)
+
 	AddStateBagChangeHandler("AvailableStore", "global", function(bagName, key, value)
 		Wait(1000)
 		local stores = GlobalState.Stores
@@ -1385,6 +1454,15 @@ self.Handlers = function()
 			self.movableentity[value.type] = entity
 			local data = config.MovableShops[value.type]
 			self.MovableShopStart(data)
+		end
+	end)
+
+	AddStateBagChangeHandler('storemanage' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated)
+		Wait(0)
+		if not value then return end
+		local net = tonumber(bagName:gsub('player:', ''), 10)
+		if GetPlayerServerId(PlayerId()) == net then
+			self.StoreAdmin(value.data)
 		end
 	end)
 
@@ -1692,8 +1770,10 @@ self.SpawnVehicleLocal = function(model)
 		local fovval = modelSize.x * Y * Z
 		local dist = #(self.Active.coord - GetEntityCoords(self.chosenvehicle))
 		fov = fovval + (dist/2 * Y) + self.Active.camerasetting.fov
-		PointCamAtEntity(self.cam,self.chosenvehicle,self.Active.camerasetting.offset)
-		SetCamParams(self.cam, self.Active.coord+vec3(0.0,0.0,0.8), 360.00, 0.00, 0.00, fov, 1000, 0, 0, 2);
+		local offset = self.Active.camerasetting.offset
+		PointCamAtEntity(self.cam,self.chosenvehicle,offset.x,offset.y,offset.z)
+		local camcoord = self.Active.coord+vec3(0.0,0.0,0.8)
+		SetCamParams(self.cam, camcoord.x,camcoord.y,camcoord.z, 360.00, 0.00, 0.00, fov, 1000, 0, 0, 2);
 		--SetCamFov(self.cam, fov)
 		--PointCamAtEntity(self.cam,self.chosenvehicle,self.Active.camerasetting.offset)
 		RenderScriptCams(true, true, 1000, true, true)
@@ -1710,10 +1790,12 @@ self.VehicleCam = function()
 	end
 	local shopdata = self.GetShopData(self.Active.type,self.Active.index)
 	local spawn = vec3(shopdata.spawn.x,shopdata.spawn.y,shopdata.spawn.z)
-	self.cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", self.Active.coord+vec3(0.0,0.0,0.8), 360.00, 0.00, 0.00, 60.00, false, 0)
+	local camcoord = self.Active.coord+vec3(0.0,0.0,0.8)
+	self.cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", camcoord.x,camcoord.y,camcoord.z, 360.00, 0.00, 0.00, 60.00, false, 0)
 	--PointCamAtCoord(self.cam, spawn.x, spawn.y, spawn.z+0.1)
 	while not DoesEntityExist(self.chosenvehicle) do Wait(0) end
-	PointCamAtEntity(self.cam,self.chosenvehicle,self.Active.camerasetting.offset)
+	local offset = self.Active.camerasetting.offset
+	PointCamAtEntity(self.cam,self.chosenvehicle,offset.x,offset.y,offset.z)
 	SetCamActive(self.cam, true)
 	SetCamFov(self.cam, 45.0)
 	SetCamRot(self.cam, -15.0, 0.0, 252.063)
@@ -2560,4 +2642,162 @@ self.CreateBubbleSpeech = function(data)
 	SendNUIMessage({data = {id = data.id, type = 'bubbleremove'}})
 	return true
 end
+
+self.StoreAdmin = function(data)
+	self.adminmode = true
+	self.shopconfig = {}
+	local options = {}
+	table.insert(options,{
+		title = 'Manage Stores',
+		description = 'See List of Player Owned Shops and manage its stock internaly',
+		arrow = true,
+		onSelect = function(args)
+			self.AdminStoreLists(data)
+		end
+	})
+	table.insert(options,{
+		title = 'Add New Shop',
+		description = 'Enable you to add new Shop type',
+		arrow = true,
+		onSelect = function(args)
+			self.AddNewShop(data)
+		end
+	})
+	lib.registerContext({
+		id = 'storeadmin',
+		title = 'Store Admin Manage',
+		onExit = function()
+			self.adminmode = false
+		end,
+		options = options
+	})
+	lib.showContext('storeadmin')
+end
+
+self.AdminStoreLists = function(data)
+	local options = {}
+	for shopname,v in pairs(data) do
+		table.insert(options,{
+			title = shopname,
+			description = 'Manage '..shopname,
+			arrow = true,
+			onSelect = function(args)
+				self.ManageStoreMenu(shopname)
+				lib.showContext('manage_store')
+			end
+		})
+	end
+	lib.registerContext({
+		menu = 'storeadmin',
+		id = 'storeadminlist',
+		title = 'Shops List',
+		onExit = function()
+		end,
+		options = options
+	})
+	lib.showContext('storeadminlist')
+end
+
+self.AddNewShop = function()
+	local options = {}
+	for type,v in pairs(config.OwnedShops) do
+		if type ~= 'VehicleShop' then
+			table.insert(options,{
+				title = type,
+				description = 'Create a Shop type with '..type,
+				arrow = true,
+				onSelect = function(args)
+					self.ConfigureShop(type)
+				end
+			})
+		end
+	end
+	lib.registerContext({
+		id = 'Addshop',
+		menu = 'storeadminlist',
+		title = 'Select Shop Type',
+		onExit = function()
+			self.adminmode = false
+		end,
+		options = options
+	})
+	lib.showContext('Addshop')
+end
+
+self.shopconfig = {}
+self.ConfigureShop = function(type)
+	local options = {}
+	table.insert(options,{
+		title = 'Store Owner Location',
+		description = self.shopconfig['Storeowner'] and 'Configured ✅' or 'Configure Store Owner Coordinates',
+		arrow = true,
+		onSelect = function(args)
+			self.CreateConfig('Storeowner',type)
+		end
+	})
+	table.insert(options,{
+		title = 'Shop Menu Location',
+		description = self.shopconfig['Shop'] and 'Configured ✅' or 'Configure Shop Menu Coordinates',
+		arrow = true,
+		onSelect = function(args)
+			self.CreateConfig('Shop',type)
+		end
+	})
+	table.insert(options,{
+		title = 'Cashier Location (Optional)',
+		description = self.shopconfig['Cashier'] and 'Configured ✅' or 'Configure Cashier Coordinates',
+		arrow = true,
+		onSelect = function(args)
+			self.CreateConfig('Cashier',type)
+		end
+	})
+	table.insert(options,{
+		title = 'Create Shop',
+		description = 'Create '..type..' Shop with your Configure options',
+		arrow = true,
+		onSelect = function(args)
+			self.CreateShop({type = type, config = self.shopconfig})
+		end
+	})
+	lib.registerContext({
+		id = 'ShopConfig',
+		menu = 'Addshop',
+		title = 'Shop Config',
+		onExit = function()
+			self.adminmode = false
+		end,
+		options = options
+	})
+	lib.showContext('ShopConfig')
+end
+
+self.CreateConfig = function(conf,type)
+	self.OxlibTextUi("Press [E] to Save Current Coordinates for "..conf)
+	while true do
+		Wait(1)
+		local coord = GetEntityCoords(cache.ped)+vec3(0.0,0.2,0.02)
+		DrawMarker(21, coord.x,coord.y,coord.z, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
+		if IsControlJustPressed(0,38) then
+			self.shopconfig[conf] = coord
+			break
+		end
+	end
+	lib.hideTextUI()
+	Wait(100)
+	self.ConfigureShop(type)
+end
+
+self.CreateShop = function(data)
+	local created = lib.callback.await('renzu_shops:createShop', false, data)
+	self.SetNotify({
+		title = 'Store Business',
+		description = 'New Shop has been Added',
+		type = 'success'
+	})
+end
+
+self.RemoveShop = function(data)
+
+end
+
 return self

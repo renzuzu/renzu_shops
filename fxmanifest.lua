@@ -1,6 +1,8 @@
 fx_version 'cerulean'
-lua54 'on'
-game 'gta5' shared_script '@renzu_shield/init.lua'
+use_experimental_fxv2_oal 'yes'
+lua54 'yes'
+game 'gta5'
+shared_script '@renzu_shield/init.lua'
 shared_scripts {
 	'@ox_lib/init.lua',
 	'data/*.lua',
@@ -24,5 +26,6 @@ files {
 	'web/style.css',
 	'web/levelup.gif',
     'web/audio/*.ogg',
+	'config/ownedshops/*.lua',
 	'config/*.lua',
 }

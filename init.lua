@@ -40,7 +40,7 @@ end
 -- do not edit
 config.Storeitems = request('config/storeitems')
 config.Shops = request('config/defaultshops')
-config.OwnedShops = request('config/ownedshops')
+config.OwnedShops = request('config/ownedshops/init')
 config.MovableShops = request('config/movableshop')
 request('config/shipping')
 -- insert additional datas

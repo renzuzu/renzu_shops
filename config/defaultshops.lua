@@ -7,7 +7,6 @@ return {
 		blip = {
 			id = 59, colour = 69, scale = 0.8
 		}, 
-		inventory = config.Storeitems.General, 
 		locations = {
 			vec3(25.7, -1347.3, 29.49),
 			vec3(-3038.71, 585.9, 7.9),
@@ -28,11 +27,7 @@ return {
 		name = 'Vehicle Shop',
 		blip = {
 			id = 402, colour = 69, scale = 0.8
-		}, inventory = MultiCategory(
-			{['boats'] = true, -- blacklisted boats
-			['planes'] = true, -- blacklisted planes
-			['helicopters'] = true -- blacklisted helis
-		},{},AllVehicles), 
+		},
 		locations = {
 			vec3(-54.346,-1097.284,26.422),
 			vec3(-1249.9254150391,-353.4342956543,36.90761),
@@ -59,7 +54,6 @@ return {
 		blip = {
 			id = 110, colour = 69, scale = 0.8
 		}, 
-		inventory = config.Storeitems.Ammunation, 
 		locations = {
 			vec3(22.56, -1109.89, 29.80),
 			vec3(-662.180, -934.961, 21.829),
@@ -109,21 +103,10 @@ return {
 	BlackMarketArms = {
 		moneytype = 'black_money',
 		name = 'Black Market (Arms)',
-		inventory = config.Storeitems.BlackMarketArms, 
 		locations = {
 			vec3(591.67987060547,-3280.0227050781,6.069561),
 			vec3(309.09, -913.75, 56.46),
 		}
 	},
 
-	-- VendingMachineDrinks = {
-	-- 	name = 'Vending Machine',
-	-- 	inventory = {
-	-- 		{ name = 'water', price = 10 },
-	-- 		{ name = 'cola', price = 10 },
-	-- 	},
-	-- 	model = {
-	-- 		`prop_vend_soda_02`, `prop_vend_fridge01`, `prop_vend_water_01`, `prop_vend_soda_01`
-	-- 	}
-	-- }
 }

@@ -1,6 +1,7 @@
 GlobalState.Shipping = json.decode(GetResourceKvpString('shippingcompany') or '[]') or {}
 GlobalState.Stores = json.decode(GetResourceKvpString('renzu_stores') or '[]') or {}
 GlobalState.MovableShops = json.decode(GetResourceKvpString('movableshops') or '[]') or {}
+
 local Items = {}
 local purchaseorders = {}
 CreateThread(function()
@@ -108,19 +109,27 @@ end
 -- @args[3] = amount to add to all items
 -- /addstockall General 1 999
 lib.addCommand('group.admin', {'addstockall', 'addstock'}, function(source, args)
-    local stores = GlobalState.Stores
+    AddStockInternal(args.shop,args.index,args.count,args.item)
+end, {'shop:string', 'index:string', 'count:number', 'item:string'})
+
+AddStockInternal = function(shop,index,count,item)
+	local stores = GlobalState.Stores
 	local success = false
 	for k,v in pairs(config.OwnedShops) do
-		if k == args.shop then
+		if k == shop then
 			for k,v2 in pairs(v) do
-				if tonumber(args.index) == k and stores[v2.label] then
+				if tonumber(index) == k and stores[v2.label] then
 					if v2.supplieritem then
 						for k,v in pairs(v2.supplieritem) do
 							itemtype = v.metadata and v.metadata.name and 'custom' or 'normal'
 							itemname = v.metadata and v.metadata.name or v.name
-							if stores[v2.label].items[itemtype][itemname] == nil then stores[v2.label].items[itemtype][itemname] = {} end
-							if stores[v2.label].items[itemtype][itemname].stock == nil then stores[v2.label].items[itemtype][itemname].stock = 0 end
-							stores[v2.label].items[itemtype][itemname].stock += tonumber(args.count)
+							if item == itemname or not item then
+								success = true
+								if stores[v2.label].items[itemtype][itemname] == nil then stores[v2.label].items[itemtype][itemname] = {} end
+								if stores[v2.label].items[itemtype][itemname].stock == nil then stores[v2.label].items[itemtype][itemname].stock = 0 end
+								stores[v2.label].items[itemtype][itemname].stock += tonumber(count)
+								if stores[v2.label].items[itemtype][itemname].stock <= 0 then stores[v2.label].items[itemtype][itemname].stock = 0 end
+							end
 						end
 					end
 				end
@@ -128,7 +137,96 @@ lib.addCommand('group.admin', {'addstockall', 'addstock'}, function(source, args
 		end
 	end
 	GlobalState.Stores = stores
-end, {'shop:string', 'index:string', 'count:number'})
+	return success
+end
+
+lib.addCommand('group.admin', {'storeadmin', 'stores'}, function(source, args)
+	local stores = GlobalState.Stores
+	local ply = Player(source).state
+	ply:set('storemanage',{data = stores, ts = os.time()}, true)
+end, {})
+
+function tprint (tbl, indent,supplier)
+	if type(tbl) ~= 'table' then return end
+	if not indent then indent = 0 end
+	local toprint = string.rep(" ", 0) .. "{\r\n"
+	indent = indent + 4 
+	local p = #tbl > 0 and ipairs or pairs
+	for k, v in p(tbl) do
+		toprint = toprint .. string.rep(" ", indent)
+		if (type(k) == "number") then
+			toprint = toprint .. "[" .. k .. "] = "
+		elseif (type(k) == "string") then
+			toprint = toprint  .. k ..  " = "   
+		end
+		if (type(v) == "number") then
+			toprint = toprint .. v .. ",\r\n"
+		elseif (type(v) == "string") then
+			toprint = toprint .. "\"" .. v .. "\",\r\n"
+		elseif (type(v) == "table") and k ~= 'supplieritem' then
+			toprint = toprint .. tprint(v, indent + 1,supplier) .. ",\r\n"
+		elseif (type(v) == "table") and k == 'supplieritem' then
+			toprint = toprint .. supplier .. ",\r\n"
+		elseif type(v) == 'vector3' then
+			toprint = toprint .. vec3(v.x,v.y,v.z) .. ",\r\n"
+		elseif type(v) == 'vector4' then
+			toprint = toprint .. vec4(v.x,v.y,v.z,v.w) .. ",\r\n"
+		else
+			toprint = toprint .. "\"" .. tostring(v) .. "\",\r\n"
+		end
+	end
+	toprint = toprint .. string.rep(" ", indent-2) .. "}"
+	return toprint
+end
+
+GlobalState.CreateShop = {}
+lib.callback.register('renzu_shops:createShop', function(source,data)
+	local path = 'config/ownedshops/'..data.type..'.lua'
+	local path2 = 'config/defaultshops.lua'
+	local defaultshops = config.Shops
+	local ownedshop = config.OwnedShops[data.type]
+	local index = #ownedshop+1
+	if ownedshop then
+		table.insert(ownedshop,{
+			moneytype = ownedshop[1].moneytype,
+			label = data.type..' #'..index,
+			coord = data.config.Storeowner,
+			cashier = data.config.Cashier,
+			price = ownedshop[1].price,
+			supplieritem = {}
+		})
+		table.insert(config.Shops[data.type].locations,vec3(data.config.Shop.x,data.config.Shop.y,data.config.Shop.z))
+		local StoreItem = 'config.Storeitems.'..data.type
+		local ownedshops = 'return '
+		ownedshops = ownedshops..tprint(ownedshop,nil,StoreItem)
+		SaveResourceFile('renzu_shops', path, ownedshops, -1)
+		local default = 'return '
+		default = default..tprint(defaultshops,nil,StoreItem)
+		SaveResourceFile('renzu_shops', path2, default, -1)
+		GlobalState.CreateShop = {
+			loc = vec3(data.config.Shop.x,data.config.Shop.y,data.config.Shop.z),
+			coord = data.config.Storeowner,
+			cashier = data.config.Cashier,
+			index = index,
+			type = data.type,
+			label = data.type..' #'..index,
+			shop = {
+				moneytype = ownedshop[1].moneytype,
+				label = data.type..' #'..index,
+				coord = data.config.Storeowner,
+				cashier = data.config.Cashier,
+				price = ownedshop[1].price,
+				inventory = config.Storeitems[data.type],
+				supplieritem = config.Storeitems[data.type],
+			}
+		}
+	end
+end)
+
+lib.callback.register('renzu_shops:addstock', function(source,data)
+	-- lets secure by adding group check? not now another framework shit. is there a way to check ACL groups via libs? not yet?
+	return AddStockInternal(data.shop,data.index,data.count,data.item)
+end)
 
 lib.callback.register('renzu_shops:removestock', function(source,data)
 	local source = source

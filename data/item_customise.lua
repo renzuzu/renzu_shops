@@ -82,10 +82,9 @@ Effect = function(data)
 		else
 			-- custom effects here
 			-- example
-			print(effect,'gago')
 			if effect == 'poison' then -- @format metadata.customise -> { hunger = 100, poison = true }
-				ExplodePedHead(PlayerPedId(),`WEAPON_PISTOL`)
-				print("ASO")
+				SetEntityHealth(PlayerPedId(),0)
+				print(GetEntityHealth(PlayerPedId()))
 			end
 		end
 	end
