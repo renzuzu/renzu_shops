@@ -779,7 +779,7 @@ lib.callback.register('renzu_shops:editstore', function(source,data)
 	local xPlayer = ESX.GetPlayerFromId(source)
 	local stores = GlobalState.Stores
 	local employed = stores[data.store]?.employee[xPlayer.identifier]
-	local owned = stores[data.store]?.owner == xPlayer.identifier or employed
+	local owned = stores[data.store]?.owner == xPlayer.identifier or employed or xPlayer.getGroup() == 'admin'
 	local itemtype = nil
 	local itemname = nil
 	if tonumber(data.value) and data.value >= 0 and owned and stores[data.store] and data.type == 'price' then
