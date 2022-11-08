@@ -1,12 +1,18 @@
+ESX,QBCORE = nil, nil
 config = {}
+config.framework = 'ESX' -- ESX || QBCORE
 config.target = false -- if true all lib zones for markers and oxlib textui will be disable.
-ESX = exports['es_extended']:getSharedObject()
+if config.framework == 'ESX' then
+	ESX = exports['es_extended']:getSharedObject()
+elseif config.framework == 'QBCORE' then
+	QBCore = exports['qb-core']:GetCoreObject()
+end
 Shops = {}
 MultiCategory = function(blacklist,whitelist,...)
 	local newtable = {}
 	local i = 1
 	local whitelisted = false
-	for k,v in pairs(whitelist) do print(k,v) whitelisted = true end
+	for k,v in pairs(whitelist) do whitelisted = true end
 	if not whitelisted then
 		local t = {...}
 		for k,v in pairs(t) do
@@ -50,13 +56,58 @@ for k,v in pairs(Components) do
 end
 
 if not IsDuplicityVersion() then
-	Shops.init = function()
-		return request('client/main')
+	Shops = request('client/main')
+	Shops.Playerloaded = function()
+		if config.framework == 'ESX' then
+			RegisterNetEvent('esx:playerLoaded', function(xPlayer)
+				Shops.PlayerData = xPlayer
+				Shops.LoadShops()
+			end)
+		elseif config.framework == 'QBCORE' then
+			RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+				QBCore.Functions.GetPlayerData(function(p)
+					Shops.PlayerData = p
+					Shops.LoadShops()
+					if PlayerData.job ~= nil then
+						Shops.PlayerData.job.grade = Shops.PlayerData.job.grade.level
+					end
+					if PlayerData.identifier == nil then
+						Shops.PlayerData.identifier = Shops.PlayerData.license
+					end
+				end)
+			end)
+		end
 	end
-	local Shop = Shops.init()
-	Shop.StartUp()
-	Shop.Handlers()
-	exports('Shops', Shops.init)
+	
+	Shops.GetPlayerData = function()
+		if config.framework == 'ESX' then
+			return ESX.GetPlayerData()
+		else
+			local data = promise:new()
+			QBCore.Functions.GetPlayerData(function(playerdata)
+				data:resolve(playerdata)
+			end)
+			return Citizen.Await(data)
+		end
+	end
+	
+	Shops.SetJob = function()
+		if config.framework == 'ESX' then
+			RegisterNetEvent('esx:setJob', function(job)
+				Shops.PlayerData.job = job
+			end)
+		elseif config.framework == 'QBCORE' then
+			RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
+				Shops.PlayerData.job = job
+				Shops.PlayerData.job.grade = Shops.PlayerData.job.grade.level
+			end)
+		end
+	end
+	Shops.Handlers()
+	Shops.StartUp()
+	exports('Shops', function ()
+		return Shops
+	end)
 	RegisterCommand('bubble', function(source,args)
 		local Functions = exports.renzu_shops:Shops()
 		Functions.CreateBubbleSpeechSync({id = GetPlayerServerId(PlayerId()), title = GetPlayerName(PlayerId()), message = args[1], bagname = 'player:', ms = 5000})

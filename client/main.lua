@@ -1,6 +1,5 @@
 local self = setmetatable({}, Shops)
 self.shopopen = false
-self.PlayerData = ESX.GetPlayerData()
 self.Items = {}
 self.temporalspheres = {}
 self.Active = {}
@@ -9,7 +8,9 @@ self.__index = {}
 self.currentstore = {}
 self.moneytype = {}
 self.itemLists = {}
+self.PlayerData = {}
 self.StartUp = function()
+	self.PlayerData = self.GetPlayerData()
 	Citizen.CreateThread(function()
 		player = LocalPlayer.state
 		Wait(2000)
@@ -1355,17 +1356,6 @@ self.Handlers = function()
 	lib.onCache('ped', function(ped)
 		self.playerPed = ped
 	end)
-	RegisterNetEvent('esx:playerLoaded', function(playerData)
-		local playerData = playerData
-		loaded = true
-		self.PlayerData = playerData
-		self.LoadShops()
-	end)
-
-	RegisterNetEvent('esx:setJob', function(job)
-		self.PlayerData.job = job
-		loaded = true
-	end)
 
 	AddStateBagChangeHandler("CreateShop", "global", function(bagName, key, value)
 		Wait(1000)
@@ -1491,7 +1481,7 @@ self.Handlers = function()
 		if data and data.type == 'vehicle' then
 			worldoffset = vec3(2.0,-2.0,0.5)
 		end
-		local offset = GetOffsetFromEntityInWorldCoords(entity,worldoffset)
+		local offset = GetOffsetFromEntityInWorldCoords(entity,worldoffset.x,worldoffset.y,worldoffset.z)
 		if value.selling and not spheres[value.identifier] then
 			spheres[value.identifier] = self.Add(offset,value.type,self.OpenShopMovable,false,{type = value.type, identifier = value.identifier, net = net})
 		elseif not value.selling then
@@ -1902,7 +1892,8 @@ self.MovableShopStart = function(data)
 		self.startingsell = false
 		while DoesEntityExist(entity) do
 			local sleep = 1000
-			local offset = GetOffsetFromEntityInWorldCoords(entity,self.worldoffset[self.movabletype])
+			local worldoffset = self.worldoffset[self.movabletype]
+			local offset = GetOffsetFromEntityInWorldCoords(entity,worldoffset.x,worldoffset.y,worldoffset.z)
 			self.clerkmode = false
 			if not self.startingsell and #(GetEntityCoords(self.playerPed) - offset) < 1 then
 				sleep = 5
@@ -2345,7 +2336,7 @@ self.OnDemand = function(items,type,storedata)
 					while not DoesEntityExist(self.peds[i]) and self.ondemand do Wait(1) end
 					self.currentcustomer = self.peds[i]
 					worldoffset = vec3(2.0,-2.0,0.5)
-					local offset = GetOffsetFromEntityInWorldCoords(self.movableentity[self.movabletype],worldoffset)
+					local offset = GetOffsetFromEntityInWorldCoords(self.movableentity[self.movabletype],worldoffset.x,worldoffset.y,worldoffset.z)
 					--TaskGoToEntity(peds[i],self.movableentity[self.movabletype],-1,3.0,1.0)
 					if storedata then
 						offset = storedata.offset

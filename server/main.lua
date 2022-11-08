@@ -4,7 +4,12 @@ GlobalState.MovableShops = json.decode(GetResourceKvpString('movableshops') or '
 
 local Items = {}
 local purchaseorders = {}
+local vehicletable = 'owned_vehicles'
+local vehiclemod = 'vehicle'
+local owner = 'owner'
+local stored = 'stored'
 CreateThread(function()
+	request('server/framework/main')
 	for k,v in pairs(config.Shops) do -- overide default ox inventory shops. temporary logic
 		exports.ox_inventory:RegisterShop(k, {
 			name = k, 
@@ -230,7 +235,7 @@ end)
 
 lib.callback.register('renzu_shops:removestock', function(source,data)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local identifier = data.type..':'..xPlayer.identifier
 	local storeowned, shopdata = isStoreOwned(data.type,data.index) -- check if this store has been owned by player
 	if storeowned then
@@ -249,7 +254,7 @@ lib.callback.register('renzu_shops:removestock', function(source,data)
 end)
 
 lib.callback.register('renzu_shops:buyitem', function(source,data)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local storeowned, shopdata = isStoreOwned(data.shop,data.index) -- check if this store has been owned by player
 	local movableshop = isMovableShop(data.index) -- check if this store is a movable type
 	local hasitem = false
@@ -341,11 +346,11 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 			else -- else if vehicle type add it to player vehicles table
 				for i = 1, tonumber(v.count) do
 					callback = GenPlate()
-					SqlFunc('oxmysql','execute','INSERT INTO owned_vehicles (plate, vehicle, owner, stored) VALUES (@plate, @vehicle, @owner, @stored)',{
+					SqlFunc('oxmysql','execute','INSERT INTO '..vehicletable..' (plate, '..vehiclemod..', '..owner..', '..stored..') VALUES (@plate, @'..vehiclemod..', @'..owner..', @'..stored..')',{
 						['@plate']   = callback,
-						['@vehicle']   = json.encode({model = GetHashKey(v.data.name), plate = callback, modLivery = tonumber(v.vehicle.livery or -1), color1 = tonumber(v.vehicle.color or 0)}),
-						['@owner']   = xPlayer.identifier,
-						['@stored'] = 1
+						['@'..vehiclemod..'']   = json.encode({model = GetHashKey(v.data.name), plate = callback, modLivery = tonumber(v.vehicle.livery or -1), color1 = tonumber(v.vehicle.color or 0)}),
+						['@'..owner..'']   = xPlayer.identifier,
+						['@'..stored..''] = 1
 					})
 				end
 			end
@@ -359,7 +364,7 @@ end)
 
 lib.callback.register("renzu_shops:buystore", function(source,data)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	if xPlayer.getAccount('money').money >= data.price then
 		local stores = GlobalState.Stores
 		if not stores[data.label] then
@@ -375,7 +380,7 @@ end)
 GlobalState.AvailableStore = {}
 lib.callback.register("renzu_shops:sellstore", function(source,store)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local stores = GlobalState.Stores
 	if stores[store] and stores[store].owner == xPlayer.identifier then
 		stores[store] = nil
@@ -473,7 +478,7 @@ end
 
 lib.callback.register("renzu_shops:getStashData", function(source,data)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local identifier = data.type..':'..xPlayer.identifier
 	data.identifier = identifier
 	return GetStashData(data)
@@ -486,7 +491,7 @@ end
 lib.callback.register("renzu_shops:craftitem", function(source,data)
 	local source = source
 	local items = config.MovableShops[data.type].menu[data.menu]
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local identifier = data.type..':'..xPlayer.identifier
 	local inventoryid = data.stash and identifier or source -- declare where the inventory will be used for removing and adding items
 	for k,v in pairs(items) do
@@ -526,7 +531,7 @@ end)
 
 lib.callback.register("renzu_shops:getmovableshopdata", function(source,data)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local identifier = data.type..':'..xPlayer.identifier
 	exports.ox_inventory:RegisterStash(identifier, data.type, 40, 40000, false)
 	return GlobalState.MovableShops[identifier]
@@ -534,7 +539,7 @@ end)
 
 lib.callback.register("renzu_shops:buymovableshop", function(source,data)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local movable = GlobalState.MovableShops
 	local identifier = data.type..':'..xPlayer.identifier
 	if not movable[identifier] then
@@ -542,11 +547,11 @@ lib.callback.register("renzu_shops:buymovableshop", function(source,data)
 			local plate = nil
 			if data.shop.type == 'vehicle' then
 				plate = GenPlate()
-				SqlFunc('oxmysql','execute','INSERT INTO owned_vehicles (plate, vehicle, owner, stored) VALUES (@plate, @vehicle, @owner, @stored)',{
+				SqlFunc('oxmysql','execute','INSERT INTO '..vehicletable..' (plate, '..vehiclemod..', '..owner..', '..stored..') VALUES (@plate, @'..vehiclemod..', @'..owner..', @'..stored..')',{
 					['@plate']   = plate,
-					['@vehicle']   = json.encode({model = data.model, plate = plate, modLivery = -1}),
-					['@owner']   = xPlayer.identifier,
-					['@stored'] = 1
+					['@'..vehiclemod..'']   = json.encode({model = data.model, plate = plate, modLivery = -1}),
+					['@'..owner..'']   = xPlayer.identifier,
+					['@'..stored..''] = 1
 				})
 			end
 			xPlayer.removeAccountMoney('money', data.price)
@@ -564,7 +569,7 @@ end)
 
 lib.callback.register("renzu_shops:getMovableVehicle", function(source,plate)
 	local plate = string.gsub(tostring(plate), '^%s*(.-)%s*$', '%1'):upper()
-	local vehicle = SqlFunc('oxmysql','fetchAll','SELECT * FROM owned_vehicles WHERE TRIM(plate) = ? ',{plate})
+	local vehicle = SqlFunc('oxmysql','fetchAll','SELECT * FROM '..vehicletable..' WHERE TRIM(plate) = ? ',{plate})
 	return vehicle[1]
 end)
 
@@ -591,7 +596,7 @@ end)
 local deliver = {}
 lib.callback.register("renzu_shops:createshoporder", function(source,data)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local stores = GlobalState.Stores
 	local amount = data.item.price * data.amount * config.discount
 	if tonumber(stores[data.store].money[data.moneytype]) >= amount then
@@ -618,7 +623,7 @@ end)
 GlobalState.OngoingShip = {}
 lib.callback.register("renzu_shops:startdelivery", function(source,data)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	for k,v in pairs(deliver) do
 		for k,v in pairs(v) do
 			if v == xPlayer.identifier then
@@ -662,7 +667,7 @@ end)
 
 lib.callback.register("renzu_shops:jobdone", function(source,data)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local found = false
 	for k,v in pairs(deliver) do
 		for k2,v in pairs(v) do
@@ -704,7 +709,7 @@ end)
 lib.callback.register("renzu_shops:addemployee", function(source,data)
 	local player = Player(data.id).state
 	local data = data
-	local employee = ESX.GetPlayerFromId(data.id)
+	local employee = GetPlayerFromId(data.id)
 	local stores = GlobalState.Stores
 	if stores[data.store].employee[employee.identifier] then
 		return 'already'
@@ -776,7 +781,7 @@ end
 
 lib.callback.register('renzu_shops:editstore', function(source,data)
 	local source = source
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local xPlayer = GetPlayerFromId(source)
 	local stores = GlobalState.Stores
 	local employed = stores[data.store]?.employee[xPlayer.identifier]
 	local owned = stores[data.store]?.owner == xPlayer.identifier or employed or xPlayer.getGroup() == 'admin'
@@ -968,12 +973,12 @@ AddEventHandler('esx:onPlayerJoined', function(src, char, data)
 	local char = char
 	local data = data
 	Wait(1000)
-	local xPlayer = ESX.GetPlayerFromId(src)
+	local xPlayer = GetPlayerFromId(src)
 end)
 
 RegisterNetEvent('esx:setJob')
 AddEventHandler('esx:setJob', function(src,j,old)
-	local xPlayer = ESX.GetPlayerFromId(src)
+	local xPlayer = GetPlayerFromId(src)
 	local new = false
 
 end)
@@ -1002,7 +1007,7 @@ for i = 48,  57 do table.insert(NumberCharset, string.char(i)) end
 local temp = {}
 CreateThread(function() -- get all existing plates and save to temp table for faster unique checking upon plate generation
     Wait(1000)
-    local vehicles = SqlFunc('oxmysql','fetchAll','SELECT plate FROM  owned_vehicles',{})
+    local vehicles = SqlFunc('oxmysql','fetchAll','SELECT plate FROM  '..vehicletable..'',{})
     for k,v in pairs(vehicles) do
         if v.plate ~= nil then
             temp[v.plate] = v
