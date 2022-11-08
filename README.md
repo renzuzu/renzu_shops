@@ -30,6 +30,7 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - Shipping Jobs - Store Owner Bulk Orders will be redirected to Shipping Job. its mean this script does not do Self Delivery like the other stock shops script. while owner can still do shipping job on their own. as shipping job is open for all and no job requirement at the moment.)
 - Cashier System - All New Sales income money will be redirected to Cashier. Store Owner or Any OnDuty Clerk can Withdraw the money from Cashier.
 - Store Robbery - a Simple store robbery with Skill Check. Every Cashier can be Robbed with a default 30minutes cooldown.
+- Item Custom Effects on use. ( from item customisation or Preconfigured Metadatas ex.status)
 - and more.
 
 # Preconfigured Shops
@@ -50,6 +51,24 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - some features might change or break in future as this is WIP.
 - All Codes used here is Written by me from Scratch. you cannot use any of the code for your own release or for money income purpose without my permission.
 - you can remove the '@renzu_shield/init.lua' from fxmanifest.lua. its my AC that i am currently working when i have a free time.
+- TO use Item Effects from Customisation @ data/item-customisation.lua
+- You need to Insert the export , `export = 'renzu_shops.ItemUse'`
+
+- Example
+
+```
+['burger'] = {
+		label = 'Burger',
+		weight = 0,
+		client = {
+			anim = 'eating',
+			prop = 'burger',
+			usetime = 2500,
+			notification = 'You ate a delicious burger',
+			export = 'renzu_shops.ItemUse'
+		},
+	},
+```
 
 # DEMO IMAGES
 - General Store
