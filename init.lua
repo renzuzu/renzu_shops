@@ -60,7 +60,7 @@ if not IsDuplicityVersion() then
 	Shops.LoadJobShops = function()
 		for k,zones in pairs(Shops.JobSpheres) do
 			if zones then
-				if not config.target then
+				if not config.target and zones.remove then
 					zones:remove()
 				else
 					exports.ox_target:removeZone(zones)
