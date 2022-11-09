@@ -493,7 +493,6 @@ GetStashData = function(data)
 	end
 	local result = {}
 	local slot = {}
-	print(data.identifier)
 	for k,v in pairs(data.items) do
 		local item = v.name
 		local label = Items[item]
@@ -807,7 +806,6 @@ AddStockstoStore = function(data)
 	end
 	SetResourceKvp('renzu_stores', json.encode(stores))
 	GlobalState.Stores = stores
-	TriggerClientEvent('table3',-1,stores)
 end
 
 GetItemCount = function(item,metadata,source) -- temporary until ox search functions works correctly as i am having issues getting correct results with search with the metadata table or strings, bite me

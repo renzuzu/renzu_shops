@@ -97,12 +97,14 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 		local shopboss = self.delivery and callback == self.StoreOwner
 		local drawdist = 1.1
 		if self.shoptype == 'vehicle' then
-			drawdist = 7.5
+			drawdist = 1.5
 		end
 		if data.var.type and config.MovableShops[data.var.type] and callback == self.OpenShopMovable then
 			if not NetworkDoesNetworkIdExist(data.var.net) 
 				or not DoesEntityExist(NetworkGetEntityFromNetworkId(data.var.net)) then
-				data:remove()
+					if data.remove then
+						data:remove()
+					end
 				return
 			end
 		end
@@ -118,7 +120,7 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 		if not textui and data.distance < drawdist then textui = true self.OxlibTextUi("Press [E] "..msg) elseif data.distance > drawdist+1 and textui then textui = false data.onExit() end
 		if data.distance < drawdist and IsControlJustReleased(0,38) and not shopboss or auto then
 			LocalPlayer.state.invOpen = callback == self.OpenShop and true
-			if delete then
+			if delete and data.remove then
 				data:remove()
 			end
 			callback(data.var)
@@ -154,7 +156,7 @@ self.LoadShops = function()
 	local stores = GlobalState.Stores or {}
 	for name,shops in pairs(config.OwnedShops) do
 		for k,shop in pairs(shops) do
-			if self.temporalspheres[shop.label] then
+			if self.temporalspheres[shop.label] and self.temporalspheres[shop.label].remove then
 				self.temporalspheres[shop.label]:remove()
 			end
 			if not stores[shop.label] then
@@ -174,13 +176,14 @@ self.LoadShops = function()
 				self.ShopBlip({coord = shop.coord, text = 'My Store '..shop.label, blip = {colour = 38, id = 374, scale = 0.6}})
 			end
 			if shop.cashier then
-				shop.index = k
-				shop.type = name
-				shop.offset = config.Shops[name].locations[k]
+				local shopdata = lib.table.deepclone(shop)
+				shopdata.index = k
+				shopdata.type = name
+				shopdata.offset = config.Shops[name].locations[k]
 				if not config.target then
-					self.Add(shop.cashier,'Cashier '..shop.label,self.Cashier,false,shop)
+					self.Add(shopdata.cashier,'Cashier '..shopdata.label,self.Cashier,false,shopdata)
 				else
-					self.addTarget(shop.cashier,'Cashier '..shop.label,self.Cashier,false,shop)
+					self.addTarget(shopdata.cashier,'Cashier '..shopdata.label,self.Cashier,false,shopdata)
 				end
 			end
 		end
@@ -344,7 +347,7 @@ self.StoreManage = function(store)
 							description = store..' has been Sold',
 							type = 'success'
 						})
-						if self.temporalspheres[store] then
+						if self.temporalspheres[store] and self.temporalspheres[store].remove then
 							self.temporalspheres[store]:remove()
 						end
 					end
@@ -412,7 +415,7 @@ self.StoreOwner = function(data)
 		lib.showContext('storeowner')
 	else
 		self.SetNotify({title = 'Store Business',description = 'You Are Fired',type = 'error'})
-		if self.temporalspheres[self.currentstore] then
+		if self.temporalspheres[self.currentstore] and self.temporalspheres[self.currentstore].spheres?.remove then
 			self.temporalspheres[self.currentstore].spheres:remove()
 		end
 	end
@@ -652,7 +655,7 @@ self.EditItem = function(data, store, cat)
 			onSelect = function(args)
 				local input = lib.inputDialog('How Many :'..item..'   \n Min: 5 Max 100', {'Whole Sale Price: '..data.pricing.original * config.discount..'$'})
 				if not input then return end
-				local wholesaleorder = tonumber(input[1])
+				local wholesaleorder = tonumber(input[1]) or 0
 				if wholesaleorder < 5 then return end
 				if wholesaleorder > 100 then return end
 				local fee = data.pricing.original * wholesaleorder * config.discount
@@ -1000,11 +1003,17 @@ self.DelivertoVehicleShop = function(var)
 		RemoveBlip(deliveryblip)
 	end
 	self.delivery = true
+	DoScreenFadeOut(333)
+	Wait(350)
 	self.trailertransport = CreateVehicle(GetHashKey('tr4'), data.point[1],data.point[2],data.point[3],data.point[4], true, true)
 	while not DoesEntityExist(self.trailertransport) do Wait(1) end
+	self.SetEntityControlable(self.trailertransport)
 	SetEntityHeading(self.Vehicle,data.point[4])
+	SetVehicleOnGroundProperly(self.trailertransport)
 	AttachVehicleToTrailer(self.Vehicle,self.trailertransport, 1.00)
 	while not GetVehicleTrailerVehicle(self.Vehicle) == self.trailertransport do Wait(100) end
+	Wait(1000)
+	DoScreenFadeIn(533)
 	local data = var
 	local storecoord = vec3(0.0,0.0,0.0)
 	local restockcoord = nil
@@ -1067,6 +1076,7 @@ self.DelivertoStore = function(data)
 				SetVehicleDoorShut(self.Vehicle,5,0)
 			end)
 			self.DeleteEntity(object)
+			ClearPedTasks(cache.ped)
 			break
 		end
 	end
@@ -1142,6 +1152,7 @@ self.DelivertoStore = function(data)
 end
 
 self.DeliverDone = function(data)
+	ClearPedTasks(cache.ped)
 	lib.hideTextUI()
 	if DoesBlipExist(deliveryblip) then
 		RemoveBlip(deliveryblip)
@@ -1200,7 +1211,7 @@ self.Shipping = function(data)
 			if not GlobalState.OngoingShip[store] or GlobalState.OngoingShip[store] and GlobalState.OngoingShip[store][v.id] == nil then
 				local pay = dist * config.shipping.payperdistance
 				local label = self.Items[v.item.name] or v.item.label
-				if v.item.metadata then
+				if v.item.metadata and v.item.metadata.label then
 					label = v.item.metadata.label
 				end
 				table.insert(options,{
@@ -1253,7 +1264,9 @@ self.BuyStore = function(data)
 			
 
 			if self.temporalspheres[data.label] then
-				self.temporalspheres[data.label].spheres:remove()
+				if self.temporalspheres[data.label].spheres.remove then
+					self.temporalspheres[data.label].spheres:remove()
+				end
 				local spheredata = self.temporalspheres[data.label]
 				local sphere = self.Add(spheredata.coord,spheredata.label,self.StoreOwner,false,spheredata.shop)
 				self.temporalspheres[data.label] = sphere
@@ -1522,7 +1535,7 @@ self.Handlers = function()
 		local offset = GetOffsetFromEntityInWorldCoords(entity,worldoffset.x,worldoffset.y,worldoffset.z)
 		if value.selling and not spheres[value.identifier] then
 			spheres[value.identifier] = self.Add(offset,value.type,self.OpenShopMovable,false,{type = value.type, identifier = value.identifier, net = net})
-		elseif not value.selling then
+		elseif not value.selling and spheres[value.identifier].remove then
 			spheres[value.identifier]:remove()
 			spheres[value.identifier] = nil
 		end
