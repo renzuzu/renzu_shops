@@ -8,7 +8,7 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - Create Item Datas for ox_inventory data/items.lua format. ( for default samples preconfigured items ) (easy)
 - ✅ Create Admin Menus to manage player shops. ( intermediate )
 - ✅ Add Transfer Ownership to Store Management ( normal )
-- Tweak Shipping Job Missions. fix or optimise zones, Trailer Spawning properly and etc.. (normal)
+- ✅ Tweak Shipping Job Missions. fix or optimise zones, Trailer Spawning properly and etc.. (normal)
 - Enhance or Add more Effects to data/item-customisation.lua ( intermediate )
 - Change Blip Sprites. (very easy)
 - ✅ Support Multiple Frameworks. (easy)
