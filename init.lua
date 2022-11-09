@@ -57,17 +57,44 @@ end
 
 if not IsDuplicityVersion() then
 	Shops = request('client/main')
+	Shops.LoadJobShops = function()
+		for k,zones in pairs(Shops.JobSpheres) do
+			if zones then
+				if not config.target then
+					zones:remove()
+				else
+					exports.ox_target:removeZone(zones)
+				end
+			end
+		end
+		local jobshop = GlobalState.JobShop
+		for k,shops in pairs(config.OwnedShops) do
+			for k,shop in pairs(shops) do
+				if jobshop[shop.label] == Shops.PlayerData.job.name then
+					if not config.target then
+						Shops.temporalspheres[shop.label] = Shops.Add(shop.coord,'My Store '..shop.label,Shops.StoreOwner,false,shop)
+						Shops.JobSpheres[Shops.PlayerData.job.name] = Shops.temporalspheres[shop.label]
+					else
+						local zone = Shops.addTarget(shop.coord,'My Store '..shop.label,Shops.StoreOwner,false,shop)
+						Shops.JobSpheres[Shops.PlayerData.job.name] = zone
+					end
+				end
+			end
+		end
+	end
 	Shops.Playerloaded = function()
 		if config.framework == 'ESX' then
 			RegisterNetEvent('esx:playerLoaded', function(xPlayer)
 				Shops.PlayerData = xPlayer
 				Shops.LoadShops()
+				Shops.LoadJobShops()
 			end)
 		elseif config.framework == 'QBCORE' then
 			RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
 				QBCore.Functions.GetPlayerData(function(p)
 					Shops.PlayerData = p
 					Shops.LoadShops()
+					Shops.LoadJobShops()
 					if PlayerData.job ~= nil then
 						Shops.PlayerData.job.grade = Shops.PlayerData.job.grade.level
 					end
@@ -95,11 +122,13 @@ if not IsDuplicityVersion() then
 		if config.framework == 'ESX' then
 			RegisterNetEvent('esx:setJob', function(job)
 				Shops.PlayerData.job = job
+				Shops.LoadJobShops()
 			end)
 		elseif config.framework == 'QBCORE' then
 			RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
 				Shops.PlayerData.job = job
 				Shops.PlayerData.job.grade = Shops.PlayerData.job.grade.level
+				Shops.LoadJobShops()
 			end)
 		end
 	end

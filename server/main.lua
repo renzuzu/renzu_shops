@@ -1,7 +1,7 @@
 GlobalState.Shipping = json.decode(GetResourceKvpString('shippingcompany') or '[]') or {}
 GlobalState.Stores = json.decode(GetResourceKvpString('renzu_stores') or '[]') or {}
 GlobalState.MovableShops = json.decode(GetResourceKvpString('movableshops') or '[]') or {}
-
+GlobalState.JobShop = {}
 local Items = {}
 local purchaseorders = {}
 local vehicletable = 'owned_vehicles'
@@ -25,6 +25,13 @@ CreateThread(function()
 	for k,v in pairs(items) do
 		Items[v.name] = v.label
 	end
+	local jobshop = {}
+	for k,v in pairs(GlobalState.Stores) do
+		if v.job then
+			jobshop[k] = v.job
+		end
+	end
+	GlobalState.JobShop = jobshop
 end)
 
 isStoreOwned = function(store,index)
@@ -415,6 +422,24 @@ lib.callback.register("renzu_shops:transfershop", function(source,data)
 	return false
 end)
 
+GlobalState.JobShopNotify = {}
+lib.callback.register("renzu_shops:shopjobaccess", function(source,store)
+	local source = source
+	local xPlayer = GetPlayerFromId(source)
+	local stores = GlobalState.Stores
+	if stores[store] and stores[store].owner == xPlayer.identifier then
+		stores[store].job = xPlayer.job.name
+		GlobalState.Stores = stores
+		SetResourceKvp('renzu_stores', json.encode(stores))
+		local jobshop = GlobalState.JobShop
+		jobshop[store] = xPlayer.job.name
+		GlobalState.JobShop = jobshop
+		GlobalState.JobShopNotify = {store = store, job = xPlayer.job.name, ts = os.time(), owner = xPlayer.identifier}
+		return true
+	end
+	return false
+end)
+
 GlobalState.RobableStore = {}
 
 Priority = function() -- your custom priority logic
@@ -468,6 +493,7 @@ GetStashData = function(data)
 	end
 	local result = {}
 	local slot = {}
+	print(data.identifier)
 	for k,v in pairs(data.items) do
 		local item = v.name
 		local label = Items[item]
@@ -478,13 +504,15 @@ GetStashData = function(data)
 		end
 		local data = exports.ox_inventory:Search(data.identifier, 'slots', v.name)
 		result[item] = 0
-		for k,v in pairs(data) do
-			if metadata and result[v.metadata.name] and not slot[v.slot] then
-				result[v.metadata.name] += v.count
-				slot[v.slot] = true
-			elseif v.metadata and not v.metadata.name and not metadata and not slot[v.slot] or not metadata and not v.metadata and not slot[v.slot] then
-				result[v.name] += v.count
-				slot[v.slot] = true
+		if data then
+			for k,v in pairs(data) do
+				if metadata and result[v.metadata.name] and not slot[v.slot] then
+					result[v.metadata.name] += v.count
+					slot[v.slot] = true
+				elseif v.metadata and not v.metadata.name and not metadata and not slot[v.slot] or not metadata and not v.metadata and not slot[v.slot] then
+					result[v.name] += v.count
+					slot[v.slot] = true
+				end
 			end
 		end
 	end
@@ -494,8 +522,7 @@ end
 lib.callback.register("renzu_shops:getStashData", function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
-	local identifier = data.type..':'..xPlayer.identifier
-	data.identifier = identifier
+	local identifier = data.identifier
 	return GetStashData(data)
 end)
 
@@ -798,8 +825,11 @@ lib.callback.register('renzu_shops:editstore', function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
 	local stores = GlobalState.Stores
-	local employed = stores[data.store]?.employee[xPlayer.identifier]
-	local owned = stores[data.store]?.owner == xPlayer.identifier or employed or xPlayer.getGroup() == 'admin'
+	local employed = stores[data.store].employee[xPlayer.identifier]
+	local owned = stores[data.store].owner == xPlayer.identifier 
+	or employed 
+	or stores[data.store].job == xPlayer.job.name
+	or xPlayer.getGroup() == 'admin'
 	local itemtype = nil
 	local itemname = nil
 	if tonumber(data.value) and data.value >= 0 and owned and stores[data.store] and data.type == 'price' then
