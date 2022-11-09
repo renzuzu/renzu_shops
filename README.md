@@ -13,7 +13,7 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - Change Blip Sprites. (very easy)
 - ✅ Support Multiple Frameworks. (easy)
 - Support Item Customisation to Movable Shops correctly. (intermediate)
-- replace scenario based when cooking to TaskPlay (easy)
+- ✅ replace scenario based when cooking to TaskPlay (easy)
 
 # Features
 - Support All types of Shops
@@ -31,6 +31,7 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - Cashier System - All New Sales income money will be redirected to Cashier. Store Owner or Any OnDuty Clerk can Withdraw the money from Cashier.
 - Store Robbery - a Simple store robbery with Skill Check. Every Cashier can be Robbed with a default 30minutes cooldown.
 - Item Custom Effects on use. ( from item customisation or Preconfigured Metadatas ex.status)
+- Admin Store Management - Manage Store Stocks and everything, Add New Store Via Menu from preconfigured Shop Ownable types.
 - and more.
 
 # Preconfigured Shops
@@ -50,7 +51,6 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - if you want to fully test the resource. you need to install all the items required here. to ox_inventory/data/items.lua by your self.
 - this resource is currently semi WIP as i have still some tasks left before releasing on CFX.
 - some features might change or break in future as this is WIP.
-- All Codes used here is Written by me from Scratch. you cannot use any of the code for your own release or for money income purpose without my permission.
 - you can remove the '@renzu_shield/init.lua' from fxmanifest.lua. its my AC that i am currently working when i have a free time.
 - Shop Images Used from \ox_inventory\web\images/{$item}.png
 - TO use Item Effects from Customisation @ data/item-customisation.lua
