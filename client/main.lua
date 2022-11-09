@@ -9,6 +9,7 @@ self.currentstore = {}
 self.moneytype = {}
 self.itemLists = {}
 self.PlayerData = {}
+self.JobSpheres = {}
 self.StartUp = function()
 	self.PlayerData = self.GetPlayerData()
 	Citizen.CreateThread(function()
@@ -42,6 +43,7 @@ self.StartUp = function()
 			self.ShopBlip({coord = shop.coord, text = shop.label, blip = shop.blip or false})
 		end
 		self.LoadShops()
+		self.LoadJobShops()
 	end)
 end
 
@@ -162,7 +164,8 @@ self.LoadShops = function()
 				else
 					self.addTarget(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
 				end
-			elseif stores[shop.label]?.owner == self.PlayerData.identifier or stores[shop.label]?.employee[self.PlayerData.identifier] then
+			elseif stores[shop.label]?.owner == self.PlayerData.identifier 
+			or stores[shop.label].employee[self.PlayerData.identifier] then
 				if not config.target then
 					self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				else
@@ -400,7 +403,8 @@ self.StoreOwner = function(data)
 	self.shoptype = data.type
 	self.moneytype = data.moneytype
 	if stores[self.currentstore] and stores[self.currentstore].owner == self.PlayerData.identifier
-	or stores[self.currentstore] and stores[self.currentstore]?.employee[self.PlayerData.identifier] then
+	or stores[self.currentstore] and stores[self.currentstore]?.employee[self.PlayerData.identifier]
+	or stores[self.currentstore]?.job == self.PlayerData.job.name then
 		self.FinanceManage(self.currentstore,data.moneytype)
 		self.EmployeeManage(self.currentstore)
 		self.ManageStoreMenu(self.currentstore)
@@ -482,34 +486,53 @@ self.AddEmployee = function(data)
 end
 
 self.EmployeeManage = function(store)
+	local options = {
+		{
+			title = 'Add Employee',
+			description = 'Add nearby citizen to your employee list',
+			arrow = true,
+			onSelect = function(args)
+				local players = lib.getNearbyPlayers(cache.coords, 50.0, true)
+				self.AddEmployee({players = players, store = store})
+			end
+		},
+		{
+			title = 'Remove Employee',
+			description = 'Remove Your Employees',
+			arrow = true,
+			onSelect = function(args)
+				local stores = GlobalState.Stores
+				if stores[store].employee then
+					self.RemoveEmployee({employee = stores[store].employee, store = store})
+				end
+			end
+		},
+	}
+	local stores = GlobalState.Stores
+	if stores[store].owner == self.PlayerData.identifier then
+		table.insert(options,{ -- will be improved later, like with grade system
+			title = 'Add Job Access',
+			description = 'Give Management Access to your Current Job   \n : ('..self.PlayerData.job.name..')',
+			arrow = true,
+			onSelect = function(args)
+				local reason = lib.callback.await('renzu_shops:shopjobaccess', false, store)
+				if reason then
+					self.SetNotify({
+						title = 'Store Business',
+						description = 'Successfully Add '..self.PlayerData.job.name..'',
+						type = 'success'
+					})
+				end
+			end
+		})
+	end
 	lib.registerContext({
 		id = 'employee_manage',
 		title = 'Manage Employees',
 		menu = 'manage_store',
 		onExit = function()
 		end,
-		options = {
-			{
-				title = 'Add Employee',
-				description = 'Add nearby citizen to your employee list',
-				arrow = true,
-				onSelect = function(args)
-					local players = lib.getNearbyPlayers(cache.coords, 50.0, true)
-					self.AddEmployee({players = players, store = store})
-				end
-			},
-			{
-				title = 'Remove Employee',
-				description = 'Remove Your Employees',
-				arrow = true,
-				onSelect = function(args)
-					local stores = GlobalState.Stores
-					if stores[store].employee then
-						self.RemoveEmployee({employee = stores[store].employee, store = store})
-					end
-				end
-			}
-		}
+		options = options
 	})
 end
 
@@ -902,6 +925,7 @@ self.BoxObject = function(dict,anim,prop,flag,hand)
 	object = CreateObjectNoOffset(GetHashKey(prop),coords.x,coords.y,coords.z,true,true)
 	while not DoesEntityExist(object) do Wait(0) end
 	SetEntityCollision(object,false,false)
+	self.SetEntityControlable(object)
 	AttachEntityToEntity(object,ped,GetPedBoneIndex(ped,hand),0.0,0.0,0.0,0.0,0.0,0.0,false,false,false,false,2,true)
 	Citizen.InvokeNative(0xAD738C3085FE7E11,object,true,true)
 	return object
@@ -1042,7 +1066,7 @@ self.DelivertoStore = function(data)
 				SetVehicleDoorShut(self.Vehicle,3,0)
 				SetVehicleDoorShut(self.Vehicle,5,0)
 			end)
-			DeleteEntity(object)
+			self.DeleteEntity(object)
 			break
 		end
 	end
@@ -1109,7 +1133,7 @@ self.DelivertoStore = function(data)
 				SetVehicleDoorShut(self.Vehicle,3,0)
 				SetVehicleDoorShut(self.Vehicle,5,0)
 			end)
-			DeleteEntity(object)
+			self.DeleteEntity(object)
 			break
 		end
 		Wait(sleep)
@@ -1123,7 +1147,7 @@ self.DeliverDone = function(data)
 		RemoveBlip(deliveryblip)
 	end
 	if DoesEntityExist(self.trailertransport) then
-		DeleteEntity(self.trailertransport)
+		self.DeleteEntity(self.trailertransport)
 	end
 	local delivered = lib.callback.await('renzu_shops:stockdelivered', false, data)
 	if data.selfdeliver then
@@ -1151,7 +1175,7 @@ self.JobDone = function(data)
 	if DoesBlipExist(deliveryblip) then
 		RemoveBlip(deliveryblip)
 	end
-	DeleteEntity(self.Vehicle)
+	self.DeleteEntity(self.Vehicle)
 	self.delivery = false
 	lib.hideTextUI()
 	local success = lib.callback.await('renzu_shops:jobdone', false, data)
@@ -1354,7 +1378,7 @@ self.Closeui = function()
 	DestroyAllCams(true)
 	ClearFocus()
 	if DoesEntityExist(self.chosenvehicle) then
-		DeleteEntity(self.chosenvehicle)
+		self.DeleteEntity(self.chosenvehicle)
 	end
 end
 
@@ -1501,6 +1525,26 @@ self.Handlers = function()
 		elseif not value.selling then
 			spheres[value.identifier]:remove()
 			spheres[value.identifier] = nil
+		end
+	end)
+
+	AddStateBagChangeHandler("JobShopNotify", "global", function(bagName, key, value)
+		Wait(1000)
+		if not value then return end
+		if value.job ~= self.PlayerData.job.name then return end
+		if value.owner == self.PlayerData.identifier then return end
+		local stores = GlobalState.Stores
+		for name,shop in pairs(config.OwnedShops) do
+			for k,v in pairs(shop) do
+				if v.label == value.store then
+					if not config.target then
+						self.temporalspheres[shop.label] = self.Add(v.coord,'My Store '..v.label,self.StoreOwner,false,v)
+					else
+						self.addTarget(shop.coord,'My Store '..v.label,self.StoreOwner,false,v)
+					end
+					break
+				end
+			end
 		end
 	end)
 
@@ -1733,9 +1777,9 @@ self.SpawnVehicleLocal = function(model)
 	for i = 1, 2 do
 		local nearveh = GetClosestVehicle(spawn, 2.000, 0, 70)
 		if DoesEntityExist(nearveh) then
-			DeleteEntity(nearveh)
+			self.DeleteEntity(nearveh)
 		end
-		while DoesEntityExist((nearveh)) do DeleteEntity(nearveh) Wait(100) end
+		while DoesEntityExist((nearveh)) do self.DeleteEntity(nearveh) Wait(100) end
 	end
 
 	local dist = #(spawn - GetEntityCoords(self.playerPed))
@@ -1755,7 +1799,7 @@ self.SpawnVehicleLocal = function(model)
 			loading = true
 			self.downloading = false
 		end
-		if DoesEntityExist(self.chosenvehicle) then DeleteEntity(self.chosenvehicle) end
+		if DoesEntityExist(self.chosenvehicle) then self.DeleteEntity(self.chosenvehicle) end
 		self.chosenvehicle = CreateVehicle(model, spawn.x,spawn.y,spawn.z, shopdata.spawn.w, false, true)
 		while not DoesEntityExist(self.chosenvehicle) do Wait(0) end
 		SetEntityHeading(self.chosenvehicle, shopdata.spawn.w)
@@ -1840,10 +1884,10 @@ end
 
 self.ReturnMovable = function()
 	if DoesEntityExist(self.movableentity[self.movabletype]) then
-		DeleteEntity(self.movableentity[self.movabletype])
+		self.DeleteEntity(self.movableentity[self.movabletype])
 	end
 	if DoesEntityExist(self.bike[self.movabletype]) then
-		DeleteEntity(self.bike[self.movabletype])
+		self.DeleteEntity(self.bike[self.movabletype])
 	end
 end
 
@@ -1944,6 +1988,9 @@ self.MovableShopStart = function(data)
 						PlaceObjectOnGroundProperly(self.movableentity[self.movabletype])
 						ClearPedTasks(self.playerPed)
 						ResetPedMovementClipset(self.playerPed,1.0)
+						local bikecoord = GetEntityCoords(self.bike[self.movabletype])
+						self.bikecoords[self.movabletype] = vec4(bikecoord.x,bikecoord.y,bikecoord.z,GetEntityHeading(self.bike[self.movabletype]))
+						self.DeleteEntity(self.bike[self.movabletype])
 						--SetEntityCoords(self.playerPed,coord)
 					end
 				end
@@ -2004,6 +2051,7 @@ self.GotoCockpit = function(data)
 		gameplaycam = GetRenderingCam()
 		self.OpenMovableShop(data)
 		self.worldoffset[self.movabletype] = vec3(0.0,-1.0,0.5)
+		self.SetEntityControlable(self.movableentity[self.movabletype])
 		AttachEntityToEntity(self.playerPed, self.movableentity[self.movabletype], 19, 1.1, -3.2, 0.6, 0.0, 0.0, -90.0, false, false, false, false, 20, true)
 		FreezeEntityPosition(self.playerPed,true)
 		SetGameplayCamVehicleCamera('taco')
@@ -2065,6 +2113,7 @@ self.SpawnMovableEntity = function(data)
 	end
 	while not DoesEntityExist(ent) do Wait(1) end
 	while not NetworkGetEntityIsNetworked(ent) do Wait(1) NetworkRegisterEntityAsNetworked(ent) end
+	self.SetEntityControlable(ent)
 	PlaceObjectOnGroundProperly(ent)
 	return ent
 	--AttachEntityToEntity(ent, ped, bone, data["x"], y, data["z"], data["x_rotation"], data["y_rotation"], data["z_rotation"], 0, 1, 0, 1, 0, 1)
@@ -2082,6 +2131,7 @@ self.SetClientStateBags = function(value)
 	}, true)
 end
 self.bike = {}
+self.bikecoords = {}
 self.OpenMovableShop = function(data)
 	local options = {}
 	if not DoesEntityExist(self.movableentity[self.movabletype]) then
@@ -2111,15 +2161,22 @@ self.OpenMovableShop = function(data)
 					-- SetPedMovementClipset(self.playerPed, 'move_characters@jimmy@slow@', 0.2)
 					local model = `cruiser`
 					lib.requestModel(model)
+					local bikecoord = self.bikecoords[self.movabletype]
+					or GetEntityCoords(self.playerPed)+vec3(0.7,0.5,0.0)
 					if not DoesEntityExist(self.bike[self.movabletype]) then
-						self.bike[self.movabletype] = CreateVehicle(model, GetEntityCoords(self.playerPed)+vec3(1.0,1.0,0.0), true, true)
+						self.bike[self.movabletype] = CreateVehicle(model, bikecoord.x,bikecoord.y,bikecoord.z+10.0, true, true)
 					end
-					SetEntityCollision(self.bike[self.movabletype],true,true)
-					SetEntityAlpha(self.bike[self.movabletype],255,true)
-					FreezeEntityPosition(self.bike[self.movabletype],false)
-					while not DoesEntityExist(self.bike[self.movabletype]) do Wait(1) end
-					while not NetworkGetEntityIsNetworked(self.bike[self.movabletype]) do Wait(1) NetworkRegisterEntityAsNetworked(self.bike[self.movabletype]) end
+					while not DoesEntityExist(self.bike[self.movabletype]) do Wait(0) end
+					while not NetworkGetEntityIsNetworked(self.bike[self.movabletype]) do Wait(0) NetworkRegisterEntityAsNetworked(self.bike[self.movabletype]) end
+					FreezeEntityPosition(self.bike[self.movabletype],true)
+					self.SetEntityControlable(self.bike[self.movabletype])
+					SetEntityCoordsNoOffset(self.bike[self.movabletype],bikecoord.x,bikecoord.y,bikecoord.z-0.5)
+					SetVehicleOnGroundProperly(self.bike[self.movabletype])
+					SetEntityNoCollisionEntity(self.bike[self.movabletype],self.movableentity[self.movabletype],false)
+					SetEntityHeading(self.bike[self.movabletype],bikecoord.w or 0)
 					SetPedIntoVehicle(self.playerPed,self.bike[self.movabletype],-1)
+					self.SetEntityControlable(self.movableentity[self.movabletype])
+					FreezeEntityPosition(self.bike[self.movabletype],false)
 					AttachEntityToEntity(self.movableentity[self.movabletype], self.bike[self.movabletype], GetEntityBoneIndexByName(self.bike[self.movabletype], 'engine'), -0.7,0.1,-0.6, -1.5,2.3,-87.199999999999, 1, 0, 0, 0, 1, 1)
 				end
 			else
@@ -2133,14 +2190,14 @@ self.OpenMovableShop = function(data)
 					local coord = GetEntityCoords(self.playerPed)+vec3(1.0,1.0,0.0)
 					TaskLeaveVehicle(self.playerPed,self.bike[self.movabletype],262144)
 					Wait(1000)
-					SetEntityCollision(self.bike[self.movabletype],false,true)
 					FreezeEntityPosition(self.bike[self.movabletype],true)
-					SetEntityAlpha(self.bike[self.movabletype],1,true)
 					DetachEntity(self.movableentity[self.movabletype],true)
 					PlaceObjectOnGroundProperly(self.movableentity[self.movabletype])
 					ClearPedTasks(self.playerPed)
 					ResetPedMovementClipset(self.playerPed,1.0)
-					--SetEntityCoords(self.playerPed,coord)
+					local bikecoord = GetEntityCoords(self.bike[self.movabletype])
+					self.bikecoords[self.movabletype] = vec4(bikecoord.x,bikecoord.y,bikecoord.z,GetEntityHeading(self.bike[self.movabletype]))
+					self.DeleteEntity(self.bike[self.movabletype])
 				end
 			end
 		end
@@ -2243,6 +2300,7 @@ self.ServePurchaseOrder = function(var,i,storedata)
 			if not self.foodbox or not DoesEntityExist(self.foodbox) then
 				self.foodbox = CreateObject(`prop_food_bag1`,GetEntityCoords(self.playerPed),true,true)
 				while not DoesEntityExist(self.foodbox) do Wait(0) end
+				self.SetEntityControlable(self.foodbox)
 				AttachEntityToEntity(self.foodbox, self.currentcustomer, GetPedBoneIndex(self.currentcustomer, 57005), 0.3800, 0.0, -0.0300, 0.0017365, -79.9999997, 110.0651988, true, true,
 				false, true, 1, true)
 			end
@@ -2260,7 +2318,8 @@ self.ServePurchaseOrder = function(var,i,storedata)
 			})
 		end
 	elseif var.ingredients then
-		local cb = self.StartCook(var.data,var.name,var.menu,true)
+		local identifier = self.movabletype..':'..self.PlayerData.identifier
+		local cb = self.StartCook(var.data,var.name,var.menu,true,identifier)
 		if cb == 'success' then
 			self.purchaseorder[i] = nil
 			self.SetNotify({
@@ -2313,7 +2372,7 @@ self.OnDemand = function(items,type,storedata)
 	if self.ondemand then 
 		self.ondemand = false 
 		for k,v in pairs(self.allpeds) do 
-			DeleteEntity(v) 
+			self.DeleteEntity(v) 
 		end
 		self.peds = {}
 		return 
@@ -2358,6 +2417,7 @@ self.OnDemand = function(items,type,storedata)
 					self.peds[i] = CreatePed(4,GetHashKey(randped),coord.x,coord.y,groundz,0.0,true,true)
 					table.insert(self.allpeds,self.peds[i])
 					while not DoesEntityExist(self.peds[i]) and self.ondemand do Wait(1) end
+					self.SetEntityControlable(self.peds[i])
 					self.currentcustomer = self.peds[i]
 					worldoffset = vec3(2.0,-2.0,0.5)
 					local offset = GetOffsetFromEntityInWorldCoords(self.movableentity[self.movabletype],worldoffset.x,worldoffset.y,worldoffset.z)
@@ -2391,10 +2451,10 @@ self.OnDemand = function(items,type,storedata)
 					local cacheped = self.peds[i]
 					SetTimeout(15000,function()
 						if DoesEntityExist(cacheped) then
-							DeleteEntity(cacheped)
+							self.DeleteEntity(cacheped)
 						end
 						if DoesEntityExist(self.foodbox) then
-							DeleteEntity(self.foodbox)
+							self.DeleteEntity(self.foodbox)
 						end
 					end)
 					if not self.ondemand then break end
@@ -2487,13 +2547,13 @@ self.CookMenu = function(data)
 	lib.showContext('cookmenu')
 end
 
-self.StartCook = function(data,item,title,dontreceive)
+self.StartCook = function(data,item,title,dontreceive,identifier)
 	local cancook = data.ingredients and true
 	local items = {}
 	for k,v in pairs(data.ingredients or {}) do
 		table.insert(items,{name = k, count = v})
 	end
-	local ingredients = lib.callback.await('renzu_shops:getStashData', false, {items = items, type = self.movabletype})
+	local ingredients = lib.callback.await('renzu_shops:getStashData', false, {items = items, type = self.movabletype, identifier = identifier})
 	for k,v in pairs(items or {}) do
 		if ingredients[v.name] <= v.count then
 			cancook = false
@@ -2532,6 +2592,7 @@ self.StartCook = function(data,item,title,dontreceive)
 			Wait(10)
 			FreezeEntityPosition(self.playerPed,true)
 			DetachEntity(self.playerPed,true,true)
+			self.SetEntityControlable(self.movableentity[self.movabletype])
 			AttachEntityToEntity(self.playerPed, self.movableentity[self.movabletype], 19, 1.1, -3.2, 0.6, 0.0, 0.0, -90.0, false, false, false, false, 20, true)
 			Wait(0)
 			SetEntityCoordsNoOffset(self.playerPed,GetEntityCoords(self.playerPed))
@@ -2564,7 +2625,7 @@ end
 self.CookMenuList = function(items,title,data)
 	local options = {}
 	local identifier = self.movabletype..':'..self.PlayerData.identifier
-	local itemdata = lib.callback.await('renzu_shops:getStashData', false, {items = items, type = self.movabletype})
+	local itemdata = lib.callback.await('renzu_shops:getStashData', false, {items = items, type = self.movabletype, identifier = identifier})
 	local movabledata = GlobalState.MovableShops[identifier]
 	for k,v in pairs(items) do
 		local item = v.name
@@ -2586,7 +2647,7 @@ self.CookMenuList = function(items,title,data)
 			arrow = true,
 			metadata = ingredients,
 			onSelect = function(args)
-				self.StartCook(v,item,title)
+				self.StartCook(v,item,title,false,identifier)
 			end
 		})
 	end
@@ -2616,7 +2677,7 @@ self.OpenShopMovable = function(data)
 		end
 	end
 	local inventory = {}
-	local itemdata = lib.callback.await('renzu_shops:getStashData', false, {items = items, type = data.type})
+	local itemdata = lib.callback.await('renzu_shops:getStashData', false, {items = items, type = data.type, identifier = data.identifier})
 	for category,v in pairs(shopdata) do
 		for k,v in pairs(v) do
 			local name = v.metadata and v.metadata.name or v.name
@@ -2876,6 +2937,24 @@ end
 
 self.RemoveShop = function(data)
 
+end
+
+self.SetEntityControlable = function(entity) -- server based entities. incase you are not the owner. server entities are a little complicated
+    local netid = NetworkGetNetworkIdFromEntity(entity)
+    SetNetworkIdExistsOnAllMachines(netid,true)
+    SetEntityAsMissionEntity(entity,true,true)
+    NetworkRequestControlOfEntity(entity)
+    local attempt = 0
+    while not NetworkHasControlOfEntity(entity) and attempt < 2000 and DoesEntityExist(entity) do
+        NetworkRequestControlOfEntity(entity)
+        Citizen.Wait(0)
+        attempt = attempt + 1
+    end
+end
+
+self.DeleteEntity = function(entity)
+	self.SetEntityControlable(entity)
+	return DeleteEntity(entity)
 end
 
 return self
