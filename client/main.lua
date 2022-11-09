@@ -315,6 +315,14 @@ self.StoreManage = function(store)
 	local stores = GlobalState.Stores
 	if stores[store].owner == self.PlayerData.identifier then
 		table.insert(options,{
+			title = 'Transfer Ownership',
+			description = 'Transfer the Shop Business to other Citizen',
+			arrow = true,
+			onSelect = function(args)
+				self.TransferOwnerShip(store)
+			end,
+		})
+		table.insert(options,{
 			title = 'Sell Store',
 			description = 'Sell your store',
 			arrow = true,
@@ -2825,6 +2833,45 @@ self.CreateShop = function(data)
 		description = 'New Shop has been Added',
 		type = 'success'
 	})
+end
+
+self.TransferOwnerShip = function(store)
+	local options = {}
+	local players = lib.getNearbyPlayers(cache.coords, 50.0, true)
+	for k,v in pairs(players) do
+		table.insert(options,{
+			title = GetPlayerName(v.id),
+			description = 'Citizen ID #'..GetPlayerServerId(v.id),
+			arrow = true,
+			onSelect = function(args)
+				local confirm = lib.alertDialog({
+					header = 'Confirm',
+					content = 'Do you really want to Transfer this Shop to '..GetPlayerName(v.id)..'?',
+					centered = true,
+					cancel = true
+				})
+				if confirm ~= 'cancel' then
+					local reason = lib.callback.await('renzu_shops:transfershop', false, {store = store, id = GetPlayerServerId(v.id)})
+					if reason == true then
+						self.SetNotify({
+							title = 'Store Business',
+							description = 'Shop Ownership has been Transfered to '..GetPlayerName(v.id),
+							type = 'success'
+						})
+					end
+				end
+			end
+		})
+	end
+	lib.registerContext({
+		id = 'transfershop',
+		title = 'Transfer Shop',
+		menu = 'storeowner',
+		onExit = function()
+		end,
+		options = options
+	})
+	lib.showContext('transfershop')
 end
 
 self.RemoveShop = function(data)

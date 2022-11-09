@@ -400,6 +400,21 @@ lib.callback.register("renzu_shops:sellstore", function(source,store)
 	end
 end)
 
+lib.callback.register("renzu_shops:transfershop", function(source,data)
+	local source = source
+	local xPlayer = GetPlayerFromId(source)
+	local toPlayer = GetPlayerFromId(data.id)
+	local stores = GlobalState.Stores
+	if toPlayer and stores[data.store] and stores[data.store].owner == xPlayer.identifier then
+		stores[data.store].owner = toPlayer.identifier
+		stores[data.store]?.employee[xPlayer.identifier] = GetPlayerName(source)
+		GlobalState.Stores = stores
+		SetResourceKvp('renzu_stores', json.encode(stores))
+		return true
+	end
+	return false
+end)
+
 GlobalState.RobableStore = {}
 
 Priority = function() -- your custom priority logic
