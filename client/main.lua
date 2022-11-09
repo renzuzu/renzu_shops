@@ -22,9 +22,11 @@ self.StartUp = function()
 			if shop.locations then
 				for shopindex,v in ipairs(shop.locations) do
 					shop.shoptype = k
+					local ownedshopdata = self.GetShopData(k,shopindex)
+					shop.groups = ownedshopdata and ownedshopdata.groups
 					if not config.target then
 						self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
-					else
+					elseif not shop.groups or shop.groups == self.PlayerData.job.name then
 						self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 					end
 					self.ShopBlip({coord = v, text = shop.name, blip = shop.blip or false})
@@ -568,7 +570,7 @@ self.getShopTypeAndIndex = function(store)
 	for type,shop in pairs(config.OwnedShops) do
 		for index,v in pairs(shop) do
 			if v.label == store then
-				return type,index
+				return type, index, v
 			end
 		end
 	end
