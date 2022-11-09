@@ -498,7 +498,7 @@ lib.callback.register("renzu_shops:craftitem", function(source,data)
 		if v.metadata and v.metadata.name and v.metadata.name == data.item then
 			local haverequired = true
 			for k,v in pairs(v.ingredients) do
-				if GetItemCountSingle(k,source) < v then
+				if GetItemCountSingle(k,inventoryid) < v then
 					haverequired = false
 				end
 			end
@@ -513,7 +513,7 @@ lib.callback.register("renzu_shops:craftitem", function(source,data)
 		elseif v.metadata and not v.metadata.name and v.name == data.item or not v.metadata and v.name == data.item then
 			local haverequired = true
 			for k,v in pairs(v.ingredients or {}) do
-				if GetItemCountSingle(k,source) < v then
+				if GetItemCountSingle(k,inventoryid) < v then
 					haverequired = false
 				end
 			end

@@ -90,7 +90,6 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 
 	function inside(data)
 		local data = data
-		if self.clerkmode then Wait(5000) end
 		local group = data?.var?.shop?.groups
 		if group and group ~= self.PlayerData?.job?.name then return end
 		local shopboss = self.delivery and callback == self.StoreOwner
@@ -110,7 +109,10 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 			self.lastdata = data.index
 			self.movabletype = data.var.type
 		end
-		DrawMarker(21, data.coords.x, data.coords.y, data.coords.z, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
+		if config.MovableShops[data.var.type] and self.clerkmode then Wait(20) end
+		if not self.clerkmode then
+			DrawMarker(21, data.coords.x, data.coords.y, data.coords.z, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
+		end
 		if not textui and data.distance < drawdist then textui = true self.OxlibTextUi("Press [E] "..msg) elseif data.distance > drawdist+1 and textui then textui = false data.onExit() end
 		if data.distance < drawdist and IsControlJustReleased(0,38) and not shopboss or auto then
 			LocalPlayer.state.invOpen = callback == self.OpenShop and true
@@ -1473,6 +1475,8 @@ self.Handlers = function()
 
 	AddStateBagChangeHandler('movableshop' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated)
 		Wait(0)
+		local value = value
+		Wait(math.random(1,200))
 		if not value then return end
 		local net = tonumber(bagName:gsub('entity:', ''), 10)
 		local entity = NetworkGetEntityFromNetworkId(net)
@@ -2488,9 +2492,33 @@ self.StartCook = function(data,item,title,dontreceive)
 		end
 	end
 	if cancook then
-		TaskStartScenarioInPlace(self.playerPed, 'PROP_HUMAN_BBQ', 0, true)
+		--TaskStartScenarioInPlace(self.playerPed, 'PROP_HUMAN_BBQ', 0, true)
+		SetTimeout(0,function()
+			lib.progressBar({
+				duration = 10000,
+				label = 'Cooking '..data.label,
+				useWhileDead = false,
+				canCancel = true,
+				disable = {
+					car = true,
+				},
+				anim = {
+					dict = 'amb@prop_human_bbq@male@idle_a',
+					clip = 'idle_b' 
+				},
+				prop = {
+					bone = 28422,
+					model = `prop_fish_slice_01`,
+					pos = vec3(0.00, 0.00, 0.00),
+					rot = vec3(0.0, 0.0, 0.0) 
+				},
+			})
+		end)
 		Wait(1000)
 		local success = lib.skillCheck({'easy', 'easy', {areaSize = 60, speedMultiplier = 2}, 'easy'})
+		if lib.progressActive() then
+			lib.cancelProgress()
+		end
 		ClearPedTasks(self.playerPed)
 		if data.type == 'vehicle' then
 			Wait(10)
