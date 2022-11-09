@@ -1610,11 +1610,19 @@ self.Handlers = function()
 							local shopdata = self.GetShopData(self.Active.type,self.Active.index)
 							local vehicle = CreateVehicle(model, shopdata.purchase.x,shopdata.purchase.y,shopdata.purchase.z, shopdata.purchase.w, true, true)
 							while not DoesEntityExist(vehicle) do Wait(0) end
-							SetEntityHeading(vehicle, shopdata.purchase.w)
+							-- for server setter vehicle incase you dont owned the entity.
+							SetEntityAsMissionEntity(vehicle,true,true)
+							NetworkRequestControlOfEntity(vehicle)
+							local attempt = 0
+							while not NetworkHasControlOfEntity(vehicle) and attempt < 500 and DoesEntityExist(vehicle) do
+								NetworkRequestControlOfEntity(vehicle)
+								Citizen.Wait(0)
+								attempt = attempt + 1
+							end
 							SetVehicleDirtLevel(vehicle, 0.0)
 							SetVehicleModKit(vehicle,0)
 							SetVehicleNumberPlateText(vehicle,reason)
-							if chosen.vehicle and tonumber(chosen.vehicle.livery) and tonumber(chosen.vehicle.livery) ~= -1 then
+							if chosen.vehicle and tonumber(chosen.vehicle?.livery) and tonumber(chosen.vehicle?.livery) ~= -1 then
 								if chosen.vehicle.liverymod then
 									SetVehicleLivery(vehicle,tonumber(chosen.vehicle.livery))
 								else
@@ -1622,7 +1630,9 @@ self.Handlers = function()
 								end
 							end
 							local primary, secondary = GetVehicleColours(vehicle)
-							SetVehicleColours(vehicle,tonumber(chosen.vehicle.color),secondary)
+							if chosen.vehicle?.color then
+								SetVehicleColours(vehicle,tonumber(chosen.vehicle?.color),secondary)
+							end
 							self.Closeui()
 							TaskWarpPedIntoVehicle(self.playerPed, vehicle, -1)
 						end

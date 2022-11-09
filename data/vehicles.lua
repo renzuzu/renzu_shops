@@ -4376,12 +4376,12 @@ Vehicles = {
 	-- Adding new category
 	Gago = { -- example new category
 		[1] = {
-		   label = "Ruston",
+		   label = "r820",
 		   type = "sports",
 		   price = 130000,
 		   category = "Gago",
-		   hash = 719660200,
-		   name = "ruston",
+		   hash = `r820`,
+		   name = "r820",
 		 },
 	 },
 }

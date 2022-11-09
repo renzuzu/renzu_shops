@@ -348,7 +348,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 					callback = GenPlate()
 					SqlFunc('oxmysql','execute','INSERT INTO '..vehicletable..' (plate, '..vehiclemod..', '..owner..', '..stored..') VALUES (@plate, @'..vehiclemod..', @'..owner..', @'..stored..')',{
 						['@plate']   = callback,
-						['@'..vehiclemod..'']   = json.encode({model = GetHashKey(v.data.name), plate = callback, modLivery = tonumber(v.vehicle.livery or -1), color1 = tonumber(v.vehicle.color or 0)}),
+						['@'..vehiclemod..'']   = json.encode({model = GetHashKey(v.data.name), plate = callback, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),
 						['@'..owner..'']   = xPlayer.identifier,
 						['@'..stored..''] = 1
 					})
