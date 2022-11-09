@@ -14,6 +14,8 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - ✅ Support Multiple Frameworks. (easy)
 - Support Item Customisation to Movable Shops correctly. (intermediate)
 - ✅ replace scenario based when cooking to TaskPlay (easy)
+- ✅ Add Job based Access to Store Managing
+- Store Logs
 
 # Features
 - Support All types of Shops
