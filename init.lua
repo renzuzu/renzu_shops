@@ -70,7 +70,7 @@ if not IsDuplicityVersion() then
 		local jobshop = GlobalState.JobShop
 		for k,shops in pairs(config.OwnedShops) do
 			for k,shop in pairs(shops) do
-				if jobshop[shop.label] == Shops.PlayerData.job.name then
+				if jobshop[shop.label] == Shops.PlayerData.job?.name then
 					if not config.target then
 						Shops.temporalspheres[shop.label] = Shops.Add(shop.coord,'My Store '..shop.label,Shops.StoreOwner,false,shop)
 						Shops.JobSpheres[Shops.PlayerData.job.name] = Shops.temporalspheres[shop.label]
