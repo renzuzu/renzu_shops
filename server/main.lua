@@ -4,10 +4,10 @@ GlobalState.MovableShops = json.decode(GetResourceKvpString('movableshops') or '
 GlobalState.JobShop = {}
 local Items = {}
 local purchaseorders = {}
-local vehicletable = 'owned_vehicles'
-local vehiclemod = 'vehicle'
-local owner = 'owner'
-local stored = 'stored'
+vehicletable = 'owned_vehicles'
+vehiclemod = 'vehicle'
+owner = 'owner'
+stored = 'stored'
 CreateThread(function()
 	request('server/framework/main')
 	for k,v in pairs(config.Shops) do -- overide default ox inventory shops. temporary logic
