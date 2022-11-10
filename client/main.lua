@@ -1133,7 +1133,7 @@ self.DelivertoVehicleShop = function(var)
 	SetEntityHeading(self.Vehicle,data.point[4])
 	SetVehicleOnGroundProperly(self.trailertransport)
 	AttachVehicleToTrailer(self.Vehicle,self.trailertransport, 1.00)
-	while not GetVehicleTrailerVehicle(self.Vehicle) == self.trailertransport do Wait(100) end
+	while not GetVehicleTrailerVehicle(self.Vehicle) == self.trailertransport do AttachVehicleToTrailer(self.Vehicle,self.trailertransport, 1.00) Wait(100) end
 	Wait(1000)
 	DoScreenFadeIn(533)
 	local data = var
