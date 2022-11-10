@@ -1,6 +1,7 @@
 ESX,QBCORE = nil, nil
 config = {}
 config.framework = 'ESX' -- ESX || QBCORE
+config.allowplayercreateitem = false -- if false only admin can create new items via /stores
 config.target = false -- if true all lib zones for markers and oxlib textui will be disable.
 if config.framework == 'ESX' then
 	ESX = exports['es_extended']:getSharedObject()

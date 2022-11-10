@@ -131,8 +131,15 @@ AddStockInternal = function(shop,index,count,item)
 		if k == shop then
 			for k,v2 in pairs(v) do
 				if tonumber(index) == k and stores[v2.label] then
-					if v2.supplieritem then
-						for k,v in pairs(v2.supplieritem) do
+					local storeitems = lib.table.deepclone(v2.supplieritem)
+					if stores[v2.label].customitems then
+						for k,v in pairs(stores[v2.label].customitems) do
+							print('gago')
+							table.insert(storeitems,v)
+						end
+					end
+					if storeitems then
+						for k,v in pairs(storeitems) do
 							itemtype = v.metadata and v.metadata.name and 'custom' or 'normal'
 							itemname = v.metadata and v.metadata.name or v.name
 							if item == itemname or not item then
@@ -403,6 +410,34 @@ lib.callback.register("renzu_shops:sellstore", function(source,store)
 		end
 		Wait(1000)
 		GlobalState.AvailableStore = {ts = os.time(), store = store}
+		return true
+	end
+end)
+
+lib.callback.register("renzu_shops:createitem", function(source,data)
+	local source = source
+	local xPlayer = GetPlayerFromId(source)
+	local stores = GlobalState.Stores
+	if stores[data.store] and stores[data.store].owner == xPlayer.identifier then
+		if not stores[data.store].customitems then stores[data.store].customitems = {} end
+		local url = string.find(data.image or '', "http") or false
+		local metadata = { -- ox_inventory supported only
+			label = data.label, -- custom label name to set from metadatas
+			name = data.itemname, -- identifier important
+			[data.status] = data.statusvalue,
+			description = data.description,
+			functions = data.functions,
+			animations = data.animations,
+		}
+		if string.find(data.image or '', "http") then
+			metadata.imageurl = data.image
+		else
+			metadata.image = data.image
+		end
+		local itemdata = {name = CustomItems.Default, price = data.price , category = data.category, metadata = metadata}
+		stores[data.store].customitems[data.itemname] = itemdata
+		SetResourceKvp('renzu_stores', json.encode(stores))
+		GlobalState.Stores = stores
 		return true
 	end
 end)

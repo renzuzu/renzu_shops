@@ -209,7 +209,7 @@ self.Cashier = function(data)
 			onSelect = function(args)
 				local input = lib.inputDialog('Withdraw Cashier Money', {'How many:'})
 				if not input then return end
-				local value = tonumber(input[1])
+				local value = tonumber(input[1]) or 1
 				local reason = lib.callback.await('renzu_shops:editstore', false, {store = data.label, type = 'withdraw_cashier', item = data.moneytype, value = value})
 				if reason == 'success' then
 					self.SetNotify({
@@ -557,7 +557,7 @@ self.FinanceManage = function(store,money)
 				onSelect = function(args)
 					local input = lib.inputDialog('Withdraw Store Money', {'How many:'})
 					if not input then return end
-					local value = tonumber(input[1])
+					local value = tonumber(input[1]) or 1
 					local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'withdraw_money', item = money, value = value})
 					if reason == 'success' then
 						self.SetNotify({
@@ -581,7 +581,7 @@ self.FinanceManage = function(store,money)
 				onSelect = function(args)
 					local input = lib.inputDialog('Deposit Money to Store :', {'How many:'})
 					if not input then return end
-					local value = tonumber(input[1])
+					local value = tonumber(input[1]) or 1
 					local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'deposit_money', item = money, value = value})
 					if reason == 'success' then
 						self.SetNotify({
@@ -625,7 +625,7 @@ self.EditItem = function(data, store, cat)
 			onSelect = function(args)
 				local input = lib.inputDialog('How Many :'..item..'   \n Min: -999 Max 999', {'Value can be Positive or Negative:'})
 				if not input then return end
-				local amount = tonumber(input[1])
+				local amount = tonumber(input[1]) or 1
 				if amount < -1000 then return end
 				if amount > 1000 then return end
 				local confirm = lib.alertDialog({
@@ -655,7 +655,7 @@ self.EditItem = function(data, store, cat)
 			onSelect = function(args)
 				local input = lib.inputDialog('How Many :'..item..'   \n Min: 5 Max 100', {'Whole Sale Price: '..data.pricing.original * config.discount..'$'})
 				if not input then return end
-				local wholesaleorder = tonumber(input[1]) or 0
+				local wholesaleorder = tonumber(input[1]) or 1
 				if wholesaleorder < 5 then return end
 				if wholesaleorder > 100 then return end
 				local fee = data.pricing.original * wholesaleorder * config.discount
@@ -700,7 +700,7 @@ self.EditItem = function(data, store, cat)
 			onSelect = function(args)
 				local input = lib.inputDialog('Edit Price :'..item, {'Current value: '..data.pricing.shop..'$'})
 				if not input then return end
-				local newprice = tonumber(input[1])
+				local newprice = tonumber(input[1]) or 1
 				local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'price', item = data.name, value = newprice, metadata = data.metadata})
 				if reason == 'success' then
 					self.SetNotify({
@@ -722,7 +722,7 @@ self.EditItem = function(data, store, cat)
 			onSelect = function(args)
 				local input = lib.inputDialog('Deposit :'..item, {'How many:'})
 				if not input then return end
-				local value = tonumber(input[1])
+				local value = tonumber(input[1]) or 1
 				local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'deposit_item', item = data.name, value = value, metadata = data.metadata})
 				if reason == 'success' then
 					self.SetNotify({
@@ -740,7 +740,7 @@ self.EditItem = function(data, store, cat)
 			onSelect = function(args)
 				local input = lib.inputDialog('Withdraw :'..item, {'How many:'})
 				if not input then return end
-				local value = tonumber(input[1])
+				local value = tonumber(input[1]) or 1
 				local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'withdraw_item', item = data.name, value = value, metadata = data.metadata})
 				if reason == 'success' then
 					self.SetNotify({
@@ -825,6 +825,80 @@ self.CheckItemPrice = function(item)
 	return false
 end
 
+self.temporarycats = {}
+self.CreateCategory = function(store)
+	local input = lib.inputDialog('Create Category', {'Category Name:'})
+	if not input then return end
+	if input[1] and input[1]:gsub(' ','') == '' then return end
+	if input[1] then
+		self.temporarycats[input[1]] = true
+		self.SetNotify({
+			title = 'Store Business',
+			description = 'Successfully Added new Category to Store',
+			type = 'inform'
+		})
+		Wait(1000)
+		self.SetNotify({
+			title = 'Store Business',
+			description = 'This Category '..input[1]..' is Temporary until you add item',
+			type = 'inform'
+		})
+	end
+end
+
+self.CreateItem = function(data)
+	local options = {}
+	-- needs to be write like this since ox_lib input dialog returns values and number index only. so the order is predictable
+	table.insert(options,{ type = "input", label = "Item Name", placeholder = CustomItems.Default })
+	table.insert(options,{ type = "input", label = "Label Name", placeholder = 'Fat Burger' })
+	table.insert(options,{ type = "input", label = "Description", placeholder = 'a delicious burger' })
+	table.insert(options,{ type = "input", label = "Image", placeholder = 'insert Image URL or itemname' })
+	table.insert(options,{ type = "checkbox", label = "Create Serial ID", checked = true })
+	local dropdownmenu = {{ value = false, label = 'none' }}
+	for k,v in pairs(CustomItems.options.Functions) do
+		table.insert(dropdownmenu,{ value = k, label = k })
+	end
+	table.insert(options,{ type = 'select', label = 'Functions', options = dropdownmenu })
+	local dropdownmenu = {{ value = false, label = 'none' }}
+	for k,v in pairs(CustomItems.options.Animations) do
+		table.insert(dropdownmenu,{ value = k, label = k })
+	end
+	table.insert(options,{ type = 'select', label = 'Animations', options = dropdownmenu })
+	local dropdownmenu = {{ value = false, label = 'none' }}
+	for k,v in pairs(CustomItems.options.Status) do
+		table.insert(dropdownmenu,{ value = k, label = k })
+	end
+	table.insert(options,{ type = 'select', label = 'Status', options = dropdownmenu })
+	table.insert(options,{ type = "slider", label = "Status Value", min = 1, max =  1000000, step = 1000})
+	table.insert(options,{ type = "number", label = "Price", default = 50 })
+	local input = lib.inputDialog('Create Custom Item', options)
+	if input then
+		local baseitem , label, description, image, serial, functions, animations, status, statusvalue, price = table.unpack(input)
+		if baseitem and baseitem:gsub(' ','') == '' then baseitem = nil end
+		if label and label:gsub(' ','') == '' then label = nil end
+		if image and image:gsub(' ','') == '' then image = nil end
+		if price == nil then price = 50 end
+		if image and string.find(image, "http") then
+			if image and image:match("^.+(%..+)$") ~= '.png' then image = nil end
+		end
+		local data = {store = data.store, category = data.category, image = image, description = description, itemname = baseitem , label = label, serial = serial, functions = functions, animations = animations, status = status, statusvalue = statusvalue, price = price}
+		if not baseitem or not label or not image then
+			self.SetNotify({
+				title = 'Store Business',
+				description = 'One of required fields are empty',
+				type = 'error'
+			})
+			return false
+		end
+		local success = lib.callback.await('renzu_shops:createitem', false, data)
+		self.SetNotify({
+			title = 'Store Business',
+			description = 'Successfully Added new Item to Store',
+			type = 'inform'
+		})
+	end
+end
+
 self.ManageInventory = function(store)
 	local data = GlobalState.Stores
 	local inventory = {}
@@ -846,7 +920,15 @@ self.ManageInventory = function(store)
 	local stores = data
 	local cats = {}
 	local catitems = {}
-	for k,v in pairs(inventory) do
+	local ItemInventory = lib.table.deepclone(inventory)
+	if stores[store].customitems then
+		for k,v in pairs(stores[store].customitems) do
+			table.insert(ItemInventory,v)
+		end
+	end
+	local additem = {}
+	local addcategory = false
+	for k,v in pairs(ItemInventory) do
 		local item = v
 		local storedata = stores[store]
 		local storeitems = storedata.items
@@ -877,7 +959,47 @@ self.ManageInventory = function(store)
 			item.pricing = pricing
 			storeinventory[item.name] = stock or 0
 			if not catitems[category] then catitems[category] = {} end
-			--table.insert(catitems[category],)
+			if not additem[category] and config.allowplayercreateitem or not additem[category] and self.adminmode then
+				additem[category] = true
+				table.insert(catitems[category], {
+					title = "Add New Item",
+					arrow = true,
+					onSelect = function()
+						self.CreateItem({store = store, category = category})
+					end
+				})
+			end
+			if not addcategory and config.allowplayercreateitem or not addcategory and self.adminmode then
+				for k,v in pairs(self.temporarycats) do
+					table.insert(options,{
+						title = k:upper(),
+						arrow = true,
+						menu = 'category_'..k,
+						onSelect = function(args)
+							--self.EditItem(item,store,'category_'..category)
+						end
+					})
+					if not catitems[k] then
+						if not catitems[k] then catitems[k] = {} end
+						table.insert(catitems[k], {
+							title = "Add New Item",
+							arrow = true,
+							onSelect = function()
+								self.CreateItem({store = store, category = k})
+							end
+						})
+					end
+					self.temporarycats[k] = nil
+				end
+				addcategory = true
+				table.insert(options, {
+					title = 'Add New Category',
+					arrow = true,
+					onSelect = function(args)
+						self.CreateCategory({store = store})
+					end
+				})
+			end
 			table.insert(catitems[category], {
 				title = label..' : instock: '..tostring(storeinventory[item.name]),
 				arrow = true,
@@ -1293,6 +1415,7 @@ self.OpenShop = function(data)
 	self.moneytype = data.shop.moneytype
 	-- shop data for owned shops
 	local ownedshops = lib.table.deepclone(config.OwnedShops)
+	local storename = nil
 	for type,v in pairs(ownedshops) do
 		for k,v2 in pairs(v) do
 			if k == data.index and type == data.type then
@@ -1309,7 +1432,15 @@ self.OpenShop = function(data)
 					end
 				end
 				if stores[v2.label] then
-					for k,item in pairs(v2.supplieritem) do
+					storename = v2.label
+					local ItemInventory = lib.table.deepclone(v2.supplieritem)
+					if stores[v2.label].customitems then
+						for k,v in pairs(stores[v2.label].customitems) do
+							v.disable = false
+							table.insert(ItemInventory,v)
+						end
+					end
+					for k,item in pairs(ItemInventory) do
 						local storedata = stores[v2.label]
 						local storeitems = storedata.items
 						local itemdata = storeitems.normal[item.name]
