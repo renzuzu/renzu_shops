@@ -1055,3 +1055,28 @@ h2 {
   height: 4vh;
   font-size: 1.2vh;
 }
+
+.customise {
+  padding: 0;
+  margin: 0;
+  color: #3baf3b;
+  font-weight: 600;
+  position: relative;
+  top: -10px;
+}
+
+.addons {
+  padding: 0;
+  margin: 0;
+  color: #268ae7;
+  font-weight: 600;
+  position: relative;
+  top: -10px;
+}
+
+.customizable {
+  position: absolute;
+  right: 1vw;
+  color: palegreen;
+  font-weight: lighter !important;
+}

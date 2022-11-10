@@ -1286,6 +1286,9 @@ self.OpenShop = function(data)
 	for k,v in pairs(data.shop.inventory) do
 		data.shop.inventory[k].disable = false
 		data.shop.inventory[k].label = v.metadata and v.metadata.label or self.Items[v.name] or v.label
+		if data.type == 'Ammunation' or data.type == 'BlackMarketArms' then
+			data.shop.inventory[k].component = self.GetWeaponComponents(v.name,true)
+		end
 	end
 	self.moneytype = data.shop.moneytype
 	-- shop data for owned shops
@@ -1301,6 +1304,9 @@ self.OpenShop = function(data)
 				for k,v in pairs(data.shop.inventory) do
 					data.shop.inventory[k].disable = false
 					data.shop.inventory[k].label = v.metadata and v.metadata.label or self.Items[v.name] or v.label
+					if data.type == 'Ammunation' or data.type == 'BlackMarketArms' then
+						data.shop.inventory[k].component = self.GetWeaponComponents(v.name,true)
+					end
 				end
 				if stores[v2.label] then
 					for k,item in pairs(v2.supplieritem) do
@@ -1335,6 +1341,9 @@ self.OpenShop = function(data)
 							if metadata then
 								data.shop.inventory[k].metadata = metadata
 							end
+						end
+						if data.type == 'Ammunation' or data.type == 'BlackMarketArms' then
+							data.shop.inventory[k].component = self.GetWeaponComponents(item.name,true)
 						end
 					end
 					self.Active.shop.type = data.type
@@ -1750,17 +1759,7 @@ self.Handlers = function()
 				SetVehicleMod(self.chosenvehicle, 48, tonumber(data.livery), false)
 			end
 		elseif data.msg == 'getAvailableAttachments' then
-			local componentitems = {}
-			for item,v in pairs(Components) do
-				if v.client and v.client.component then
-					--componentitems[item] = v.client.component
-					for k,componenthash in pairs(v.client.component) do
-						if DoesWeaponTakeWeaponComponent(GetHashKey(data.item), componenthash) then
-							table.insert(componentitems,{name = v.name, label = v.label})
-						end
-					end
-				end
-			end
+			local componentitems = self.GetWeaponComponents(data.item)
 			cb(componentitems)
 		end
 	end)
@@ -1768,6 +1767,28 @@ end
 self.view = false
 self.downloading = false
 self.chosenvehicle = nil
+
+self.GetWeaponComponents = function(weapon,check)
+	local componentitems = {}
+	local hascomponents = false
+	for item,v in pairs(Components) do
+		if v.client and v.client.component then
+			for k,componenthash in pairs(v.client.component) do
+				if DoesWeaponTakeWeaponComponent(GetHashKey(weapon), componenthash) then
+					if check then
+						hascomponents = true
+						break
+					end
+					table.insert(componentitems,{name = v.name, label = v.label})
+				end
+			end
+			if hascomponents then break end
+		end
+	end
+	if check then return hascomponents end
+	return componentitems
+end
+
 self.GetShopData = function(si,li)
 	for k,v in pairs(config.OwnedShops) do
 		if si == k then

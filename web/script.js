@@ -17,7 +17,7 @@
     xhr.send(JSON.stringify(data))
 }
 let getEl = function( id ) { return document.getElementById( id )}
-let metadatas = {}
+let metadatas = undefined
 let itemids = {}
 let uiopen = false
 let position = 1;
@@ -157,7 +157,7 @@ function pay(type) {
 
 function CloseModal() {
     getEl('metadatas').style.display = 'none'
-    metadatas = {}
+    metadatas = undefined
 }
 
 let liveries = {}
@@ -188,6 +188,7 @@ function ItemCallback(model,index) {
         getEl('metaimg').src = `https://cfx-nui-ox_inventory/web/images/${model}.png`
         SendData({item:model, msg : 'getAvailableAttachments'}, function(cb){
             let data = JSON.parse(cb)
+            if (!data[1]) { return }
             getEl('metadatas').style.display = 'block'
             itemcustomise = index
             metadatas = {}
@@ -211,12 +212,12 @@ function ItemCallback(model,index) {
     } else {
         getEl('metacontent').innerHTML = ''
         getEl('metaimg').src = `https://cfx-nui-ox_inventory/web/images/${model}.png`
-        getEl('metadatas').style.display = 'block'
-        itemcustomise = index
-        metadatas = {}
-        let metas = {}
-        let c = 0
         if (items[index].customise) {
+            getEl('metadatas').style.display = 'block'
+            itemcustomise = index
+            metadatas = {}
+            let metas = {}
+            let c = 0
             for (const i in items[index].customise) {
                 var name = items[index].customise[i]
                 var ui = `<input class="metainput" id="${name}" name="${name}" type="checkbox">
@@ -250,11 +251,24 @@ async function CustomiseItem(data) {
     for( var key in meta ) {
         await AddtoCart(key,qty)
     }
-    metadatas = {}
+    metadatas = undefined
     CloseModal()
 }
 
 var cartid = 0
+
+function FindCartIDFromDefaultItem(data) {
+    if (data.metadatas == undefined) {
+        // try find existing cartid
+        for (const i in cart) {
+            if (cart[i].metadatas == undefined && cart[i].data.name == data.item.name) {
+                return i
+            }
+        }
+    }
+    return false
+}
+
 async function AddtoCart(item,qty) {
     var amount = 0
     let myForm = getEl(item)
@@ -268,12 +282,18 @@ async function AddtoCart(item,qty) {
         }
     }
     if (qty>0) { amount = qty }
-    if (items[item].stock <= 0) { delete metadatas[item]; return SendData({item:items[item].name, amount:amount, msg : 'outofstock'}) }
+    if (items[item].stock <= 0) { if (metadatas) {delete metadatas[item]}; return SendData({item:items[item].name, amount:amount, msg : 'outofstock'}) }
     if (amount == 0 || !Number(amount)) { amount = 1 }
-    if (amount > items[item].stock) { delete metadatas[item]; return SendData({item:items[item].name, amount:amount, msg : 'limitreached'}) }
-    cartid += 1
-    cart[cartid] = {slotid: item, count : parseInt(amount), data : items[item], vehicle: {livery: liveryid, color: colorid, liverymod: liverymod}, metadatas: metadatas}
-    metadatas = {}
+    if (amount > items[item].stock) { if (metadatas) {delete metadatas[item]}; return SendData({item:items[item].name, amount:amount, msg : 'limitreached'}) }
+    let findcartid = FindCartIDFromDefaultItem({item : items[item], metadatas: metadatas})
+    cartid = findcartid !== false && findcartid || cartid+1
+    if (cart[cartid]) {
+        cart[cartid].count += parseInt(amount)
+        console.log(cart[cartid].count)
+        amount = cart[cartid].count
+    } else {
+        cart[cartid] = {slotid: item, count : parseInt(amount), data : items[item], vehicle: {livery: liveryid, color: colorid, liverymod: liverymod}, metadatas: metadatas}
+    }
     var totalprice = items[item].price * parseInt(cart[cartid].count)
     totalamount = totalitemprice(item)
     getEl('totalamount').innerHTML = totalamount
@@ -281,6 +301,17 @@ async function AddtoCart(item,qty) {
         getEl(cartid+"_cart").remove()
     }
     totalitem()
+    var customise = `<p class="customise">Customise</p>`
+    var addons = `<p class="addons">Addon</p>`
+    if (metadatas == undefined) {
+        customise = ''
+    } else {
+        qty = undefined
+    }
+    if (qty == undefined) {
+        addons = ''
+    }
+    metadatas = undefined
     var ui = `
             <tr class="cartitem" id="${cartid}_cart">
                 <td>
@@ -296,6 +327,8 @@ async function AddtoCart(item,qty) {
                 <td>
                     <div class="product-name">
                         <p>${items[item].label}</p>
+                        ${customise}
+                        ${addons}
                     </div>
                 </td>
                 <td>${items[item].price} $</td>
@@ -461,9 +494,20 @@ async function ShopItems(shop, cat) {
             // items[i] = data
             let image = validimage[imgname] || `https://cfx-nui-ox_inventory/web/images/${imgname}.png`
             if (!show && shoptype == 'VehicleShop') { show = true; ItemCallback(data.name) }
+            var addons = `<h2 class="customizable">⚙️ Addons</h2>`
+            var component = ''
+            if (!items[i].customise) {
+                addons = ''
+            }
+            if (items[i].component) {
+                component = `<h2 class="customizable">⚙️ Customise</h2>`
+            }
             var ui = `
                 <div id="${iddiv}_main" class="featured-item" style="position:relative;">
-                <span><img class="aso" onclick="ItemCallback('${data.name}','${i}')" id="${iddiv}_img" src="${image}" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+imgname+`.jpg';this.onerror = defaultimg(this,'${imgname}');">
+                <span>
+                ${addons}
+                ${component}
+                <img class="aso" onclick="ItemCallback('${data.name}','${i}')" id="${iddiv}_img" src="${image}" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+imgname+`.jpg';this.onerror = defaultimg(this,'${imgname}');">
                     <h2>
                     ${label}
                     </h2>
