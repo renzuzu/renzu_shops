@@ -74,10 +74,10 @@ if not IsDuplicityVersion() then
 				if jobshop[shop.label] == Shops.PlayerData.job?.name then
 					if not config.target then
 						Shops.temporalspheres[shop.label] = Shops.Add(shop.coord,'My Store '..shop.label,Shops.StoreOwner,false,shop)
-						Shops.JobSpheres[Shops.PlayerData.job.name] = Shops.temporalspheres[shop.label]
+						Shops.JobSpheres[Shops.PlayerData.job?.name] = Shops.temporalspheres[shop.label]
 					else
 						local zone = Shops.addTarget(shop.coord,'My Store '..shop.label,Shops.StoreOwner,false,shop)
-						Shops.JobSpheres[Shops.PlayerData.job.name] = zone
+						Shops.JobSpheres[Shops.PlayerData.job?.name] = zone
 					end
 				end
 			end
