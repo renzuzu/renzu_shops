@@ -1,8 +1,8 @@
-config.supplierlimit = 100 -- how many item will be deliver for every order
-config.discount = 0.75 -- 25% discount from supplier
+shared.supplierlimit = 100 -- how many item will be deliver for every order
+shared.discount = 0.75 -- 25% discount from supplier
 
 -- Shipping Company - this is the config for shipping , all store order will go to shipping job
-config.shipping = {
+shared.shipping = {
 	blip = {
 		id = 478, colour = 69, scale = 0.8
 	},
@@ -17,7 +17,7 @@ config.shipping = {
 }
 
 -- random locations of pickup points
-config.deliverypoints = {
+shared.deliverypoints = {
 	vehicle = {
 		[1] = {-222.71998596191,-1170.1285400391,22.307970046997,358.60589599609},
 		[2] = {851.11138916016,-918.30041503906,25.173732757568,86.777755737305}

@@ -8,7 +8,7 @@
 	-- 		coord = vec3(25.931,-1350.181,29.32), -- @5
 	-- 		cashier = vec3(24.48,-1347.23,29.49), -- @6
 	-- 		price = 1000000, -- @7
-	-- 		supplieritem = config.Storeitems.General, -- @8
+	-- 		supplieritem = shared.Storeitems.General, -- @8
 	-- 	},
 	-- }
 

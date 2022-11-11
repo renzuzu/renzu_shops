@@ -15,6 +15,7 @@ return {
 		{ lvl = 1, name = 'burgerpatty', price = 15 , category = 'ingredients'},
 		{ lvl = 1, name = 'tacoshells', price = 15 , category = 'ingredients'},
 		{ lvl = 1, name = 'ground_beef', price = 15 , category = 'ingredients'},
+		{ lvl = 1, name = 'cheese', price = 15 , category = 'ingredients'},
 		{ lvl = 1, name = 'tomato', price = 15 , category = 'ingredients'},
 		{ lvl = 1, name = 'pasta', price = 15 , category = 'ingredients'},
 		{ lvl = 1, name = 'onion', price = 15 , category = 'ingredients'},

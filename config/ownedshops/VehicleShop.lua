@@ -12,7 +12,7 @@ return {
 			id = 402, colour = 69, scale = 0.8
 		},
 		price = 3000000,
-		supplieritem = config.Storeitems.VehicleShop,
+		supplieritem = shared.Storeitems.VehicleShop,
 		camerasetting = {offset = vec3(0.0,-1.2,0.0), fov = 25}
 	},
 	[2] = {

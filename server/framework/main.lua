@@ -1,7 +1,7 @@
-if config.framework == 'ESX' then
+if shared.framework == 'ESX' then
 	vehicletable = 'owned_vehicles'
 	vehiclemod = 'vehicle'
-elseif config.framework == 'QBCORE' then
+elseif shared.framework == 'QBCORE' then
 	vehicletable = 'player_vehicles '
 	vehiclemod = 'mods'
 	owner = 'license'
@@ -13,9 +13,9 @@ end
 function GetPlayerFromId(src)
 	self = {}
 	self.src = src
-	if config.framework == 'ESX' then
+	if shared.framework == 'ESX' then
 		return ESX.GetPlayerFromId(self.src)
-	elseif config.framework == 'QBCORE' then
+	elseif shared.framework == 'QBCORE' then
 		selfcore = {}
 		selfcore.data = QBCore.Functions.GetPlayer(self.src)
 		if selfcore.data.identifier == nil then

@@ -19,14 +19,14 @@ self.StartUp = function()
 		for k,v in pairs(itemLists) do
 			self.Items[v.name] = v.label
 		end
-		if not config.oxShops then
-			for k,shop in pairs(config.Shops) do
+		if not shared.oxShops then
+			for k,shop in pairs(shared.Shops) do
 				if shop.locations then
 					for shopindex,v in ipairs(shop.locations) do
 						shop.shoptype = k
 						local ownedshopdata = self.GetShopData(k,shopindex)
 						shop.groups = ownedshopdata and ownedshopdata.groups
-						if not config.target then
+						if not shared.target then
 							self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 						elseif not shop.groups or shop.groups == self.PlayerData.job.name then
 							self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
@@ -36,8 +36,8 @@ self.StartUp = function()
 				end
 			end
 		end
-		for k,shop in pairs(config.MovableShops) do
-			if not config.target then
+		for k,shop in pairs(shared.MovableShops) do
+			if not shared.target then
 				self.Add(shop.coord,shop.label,self.MovableShop,false,{shop = shop, type = k, price = shop.price, label = shop.label})
 			else
 				self.addTarget(shop.coord,shop.label,self.MovableShop,false,{shop = shop, type = k, price = shop.price, label = shop.label})
@@ -101,7 +101,7 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 		if self.shoptype == 'vehicle' then
 			drawdist = 1.5
 		end
-		if data.var.type and config.MovableShops[data.var.type] and callback == self.OpenShopMovable then
+		if data.var.type and shared.MovableShops[data.var.type] and callback == self.OpenShopMovable then
 			if not NetworkDoesNetworkIdExist(data.var.net) 
 				or not DoesEntityExist(NetworkGetEntityFromNetworkId(data.var.net)) then
 					if data.remove then
@@ -115,7 +115,7 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 			self.lastdata = data.index
 			self.movabletype = data.var.type
 		end
-		if config.MovableShops[data.var.type] and self.clerkmode then Wait(20) end
+		if shared.MovableShops[data.var.type] and self.clerkmode then Wait(20) end
 		if not self.clerkmode then
 			DrawMarker(21, data.coords.x, data.coords.y, data.coords.z, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
 		end
@@ -156,7 +156,7 @@ end
 self.LoadShops = function()
 	if self.PlayerData.identifier == nil then return end
 	local stores = GlobalState.Stores or {}
-	for name,shops in pairs(config.OwnedShops) do
+	for name,shops in pairs(shared.OwnedShops) do
 		for k,shop in pairs(shops) do
 			if self.temporalspheres[shop.label] and self.temporalspheres[shop.label].remove then
 				self.temporalspheres[shop.label]:remove()
@@ -164,7 +164,7 @@ self.LoadShops = function()
 			if not stores[shop.label] then
 				shop.shopName = name
 				shop.shopIndex = k
-				if not config.target then
+				if not shared.target then
 					local spheres = self.Add(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
 					self.temporalspheres[shop.label] = {spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
 				else
@@ -173,7 +173,7 @@ self.LoadShops = function()
 				end
 			elseif stores[shop.label]?.owner == self.PlayerData.identifier 
 			or stores[shop.label].employee[self.PlayerData.identifier] then
-				if not config.target then
+				if not shared.target then
 					self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				else
 					self.temporalspheres[shop.label] = self.addTarget(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
@@ -184,8 +184,8 @@ self.LoadShops = function()
 				local shopdata = lib.table.deepclone(shop)
 				shopdata.index = k
 				shopdata.type = name
-				shopdata.offset = config.Shops[name].locations[k]
-				if not config.target then
+				shopdata.offset = shared.Shops[name].locations[k]
+				if not shared.target then
 					self.Add(shopdata.cashier,'Cashier '..shopdata.label,self.Cashier,false,shopdata)
 				else
 					self.addTarget(shopdata.cashier,'Cashier '..shopdata.label,self.Cashier,false,shopdata)
@@ -193,12 +193,12 @@ self.LoadShops = function()
 			end
 		end
 	end
-	if not config.target then
-		self.Add(config.shipping.coord,config.shipping.label,self.Shipping,false,{})
+	if not shared.target then
+		self.Add(shared.shipping.coord,shared.shipping.label,self.Shipping,false,{})
 	else
-		self.addTarget(config.shipping.coord,config.shipping.label,self.Shipping,false,{})
+		self.addTarget(shared.shipping.coord,shared.shipping.label,self.Shipping,false,{})
 	end
-	self.ShopBlip({coord = config.shipping.coord, text = config.shipping.label, blip = config.shipping.blip})
+	self.ShopBlip({coord = shared.shipping.coord, text = shared.shipping.label, blip = shared.shipping.blip})
 end
 self.duty = {}
 self.Cashier = function(data)
@@ -352,7 +352,7 @@ self.StoreManage = function(store)
 							description = store..' has been Sold',
 							type = 'success'
 						})
-						if not config.target then
+						if not shared.target then
 							if self.temporalspheres[store] and self.temporalspheres[store].remove then
 								self.temporalspheres[store]:remove()
 							end
@@ -622,7 +622,7 @@ self.FinanceManage = function(store,money)
 end
 
 self.getShopTypeAndIndex = function(store)
-	for type,shop in pairs(config.OwnedShops) do
+	for type,shop in pairs(shared.OwnedShops) do
 		for index,v in pairs(shop) do
 			if v.label == store then
 				return type, index, v
@@ -672,12 +672,12 @@ self.EditItem = function(data, store, cat)
 			description = 'Create a Order for 100x '..item..'',
 			arrow = true,
 			onSelect = function(args)
-				local input = lib.inputDialog('How Many :'..item..'   \n Min: 5 Max 100', {'Whole Sale Price: '..data.pricing.original * config.discount..'$'})
+				local input = lib.inputDialog('How Many :'..item..'   \n Min: 5 Max 100', {'Whole Sale Price: '..data.pricing.original * shared.discount..'$'})
 				if not input then return end
 				local wholesaleorder = tonumber(input[1]) or 1
 				if wholesaleorder < 5 then return end
 				if wholesaleorder > 100 then return end
-				local fee = data.pricing.original * wholesaleorder * config.discount
+				local fee = data.pricing.original * wholesaleorder * shared.discount
 				local confirm = lib.alertDialog({
 					header = 'Confirm',
 					content = 'Do you really want order this to supplier? \n Total Funds Needed: '..fee..' $',
@@ -699,7 +699,7 @@ self.EditItem = function(data, store, cat)
 								description = 'Order Success - Go and Pickup Your Order',
 								type = 'success'
 							})
-							self.StartDelivery({dist = 0, store = store, index = 0, data = data, type = data.type, selfdeliver = config.OwnedShops[self.ShopType][self.ShopIndex].selfdeliver})
+							self.StartDelivery({dist = 0, store = store, index = 0, data = data, type = data.type, selfdeliver = shared.OwnedShops[self.ShopType][self.ShopIndex].selfdeliver})
 						end
 					else
 						self.SetNotify({
@@ -834,7 +834,7 @@ end
 
 self.CheckItemPrice = function(item)
 	local price = 0
-	local items = config.Storeitems[self.ShopType]
+	local items = shared.Storeitems[self.ShopType]
 	for k,v in pairs(items) do
 		if item == v.name then
 			price = v.price
@@ -925,7 +925,7 @@ self.ManageInventory = function(store)
 	local prices = {}
 	local disable = {}
 	local store = store
-	for shoptype,v in pairs(config.OwnedShops) do
+	for shoptype,v in pairs(shared.OwnedShops) do
 		for k,v in pairs(v) do
 			if v.label == store then
 				inventory = v.supplieritem
@@ -978,7 +978,7 @@ self.ManageInventory = function(store)
 			item.pricing = pricing
 			storeinventory[item.name] = stock or 0
 			if not catitems[category] then catitems[category] = {} end
-			if not additem[category] and config.allowplayercreateitem or not additem[category] and self.adminmode then
+			if not additem[category] and shared.allowplayercreateitem or not additem[category] and self.adminmode then
 				additem[category] = true
 				table.insert(catitems[category], {
 					title = "Add New Item",
@@ -988,7 +988,7 @@ self.ManageInventory = function(store)
 					end
 				})
 			end
-			if not addcategory and config.allowplayercreateitem or not addcategory and self.adminmode then
+			if not addcategory and shared.allowplayercreateitem or not addcategory and self.adminmode then
 				for k,v in pairs(self.temporarycats) do
 					table.insert(options,{
 						title = k:upper(),
@@ -1104,8 +1104,8 @@ self.StartDelivery = function(var)
 		local type = var.type or 'item'
 		self.shoptype = type
 		local label = self.Items[data.item.name] or data.item.label
-		local spawn = config.shipping.spawn
-		local model = config.shipping.model[type]
+		local spawn = shared.shipping.spawn
+		local model = shared.shipping.model[type]
 		if var.selfdeliver then
 			spawn = var.selfdeliver.coord
 			model = var.selfdeliver.model
@@ -1158,7 +1158,7 @@ self.DelivertoVehicleShop = function(var)
 	local data = var
 	local storecoord = vec3(0.0,0.0,0.0)
 	local restockcoord = nil
-	for k,v in pairs(config.OwnedShops) do
+	for k,v in pairs(shared.OwnedShops) do
 		for k,v in pairs(v) do
 			if v.label == data.store then
 				storecoord = v.coord
@@ -1224,7 +1224,7 @@ self.DelivertoStore = function(data)
 	lib.hideTextUI()
 	local data = data
 	local storecoord = vec3(0.0,0.0,0.0)
-	for k,v in pairs(config.OwnedShops) do
+	for k,v in pairs(shared.OwnedShops) do
 		for k,v in pairs(v) do
 			if v.label == data.store then
 				storecoord = v.coord
@@ -1314,12 +1314,12 @@ self.DeliverDone = function(data)
 			description = 'Go back to Shipping Garage to Finish the job',
 			type = 'inform'
 		})
-		SetNewWaypoint(config.shipping.spawn)
-		deliveryblip = AddBlipForCoord(config.shipping.spawn.x,config.shipping.spawn.y,config.shipping.spawn.z)
+		SetNewWaypoint(shared.shipping.spawn)
+		deliveryblip = AddBlipForCoord(shared.shipping.spawn.x,shared.shipping.spawn.y,shared.shipping.spawn.z)
 		self.SetBlip(deliveryblip,358,26,'Shipping Garage')
 		SetBlipRoute(deliveryblip,true)
 		SetBlipRouteColour(deliveryblip,3)
-		self.Add(vec3(config.shipping.spawn.x,config.shipping.spawn.y,config.shipping.spawn.z),'Finish Delivery Job',self.JobDone,false,data,true)
+		self.Add(vec3(shared.shipping.spawn.x,shared.shipping.spawn.y,shared.shipping.spawn.z),'Finish Delivery Job',self.JobDone,false,data,true)
 	end
 end
 
@@ -1350,7 +1350,7 @@ self.Shipping = function(data)
 			local streetname = GetStreetNameFromHashKey(hashstreet)
 			local dist = math.floor(#(GetEntityCoords(self.playerPed) - loc)+0.5)
 			if not GlobalState.OngoingShip[store] or GlobalState.OngoingShip[store] and GlobalState.OngoingShip[store][v.id] == nil then
-				local pay = dist * config.shipping.payperdistance
+				local pay = dist * shared.shipping.payperdistance
 				local label = self.Items[v.item.name] or v.item.label
 				if v.item.metadata and v.item.metadata.label then
 					label = v.item.metadata.label
@@ -1406,7 +1406,7 @@ self.BuyStore = function(data)
 
 			if self.temporalspheres[data.label] then
 				local spheredata = self.temporalspheres[data.label]
-				if not config.target then
+				if not shared.target then
 					if self.temporalspheres[data.label].spheres?.remove then
 						self.temporalspheres[data.label].spheres:remove()
 					end
@@ -1429,7 +1429,7 @@ self.OpenShop = function(data)
 	local stores = GlobalState.Stores
 	-- shop data of defaults shops
 	if not self.Active or  not self.Active.shop then return end
-	data.shop.inventory = data.shop.inventory or config.Storeitems[data.type]
+	data.shop.inventory = data.shop.inventory or shared.Storeitems[data.type]
 	self.Active.shop.inventory = data.shop.inventory
 	self.Active.shop.type = data.type
 	for k,v in pairs(data.shop.inventory) do
@@ -1441,7 +1441,7 @@ self.OpenShop = function(data)
 	end
 	self.moneytype = data.shop.moneytype
 	-- shop data for owned shops
-	local ownedshops = lib.table.deepclone(config.OwnedShops)
+	local ownedshops = lib.table.deepclone(shared.OwnedShops)
 	local storename = nil
 	for type,v in pairs(ownedshops) do
 		for k,v2 in pairs(v) do
@@ -1575,11 +1575,11 @@ self.Handlers = function()
 
 	AddStateBagChangeHandler("CreateShop", "global", function(bagName, key, value)
 		Wait(1000)
-		config.OwnedShops = request('config/ownedshops/init')
+		shared.OwnedShops = request('config/ownedshops/init')
 		if value then
 			local data = {shop = value.shop, index = value.index, type = value.type, coord = value.loc}
-			if not config.target then
-				if not config.oxShops then
+			if not shared.target then
+				if not shared.oxShops then
 					self.Add(value.loc,value.label,self.OpenShop,false,data)
 				end
 				value.shop.shopName = value.type
@@ -1592,8 +1592,8 @@ self.Handlers = function()
 			end
 			value.shop.index = value.index
 			value.shop.type = value.type
-			value.shop.offset = config.Shops[value.type].locations[value.index]
-			if not config.target then
+			value.shop.offset = shared.Shops[value.type].locations[value.index]
+			if not shared.target then
 				self.Add(value.cashier,'Cashier '..value.label,self.Cashier,false,value.shop)
 			else
 				self.addTarget(value.cashier,'Cashier '..value.label,self.Cashier,false,value.shop)
@@ -1605,12 +1605,12 @@ self.Handlers = function()
 		Wait(1000)
 		local stores = GlobalState.Stores
 		if not stores[value.store] then
-			for name,shop in pairs(config.OwnedShops) do
+			for name,shop in pairs(shared.OwnedShops) do
 				for k,v in pairs(shop) do
 					if v.label == value.store then
 						v.shopName = name
 						v.shopIndex = k
-						if not config.target then
+						if not shared.target then
 							local spheres = self.Add(v.coord,'Buy '..name..' #'..k,self.BuyStore,false,v)
 							self.temporalspheres[v.label] = {spheres = spheres, coord = v.coord, shop = v, label = 'My Store '..v.label}
 						else
@@ -1669,7 +1669,7 @@ self.Handlers = function()
 		if value.identifier == self.PlayerData.identifier and self.movableentity[value.type] ~= entity then
 			self.movabletype = value.type
 			self.movableentity[value.type] = entity
-			local data = config.MovableShops[value.type]
+			local data = shared.MovableShops[value.type]
 			self.MovableShopStart(data)
 		end
 	end)
@@ -1706,7 +1706,7 @@ self.Handlers = function()
 		local ent = Entity(entity).state
 		local coord = GetEntityCoords(entity)
 		local worldoffset = vec3(0.0,-1.0,0.5)
-		local data = config.MovableShops[value.type]
+		local data = shared.MovableShops[value.type]
 		if data and data.type == 'vehicle' then
 			worldoffset = vec3(2.0,-2.0,0.5)
 		end
@@ -1725,10 +1725,10 @@ self.Handlers = function()
 		if value.job ~= self.PlayerData.job.name then return end
 		if value.owner == self.PlayerData.identifier then return end
 		local stores = GlobalState.Stores
-		for name,shop in pairs(config.OwnedShops) do
+		for name,shop in pairs(shared.OwnedShops) do
 			for k,v in pairs(shop) do
 				if v.label == value.store then
-					if not config.target then
+					if not shared.target then
 						self.temporalspheres[shop.label] = self.Add(v.coord,'My Store '..v.label,self.StoreOwner,false,v)
 					else
 						self.addTarget(shop.coord,'My Store '..v.label,self.StoreOwner,false,v)
@@ -1763,7 +1763,7 @@ self.Handlers = function()
 					description = 'You are now Employee of '..value.store,
 					type = 'success'
 				})
-				for k,shops in pairs(config.OwnedShops) do
+				for k,shops in pairs(shared.OwnedShops) do
 					for k,shop in pairs(shops) do
 						if value.store == shop.label then
 							self.Add(shop.coord,'My Store '..shop.label,StoreOwner,false,shop)
@@ -1959,7 +1959,7 @@ self.GetWeaponComponents = function(weapon,check)
 end
 
 self.GetShopData = function(si,li)
-	for k,v in pairs(config.OwnedShops) do
+	for k,v in pairs(shared.OwnedShops) do
 		if si == k then
 			for k,v in pairs(v) do
 				if li == k then
@@ -2872,7 +2872,7 @@ self.OpenShopMovable = function(data)
 	data.shop.label = data.type
 	self.Active.index = data.type
 	self.moneytype = 'money'
-	local shopdata = config.MovableShops[data.type].menu
+	local shopdata = shared.MovableShops[data.type].menu
 	local items = {}
 	for category,v in pairs(shopdata) do
 		for k,v in pairs(v) do
@@ -3003,7 +3003,7 @@ end
 
 self.AddNewShop = function()
 	local options = {}
-	for type,v in pairs(config.OwnedShops) do
+	for type,v in pairs(shared.OwnedShops) do
 		if type ~= 'VehicleShop' then
 			table.insert(options,{
 				title = type,

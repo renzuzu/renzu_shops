@@ -1,20 +1,20 @@
 ESX,QBCORE = nil, nil
-config = {}
-config.framework = 'ESX' -- ESX || QBCORE
+shared = {}
+shared.framework = 'ESX' -- ESX || QBCORE
 -- use ox_inventory Shops UI (experimental feature) only with my forked ox_inventory REPO https://github.com/renzuzu/ox_inventory
-config.oxShops = false -- if true this resource will use ox_inventory Shops UI instead of built in UI
-config.allowplayercreateitem = false -- if false only admin can create new items via /stores
-config.target = false -- if true all lib zones for markers and oxlib textui will be disable.
-config.defaultStock = {
+shared.oxShops = false -- if true this resource will use ox_inventory Shops UI instead of built in UI
+shared.allowplayercreateitem = false -- if false only admin can create new items via /stores
+shared.target = false -- if true all lib zones for markers and oxlib textui will be disable.
+shared.defaultStock = {
 	General = 100, 
 	Ammunation = 20,
 	VehicleShop = 10,
 	BlackMarketArms = 20,
 } -- default to all items in store when newly purchased
 
-if config.framework == 'ESX' then
+if shared.framework == 'ESX' then
 	ESX = exports['es_extended']:getSharedObject()
-elseif config.framework == 'QBCORE' then
+elseif shared.framework == 'QBCORE' then
 	QBCore = exports['qb-core']:GetCoreObject()
 end
 Shops = {}
@@ -54,15 +54,15 @@ function request(file)
 end
 
 -- do not edit
-config.Storeitems = request('config/storeitems')
-config.Shops = request('config/defaultshops')
-config.OwnedShops = request('config/ownedshops/init')
-config.MovableShops = request('config/movableshop')
+shared.Storeitems = request('config/storeitems')
+shared.Shops = request('config/defaultshops')
+shared.OwnedShops = request('config/ownedshops/init')
+shared.MovableShops = request('config/movableshop')
 request('config/shipping')
 -- insert additional datas
 for k,v in pairs(Components) do
-	table.insert(config.Storeitems.Ammunation,v)
-	table.insert(config.Storeitems.BlackMarketArms,v)
+	table.insert(shared.Storeitems.Ammunation,v)
+	table.insert(shared.Storeitems.BlackMarketArms,v)
 end
 
 if not IsDuplicityVersion() then
@@ -70,7 +70,7 @@ if not IsDuplicityVersion() then
 	Shops.LoadJobShops = function()
 		for k,zones in pairs(Shops.JobSpheres) do
 			if zones then
-				if not config.target and zones.remove then
+				if not shared.target and zones.remove then
 					zones:remove()
 				else
 					exports.ox_target:removeZone(zones)
@@ -78,10 +78,10 @@ if not IsDuplicityVersion() then
 			end
 		end
 		local jobshop = GlobalState.JobShop
-		for k,shops in pairs(config.OwnedShops) do
+		for k,shops in pairs(shared.OwnedShops) do
 			for k,shop in pairs(shops) do
 				if jobshop[shop.label] == Shops.PlayerData.job?.name then
-					if not config.target then
+					if not shared.target then
 						Shops.temporalspheres[shop.label] = Shops.Add(shop.coord,'My Store '..shop.label,Shops.StoreOwner,false,shop)
 						Shops.JobSpheres[Shops.PlayerData.job?.name] = Shops.temporalspheres[shop.label]
 					else
@@ -93,13 +93,13 @@ if not IsDuplicityVersion() then
 		end
 	end
 	Shops.Playerloaded = function()
-		if config.framework == 'ESX' then
+		if shared.framework == 'ESX' then
 			RegisterNetEvent('esx:playerLoaded', function(xPlayer)
 				Shops.PlayerData = xPlayer
 				Shops.LoadShops()
 				Shops.LoadJobShops()
 			end)
-		elseif config.framework == 'QBCORE' then
+		elseif shared.framework == 'QBCORE' then
 			RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
 				QBCore.Functions.GetPlayerData(function(p)
 					Shops.PlayerData = p
@@ -117,7 +117,7 @@ if not IsDuplicityVersion() then
 	end
 	
 	Shops.GetPlayerData = function()
-		if config.framework == 'ESX' then
+		if shared.framework == 'ESX' then
 			return ESX.GetPlayerData()
 		else
 			local data = promise:new()
@@ -129,12 +129,12 @@ if not IsDuplicityVersion() then
 	end
 	
 	Shops.SetJob = function()
-		if config.framework == 'ESX' then
+		if shared.framework == 'ESX' then
 			RegisterNetEvent('esx:setJob', function(job)
 				Shops.PlayerData.job = job
 				Shops.LoadJobShops()
 			end)
-		elseif config.framework == 'QBCORE' then
+		elseif shared.framework == 'QBCORE' then
 			RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
 				Shops.PlayerData.job = job
 				Shops.PlayerData.job.grade = Shops.PlayerData.job.grade.level
