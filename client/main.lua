@@ -19,18 +19,20 @@ self.StartUp = function()
 		for k,v in pairs(itemLists) do
 			self.Items[v.name] = v.label
 		end
-		for k,shop in pairs(config.Shops) do
-			if shop.locations then
-				for shopindex,v in ipairs(shop.locations) do
-					shop.shoptype = k
-					local ownedshopdata = self.GetShopData(k,shopindex)
-					shop.groups = ownedshopdata and ownedshopdata.groups
-					if not config.target then
-						self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
-					elseif not shop.groups or shop.groups == self.PlayerData.job.name then
-						self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
+		if not config.oxShops then
+			for k,shop in pairs(config.Shops) do
+				if shop.locations then
+					for shopindex,v in ipairs(shop.locations) do
+						shop.shoptype = k
+						local ownedshopdata = self.GetShopData(k,shopindex)
+						shop.groups = ownedshopdata and ownedshopdata.groups
+						if not config.target then
+							self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
+						elseif not shop.groups or shop.groups == self.PlayerData.job.name then
+							self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
+						end
+						self.ShopBlip({coord = v, text = shop.name, blip = shop.blip or false})
 					end
-					self.ShopBlip({coord = v, text = shop.name, blip = shop.blip or false})
 				end
 			end
 		end
@@ -160,18 +162,21 @@ self.LoadShops = function()
 				self.temporalspheres[shop.label]:remove()
 			end
 			if not stores[shop.label] then
+				shop.shopName = name
+				shop.shopIndex = k
 				if not config.target then
 					local spheres = self.Add(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
 					self.temporalspheres[shop.label] = {spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
 				else
-					self.addTarget(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
+					local id = self.addTarget(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
+					self.temporalspheres[shop.label] = {target = id, spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
 				end
 			elseif stores[shop.label]?.owner == self.PlayerData.identifier 
 			or stores[shop.label].employee[self.PlayerData.identifier] then
 				if not config.target then
 					self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				else
-					self.addTarget(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
+					self.temporalspheres[shop.label] = self.addTarget(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				end
 				self.ShopBlip({coord = shop.coord, text = 'My Store '..shop.label, blip = {colour = 38, id = 374, scale = 0.6}})
 			end
@@ -347,8 +352,16 @@ self.StoreManage = function(store)
 							description = store..' has been Sold',
 							type = 'success'
 						})
-						if self.temporalspheres[store] and self.temporalspheres[store].remove then
-							self.temporalspheres[store]:remove()
+						if not config.target then
+							if self.temporalspheres[store] and self.temporalspheres[store].remove then
+								self.temporalspheres[store]:remove()
+							end
+						else
+							if type(self.temporalspheres[store]) == 'table' and tonumber(self.temporalspheres[store].target) then
+								exports.ox_target:removeZone(self.temporalspheres[store].target)
+							elseif tonumber(self.temporalspheres[store]) then
+								exports.ox_target:removeZone(self.temporalspheres[store])
+							end
 						end
 					end
 				end)
@@ -417,6 +430,12 @@ self.StoreOwner = function(data)
 		self.SetNotify({title = 'Store Business',description = 'You Are Fired',type = 'error'})
 		if self.temporalspheres[self.currentstore] and self.temporalspheres[self.currentstore].spheres?.remove then
 			self.temporalspheres[self.currentstore].spheres:remove()
+		end
+		if self.temporalspheres[self.currentstore] and self.temporalspheres[self.currentstore].target then
+			removeZone = function()
+				remove = exports.ox_target:removeZone(self.temporalspheres[self.currentstore].target)
+			end
+			if pcall(removeZone) then end
 		end
 	end
 end
@@ -1386,12 +1405,20 @@ self.BuyStore = function(data)
 			
 
 			if self.temporalspheres[data.label] then
-				if self.temporalspheres[data.label].spheres.remove then
-					self.temporalspheres[data.label].spheres:remove()
-				end
 				local spheredata = self.temporalspheres[data.label]
-				local sphere = self.Add(spheredata.coord,spheredata.label,self.StoreOwner,false,spheredata.shop)
-				self.temporalspheres[data.label] = sphere
+				if not config.target then
+					if self.temporalspheres[data.label].spheres?.remove then
+						self.temporalspheres[data.label].spheres:remove()
+					end
+					local sphere = self.Add(spheredata.coord,spheredata.label,self.StoreOwner,false,spheredata.shop)
+					self.temporalspheres[data.label].spheres = sphere
+				else
+					if spheredata then
+						exports.ox_target:removeZone(spheredata.target)
+					end
+					local id = self.addTarget(spheredata.coord,spheredata.label,self.StoreOwner,false,spheredata.shop)
+					self.temporalspheres[data.label].target = id
+				end
 			end
 		end
 	end
@@ -1552,7 +1579,11 @@ self.Handlers = function()
 		if value then
 			local data = {shop = value.shop, index = value.index, type = value.type, coord = value.loc}
 			if not config.target then
-				self.Add(value.loc,value.label,self.OpenShop,false,data)
+				if not config.oxShops then
+					self.Add(value.loc,value.label,self.OpenShop,false,data)
+				end
+				value.shop.shopName = value.type
+				value.shop.shopIndex = value.index
 				local spheres = self.Add(value.coord,'Buy '..value.type..' #'..value.index,self.BuyStore,false,value.shop)
 				self.temporalspheres[value.label] = {spheres = spheres, coord = value.coord, shop = value.shop, label = 'My Store '..value.label}
 			else
@@ -1577,8 +1608,15 @@ self.Handlers = function()
 			for name,shop in pairs(config.OwnedShops) do
 				for k,v in pairs(shop) do
 					if v.label == value.store then
-						local spheres = self.Add(v.coord,'Buy '..name..' #'..k,self.BuyStore,false,v)
-						self.temporalspheres[v.label] = {spheres = spheres, coord = v.coord, shop = v, label = 'My Store '..v.label}
+						v.shopName = name
+						v.shopIndex = k
+						if not config.target then
+							local spheres = self.Add(v.coord,'Buy '..name..' #'..k,self.BuyStore,false,v)
+							self.temporalspheres[v.label] = {spheres = spheres, coord = v.coord, shop = v, label = 'My Store '..v.label}
+						else
+							local target = self.addTarget(v.coord,'Buy '..name..' #'..k,self.BuyStore,false,v)
+							self.temporalspheres[v.label] = {target = target, spheres = spheres, coord = v.coord, shop = v, label = 'My Store '..v.label}
+						end
 						break
 					end
 				end
@@ -3054,11 +3092,19 @@ end
 
 self.CreateShop = function(data)
 	local created = lib.callback.await('renzu_shops:createShop', false, data)
-	self.SetNotify({
-		title = 'Store Business',
-		description = 'New Shop has been Added',
-		type = 'success'
-	})
+	if created then
+		self.SetNotify({
+			title = 'Store Business',
+			description = 'New Shop has been Added',
+			type = 'success'
+		})
+	else
+		self.SetNotify({
+			title = 'Store Business',
+			description = 'something is missing from config',
+			type = 'error'
+		})
+	end
 end
 
 self.TransferOwnerShip = function(store)

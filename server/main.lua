@@ -8,18 +8,56 @@ vehicletable = 'owned_vehicles'
 vehiclemod = 'vehicle'
 owner = 'owner'
 stored = 'stored'
+local ox = exports.ox_inventory
+local canregister = false
+local checkox = function()
+    _ = exports.ox_inventory.RegisterSingleShop
+end
+
 CreateThread(function()
+	if pcall(checkox) then canregister = true end
 	request('server/framework/main')
-	for k,v in pairs(config.Shops) do -- overide default ox inventory shops. temporary logic
-		exports.ox_inventory:RegisterShop(k, {
-			name = k, 
-			inventory = {
-				{name = 'burger', price = 999}
-			}, 
-			locations = {
-				vec3(9999.0,9999.0,9999.0),
-			}
-		})
+	-- config.ox_Shops = true . try ox_inventory single create shop
+	-- this logic will only work on my forked ox_inventory https://github.com/renzuzu/ox_inventory
+	if config.oxShops and canregister then -- replace datas from default and ignore if shops is not owned
+		local stores = GlobalState.Stores
+		for shopname,shops in pairs(config.Shops) do
+			if shopname ~= 'VehicleShop' then
+				for index,shop in pairs(config.OwnedShops[shopname] or {}) do
+					local items = {}
+					local storeitems = stores[shop.label] and stores[shop.label].items
+					for k,v in pairs(shop.supplieritem) do
+						local name = v.metadata and v.metadata.name or v.name
+						v.currency = shop.moneytype
+						if storeitems then
+							v.count = storeitems and storeitems['custom'] and storeitems['custom'][name] and storeitems['custom'][name].stock 
+							or storeitems and storeitems['normal'] and storeitems['normal'][name] and storeitems['normal'][name].stock or not storeitems and nil
+							v.count = tonumber(v.count) or 0
+						elseif not storeitems then 
+							v.count = nil 
+						end
+						table.insert(items,v)
+					end
+					exports.ox_inventory:RegisterSingleShop(shopname, {
+						name = shopname, 
+						inventory = items,
+						coord = shops.locations[index]
+					}, index,false,true)
+				end
+			end
+		end
+	else -- if above condition is not possible , we will override ox_inventory shops
+		for k,v in pairs(config.Shops) do -- overide default ox inventory shops. temporary logic
+			exports.ox_inventory:RegisterShop(k, {
+				name = k, 
+				inventory = {
+					{name = 'burger', price = 999}
+				}, 
+				locations = {
+					vec3(9999.0,9999.0,9999.0),
+				}
+			})
+		end
 	end
 	local items = exports.ox_inventory:Items()
 	for k,v in pairs(items) do
@@ -32,7 +70,21 @@ CreateThread(function()
 		end
 	end
 	GlobalState.JobShop = jobshop
+	TryInstallItems()
 end)
+
+getShopDataByLabel = function(id)
+	local stores = GlobalState.Stores
+	local shop = false
+	for name,shops in pairs(config.OwnedShops) do
+		for k,v in pairs(shops) do
+			if v.label == id then
+				return name,k,v
+			end
+		end
+	end
+	return false
+end
 
 isStoreOwned = function(store,index)
 	local stores = GlobalState.Stores
@@ -62,6 +114,21 @@ CheckItemData = function(data)
 	end
 	return false
 end
+
+exports.ox_inventory:registerHook('buyItem', function(payload)
+	if not config.oxShops then return end
+	local data = payload
+	local conf = config.OwnedShops[data.ShopName]
+	local stores = GlobalState.Stores
+	data.ShopIndex = tonumber(data.ShopIndex)
+	if conf then
+		local store = conf[data.ShopIndex] and conf[data.ShopIndex].label
+		local name = data.metadata and data.metadata.name or data.item
+		if stores[store] then
+			RemoveStockFromStore({shop = data.ShopName, metadata = data.metadata, index = data.ShopIndex, item = data.item, amount = tonumber(data.count), price = data.price, money = data.currency})
+		end
+	end
+end)
 
 RemoveStockFromStore = function(data)
 	local stores = GlobalState.Stores
@@ -134,7 +201,6 @@ AddStockInternal = function(shop,index,count,item)
 					local storeitems = lib.table.deepclone(v2.supplieritem)
 					if stores[v2.label].customitems then
 						for k,v in pairs(stores[v2.label].customitems) do
-							print('gago')
 							table.insert(storeitems,v)
 						end
 					end
@@ -205,6 +271,8 @@ lib.callback.register('renzu_shops:createShop', function(source,data)
 	local defaultshops = config.Shops
 	local ownedshop = config.OwnedShops[data.type]
 	local index = #ownedshop+1
+	if not data.config.Shop then return false end
+	if not data.config.Storeowner then return false end
 	if ownedshop then
 		table.insert(ownedshop,{
 			moneytype = ownedshop[1].moneytype,
@@ -237,9 +305,27 @@ lib.callback.register('renzu_shops:createShop', function(source,data)
 				price = ownedshop[1].price,
 				inventory = config.Storeitems[data.type],
 				supplieritem = config.Storeitems[data.type],
-			}
+			},
+			ts = os.time()
 		}
+		if canregister and config.oxShops then
+			local items = {}
+			local storeitems = config.Storeitems[data.type]
+			for k,v in pairs(storeitems) do
+				local name = v.metadata and v.metadata.name or v.name
+				v.currency = ownedshop[1].moneytype
+				v.count = config.defaultStock[data.type]
+				table.insert(items,v)
+			end
+			exports.ox_inventory:RegisterSingleShop(data.type, {
+				name = data.type, 
+				inventory = items,
+				coord = vec3(data.config.Shop.x,data.config.Shop.y,data.config.Shop.z)
+			}, index,false,true)
+		end
+		return true
 	end
+	return false
 end)
 
 lib.callback.register('renzu_shops:addstock', function(source,data)
@@ -386,6 +472,26 @@ lib.callback.register("renzu_shops:buystore", function(source,data)
 			stores[data.label] = {owner = xPlayer.identifier, money = {money = 0, black_money = 0}, items = {normal = {}, custom = {}}, employee = {}, cashier = { money = 0, black_money = 0}}
 			SetResourceKvp('renzu_stores', json.encode(stores))
 			GlobalState.Stores = stores
+			AddStockInternal(data.shopName,data.shopIndex,config.defaultStock[data.shopName])
+			if config.oxShops and canregister and data.shopName ~= 'VehicleShop' then
+				local items = {}
+				local stores = GlobalState.Stores
+				local storeitems = stores[data.label].items
+				for k,v in pairs(data.supplieritem) do
+					local name = v.metadata and v.metadata.name or v.name
+					local itemtype = v.metadata and v.metadata.name and 'custom' or 'normal'
+					v.currency = data.moneytype or 'money'
+					v.count = storeitems[itemtype] and storeitems[itemtype][name] and storeitems[itemtype][name].stock 
+					or config.defaultStock[data.shopName]
+					v.count = tonumber(v.count) or config.defaultStock[data.shopName]
+					table.insert(items,v)
+				end
+				exports.ox_inventory:RegisterSingleShop(data.shopName, {
+					name = data.label, 
+					inventory = items,
+					coord = config.Shops[data.shopName].locations[data.shopIndex]
+				}, data.shopIndex,false,true)
+			end
 			return true
 		end
 	end
@@ -837,6 +943,10 @@ AddStockstoStore = function(data)
 			if stores[k].items[itemtype][itemname] == nil then stores[k].items[itemtype][itemname] = {} end
 			if stores[k].items[itemtype][itemname].stock == nil then stores[k].items[itemtype][itemname].stock = 0 end
 			stores[k].items[itemtype][itemname].stock = tonumber(stores[k].items[itemtype][itemname].stock) + data.data.item.amount
+			if canregister and config.oxShops then
+				local name, index, storedata = getShopDataByLabel(k)
+				SetOxInvShopStock({name = name, index = index, item = itemname, value = data.data.item.amount})
+			end
 		end
 	end
 	SetResourceKvp('renzu_stores', json.encode(stores))
@@ -890,6 +1000,10 @@ lib.callback.register('renzu_shops:editstore', function(source,data)
 			stores[data.store].items[itemtype][itemname].stock = tonumber(stores[data.store].items[itemtype][itemname].stock) + data.value
 			SetResourceKvp('renzu_stores', json.encode(stores))
 			GlobalState.Stores = stores
+			if canregister and config.oxShops then
+				local name, index, storedata = getShopDataByLabel(data.store)
+				SetOxInvShopStock({name = name, index = index, item = itemname, value = data.value})
+			end
 			return 'success'
 		end
 	elseif owned and stores[data.store] and data.type == 'withdraw_item' then
@@ -902,6 +1016,10 @@ lib.callback.register('renzu_shops:editstore', function(source,data)
 			SetResourceKvp('renzu_stores', json.encode(stores))
 			GlobalState.Stores = stores
 			exports.ox_inventory:AddItem(source, data.item, data.value, data.metadata or {})
+			if canregister and config.oxShops then
+				local name, index, storedata = getShopDataByLabel(data.store)
+				SetOxInvShopStock({name = name, index = index, item = itemname, value = -data.value})
+			end
 			return 'success'
 		end
 	elseif owned and stores[data.store] and data.type == 'deposit_money' then
@@ -1143,4 +1261,28 @@ function GetRandomNumber(length)
 	else
 		return ''
 	end
+end
+
+TryInstallItems = function()
+	local items = request('data/item_install')
+	if canregister then -- will only work on my forked ox_inventory
+		for k,v in pairs(items) do
+			exports.ox_inventory:AddUsableItem(k, {
+				label = v.label,
+				description = v.description or '',
+				weight = v.weight,
+				client = v.client
+			})
+		end
+	end
+end
+
+SetOxInvShopStock = function(data)
+	exports.ox_inventory:ModifyShop({
+		shopname = data.name,
+		shopindex = data.index,
+		item = data.itemname,
+		value = data.value, -- can be string or number. eg if count should be number. currency are string. this
+		parameter = 'count' -- count, price, currency. or any shop parameter. count will add if item count is existed
+	})
 end
