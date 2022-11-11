@@ -74,6 +74,8 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 		},
 	},
 ```
+- Some Experimental Feature to Use Ox inventory Shop UI required my forked of ox_inventory
+- https://github.com/renzuzu/ox_inventory
 
 # DEMO IMAGES
 - General Store
