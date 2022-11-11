@@ -5,7 +5,7 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - WIP but ready for testing.
 
 # TASKS or can be contributed from Forking.
-- Create Item Datas for ox_inventory data/items.lua format. ( for default samples preconfigured items ) (easy)
+- ✅ Create Item Datas for ox_inventory data/items.lua format. ( for default samples preconfigured items ) (easy)
 - ✅ Create Admin Menus to manage player shops. ( intermediate )
 - ✅ Add Transfer Ownership to Store Management ( normal )
 - ✅ Tweak Shipping Job Missions. fix or optimise zones, Trailer Spawning properly and etc.. (normal)
@@ -49,14 +49,13 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - ESX Legacy only for now.
 
 # Note
-- this resource will overide/disable ox inventory shops
-- if you want to fully test the resource. you need to install all the items required here. to ox_inventory/data/items.lua by your self.
-- this resource is currently semi WIP as i have still some tasks left before releasing on CFX.
+- this resource will overide/disable ox inventory shops if config.oxShops is false
+- if you want to fully test the resource. you need to install all the items required here. to ox_inventory/data/items.lua , items can be found in data/install_items.lua.
 - some features might change or break in future as this is WIP.
 - you can remove the '@renzu_shield/init.lua' from fxmanifest.lua. its my AC that i am currently working when i have a free time.
 - Shop Images Used from \ox_inventory\web\images/{$item}.png
 - TO use Item Effects from Customisation @ data/item-customisation.lua
-- You need to Insert the export , `export = 'renzu_shops.ItemUse'`
+- You need to Insert the export , `export = 'renzu_shops.ItemUse'`, once you use this export. this will override your config from data/items.lua on ox.
 
 - Example
 
