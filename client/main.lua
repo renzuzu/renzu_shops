@@ -22,7 +22,7 @@ self.StartUp = function()
 		for k,shop in pairs(shared.Shops) do
 			if shop.locations then
 				for shopindex,v in ipairs(shop.locations) do
-					if not shared.oxShops then
+					if not shared.oxShops or k == 'VehicleShop' then
 						shop.shoptype = k
 						local ownedshopdata = self.GetShopData(k,shopindex)
 						shop.groups = ownedshopdata and ownedshopdata.groups
