@@ -1581,6 +1581,12 @@ self.Handlers = function()
 		if self.shopopen then return end
 		local shop = shared.Shops[data.type]
 		local coord = shared.Shops[data.type].locations[data.id]
+		for k,v in pairs(shared.Shops[data.type].locations) do
+			if #(GetEntityCoords(cache.ped) - v) < 25 then
+				data.id = k
+				coord = v
+			end
+		end
 		local shopdata = {index = data.id, type = data.type, coord = coord, shop = shop}
 		self.Active = lib.table.deepclone(shopdata)
 		self.movabletype = data.type
