@@ -1581,10 +1581,13 @@ self.Handlers = function()
 		if self.shopopen then return end
 		local shop = shared.Shops[data.type]
 		local coord = shared.Shops[data.type].locations[data.id]
+		local closest = nil
 		for k,v in pairs(shared.Shops[data.type].locations) do
-			if #(GetEntityCoords(cache.ped) - v) < 25 then
+			local dist = #(GetEntityCoords(cache.ped) - v)
+			if closest and dist < closest or closest == nil then
 				data.id = k
 				coord = v
+				closest = dist
 			end
 		end
 		local shopdata = {index = data.id, type = data.type, coord = coord, shop = shop}
