@@ -353,6 +353,15 @@ lib.callback.register('renzu_shops:removestock', function(source,data)
 	end
 end)
 
+function hasLicense(name, xPlayer)
+	if shared.framework == 'ESX' then
+		local result = SqlFunc('oxmysql','fetchAll','SELECT 1 FROM user_licenses WHERE type = ? AND owner = ?', { name, xPlayer.identifier })
+		return result and result[1]
+	else
+		return xPlayer?.PlayerData?.metadata?.licences[name]
+	end
+end
+
 lib.callback.register('renzu_shops:buyitem', function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
@@ -368,6 +377,9 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 			total = total + tonumber(data.data[name].price) * tonumber(v.count)
 		else
 			data.items[k] = nil
+		end
+		if string.find(name:upper(), "WEAPON_") and v.data.license and not hasLicense(v.data.license,xPlayer) then
+			return 'license'
 		end
 		local customise = v.metadatas or {}
 		local metadata = {}

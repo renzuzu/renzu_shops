@@ -1845,6 +1845,12 @@ self.Handlers = function()
 							description = 'Invalid Amount to purchase ',
 							type = 'error'
 						})
+					elseif reason == 'license' then
+						self.SetNotify({
+							title = 'Store Business',
+							description = 'You dont have a licensed to purchase ',
+							type = 'error'
+						})
 					else
 						self.SetNotify({
 							title = 'Store',
