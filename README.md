@@ -38,11 +38,22 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - Admin Store Management - Manage Store Stocks and everything, Add New Store Via Menu from preconfigured Shop Ownable types.
 - and more.
 
+# Commands
+- /stores - Open Admin store manage
+- /addstock - @param ShopName : string: ex: General @param ShopIndex : number: ex: 1 @param Amount : number: ex: 100 @extraparam ItemName : string: ex: burger
+
 # Preconfigured Shops
 - General 24 / 7 Stores
 - Ammunation
 - Black markets
 - Vehicle Shops ( Boat, Helis, Vehicles )
+
+# Shared Options - can be found config/init.lua
+- shared.framework - @value : string ex 'ESX' or 'QBCORE'
+- shared.oxShops - @value Boolean ( Allow you to use Ox Shops UI instead of Builtin UI ) Integrated Majority of Shop management Feature.
+- shared.allowplayercreateitem - @value Boolean - Allow you to Add new Custom Item to to Any Stores (exluding vehicleshop) Default false (only admin)
+- shared.target = Enable use of ox_target
+- shared.defaultStock = @value Boolean - Declare how much the Initial Stock upon Store Purchase.
 
 # Dependency
 - ox_inventory (latest)
