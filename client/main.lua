@@ -19,10 +19,10 @@ self.StartUp = function()
 		for k,v in pairs(itemLists) do
 			self.Items[v.name] = v.label
 		end
-		if not shared.oxShops then
-			for k,shop in pairs(shared.Shops) do
-				if shop.locations then
-					for shopindex,v in ipairs(shop.locations) do
+		for k,shop in pairs(shared.Shops) do
+			if shop.locations then
+				for shopindex,v in ipairs(shop.locations) do
+					if not shared.oxShops then
 						shop.shoptype = k
 						local ownedshopdata = self.GetShopData(k,shopindex)
 						shop.groups = ownedshopdata and ownedshopdata.groups
@@ -31,8 +31,8 @@ self.StartUp = function()
 						elseif not shop.groups or shop.groups == self.PlayerData.job.name then
 							self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 						end
-						self.ShopBlip({coord = v, text = shop.name, blip = shop.blip or false})
 					end
+					self.ShopBlip({coord = v, text = shop.name, blip = shop.blip or false})
 				end
 			end
 		end
