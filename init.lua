@@ -12,6 +12,11 @@ shared.defaultStock = {
 	BlackMarketArms = 20,
 } -- default to all items in store when newly purchased
 
+shared.VehicleKeys = function(plate,src) -- vehicle keys (replace the exports with your vehicle keys script) (server export)
+	-- parameter must have nil in first parameter because we use pcall method
+	sendvehiclekeys = exports.renzu_garage.GiveVehicleKey(nil,plate,src)
+end
+
 if shared.framework == 'ESX' then
 	ESX = exports['es_extended']:getSharedObject()
 elseif shared.framework == 'QBCORE' then

@@ -354,6 +354,7 @@ lib.callback.register('renzu_shops:removestock', function(source,data)
 end)
 
 lib.callback.register('renzu_shops:buyitem', function(source,data)
+	local source = source
 	local xPlayer = GetPlayerFromId(source)
 	local storeowned, shopdata = isStoreOwned(data.shop,data.index) -- check if this store has been owned by player
 	local movableshop = isMovableShop(data.index) -- check if this store is a movable type
@@ -452,6 +453,8 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 						['@'..owner..'']   = xPlayer.identifier,
 						['@'..stored..''] = 1
 					})
+					Wait(100)
+					if pcall(shared.VehicleKeys(callback,source), result or false) then end
 				end
 			end
 			Wait(500)
