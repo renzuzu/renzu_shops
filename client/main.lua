@@ -1,4 +1,4 @@
-local self = setmetatable({}, Shops)
+local self = {}
 self.shopopen = false
 self.Items = {}
 self.temporalspheres = {}

@@ -454,7 +454,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 						['@'..stored..''] = 1
 					})
 					Wait(100)
-					if pcall(shared.VehicleKeys(callback,source), result or false) then end
+					shared.VehicleKeys(callback,source)
 				end
 			end
 			Wait(500)
