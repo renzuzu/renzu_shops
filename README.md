@@ -48,6 +48,13 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - Black markets
 - Vehicle Shops ( Boat, Helis, Vehicles )
 
+# Shared Options - can be found config/init.lua
+- shared.framework - @value : string ex 'ESX' or 'QBCORE'
+- shared.oxShops - @value Boolean ( Allow you to use Ox Shops UI instead of Builtin UI ) Integrated Majority of Shop management Feature.
+- shared.allowplayercreateitem - @value Boolean - Allow you to Add new Custom Item to to Any Stores (exluding vehicleshop) Default false (only admin)
+- shared.target = Enable use of ox_target
+- shared.defaultStock = @value Boolean - Declare how much the Initial Stock upon Store Purchase.
+
 # Dependency
 - ox_inventory (latest)
 - ox_lib (latest)
