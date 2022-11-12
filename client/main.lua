@@ -136,7 +136,7 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 		end
 	end
 	SetRandomSeed(GetGameTimer()+math.random(1,99))
-	local sphere = lib.zones.sphere({ index = GetRandomIntInRange() ,var = lib.table.deepclone(var) , coords = coord, radius = 10, debug = false, inside = inside, onEnter = onEnter, onExit = onExit })
+	local sphere = lib.zones.sphere({ index = GetRandomIntInRange(1,9999) ,var = lib.table.deepclone(var) , coords = coord, radius = 10, debug = false, inside = inside, onEnter = onEnter, onExit = onExit })
 	table.insert(self.Spheres,sphere)
 	return sphere
 end
@@ -1427,6 +1427,7 @@ self.BuyStore = function(data)
 end
 
 self.OpenShop = function(data)
+	if self.shopopen then return end
 	local data = lib.table.deepclone(data)
 	local stores = GlobalState.Stores
 	-- shop data of defaults shops
@@ -1575,6 +1576,16 @@ self.Handlers = function()
 		self.playerPed = ped
 	end)
 
+	RegisterNetEvent('renzu_shop:OpenShops', function(data)
+		Wait(500)
+		if self.shopopen then return end
+		local shop = shared.Shops[data.type]
+		local coord = shared.Shops[data.type].locations[data.id]
+		local shopdata = {index = data.id, type = data.type, coord = coord, shop = shop}
+		self.Active = lib.table.deepclone(shopdata)
+		self.movabletype = data.type
+		self.OpenShop(shopdata)
+	end)
 	AddStateBagChangeHandler("CreateShop", "global", function(bagName, key, value)
 		Wait(1000)
 		shared.OwnedShops = request('config/ownedshops/init')

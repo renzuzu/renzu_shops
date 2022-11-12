@@ -115,6 +115,16 @@ CheckItemData = function(data)
 	return false
 end
 
+if not shared.oxShops then
+	lib.callback.register('ox_inventory:openShop', function(source, data)
+		TriggerClientEvent('renzu_shop:OpenShops',source, {type = data.type, id = data.id})
+		SetTimeout(1,function()
+			TriggerClientEvent('ox_inventory:closeInventory', source) -- temporary logic. this will avoid having error notification thrown by ox_inventory due to distance checks
+		end)
+		return {items = {}}
+	end)
+end
+
 exports.ox_inventory:registerHook('buyItem', function(payload)
 	if not shared.oxShops then return end
 	local data = payload
