@@ -1,6 +1,6 @@
 # renzu_shops
 Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_lib.
-
+![image](https://forum.cfx.re/uploads/default/original/4X/c/8/9/c89e89ca9b9ffdc2fb4867a7346f1c4810c84092.gif)
 # Features
 - Support All types of Shops
 - Categorized Shop
