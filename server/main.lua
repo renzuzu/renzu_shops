@@ -11,7 +11,6 @@ stored = 'stored'
 playertable = 'users'
 playeridentifier = 'identifier'
 playeraccounts = 'accounts'
-local ox = exports.ox_inventory
 local canregister = false
 local checkox = function()
     _ = exports.ox_inventory.RegisterSingleShop
