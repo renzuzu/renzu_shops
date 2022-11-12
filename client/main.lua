@@ -1805,6 +1805,7 @@ self.Handlers = function()
 	RegisterNUICallback('nuicb', function(data, cb)
 		local shop = self.Active.shop.inventory
 		local itemdata = {}
+		if not shop then self.Closeui() end
 		for k,v in pairs(shop) do
 			if data.item == v.name then
 				itemdata = v
