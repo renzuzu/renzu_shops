@@ -2118,6 +2118,7 @@ self.MovableShop = function(data)
 		})
 		lib.showContext('movable_shopdata')
 	elseif DoesEntityExist(self.movableentity[self.movabletype]) then
+		self.ondemand = false
 		return self.ReturnMovable()
 	else
 		local confirm = lib.alertDialog({
