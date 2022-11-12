@@ -18,7 +18,7 @@ return {
 			}
 		},
 		blip = {
-			id = 402, colour = 69, scale = 0.8
+			id = 375, colour = 69, scale = 0.6
 		},
 		pos = vec3(-0.2 ,1.4,-0.95),
 		rot = vec3(2.55,0.65,100.2)
@@ -43,7 +43,7 @@ return {
 			}
 		},
 		blip = {
-			id = 402, colour = 69, scale = 0.8
+			id = 375, colour = 69, scale = 0.6
 		},
 		pos = vec3(-0.2 ,1.4,-0.95),
 		rot = vec3(2.55,0.65,100.2)
@@ -68,7 +68,7 @@ return {
 			}
 		},
 		blip = {
-			id = 402, colour = 69, scale = 0.8
+			id = 375, colour = 69, scale = 0.6
 		},
 		pos = vec3(-0.2 ,1.4,-0.95),
 		rot = vec3(2.55,0.65,100.2)

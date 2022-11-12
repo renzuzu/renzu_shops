@@ -26,7 +26,7 @@ return {
 		type = 'vehicle',
 		name = 'Vehicle Shop',
 		blip = {
-			id = 402, colour = 69, scale = 0.8
+			id = 595, colour = 38, scale = 0.8
 		},
 		locations = {
 			vec3(-54.346,-1097.284,26.422),
