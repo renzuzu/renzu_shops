@@ -147,9 +147,9 @@ RemoveStockFromStore = function(data)
 							if v.cashier then -- if cashier is enable store money to cashier
 								if not stores[v.label].cashier then stores[v.label].cashier = {} end
 								if stores[v.label].cashier[data.money] == nil then stores[v.label].cashier[data.money] = 0 end
-								stores[v.label].cashier[data.money] = tonumber(stores[v.label].cashier[data.money]) + tonumber(price)
+								stores[v.label].cashier[data.money] = tonumber(stores[v.label].cashier[data.money]) + (tonumber(price) * data.amount)
 							else
-								stores[v.label].money[data.money] = tonumber(stores[v.label].money[data.money]) + tonumber(price)
+								stores[v.label].money[data.money] = tonumber(stores[v.label].money[data.money]) + (tonumber(price) * data.amount)
 							end
 						end
 						success = true
