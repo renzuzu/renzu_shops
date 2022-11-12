@@ -8,6 +8,9 @@ vehicletable = 'owned_vehicles'
 vehiclemod = 'vehicle'
 owner = 'owner'
 stored = 'stored'
+playertable = 'users'
+playeridentifier = 'identifier'
+playeraccounts = 'accounts'
 local ox = exports.ox_inventory
 local canregister = false
 local checkox = function()
@@ -140,6 +143,13 @@ exports.ox_inventory:registerHook('buyItem', function(payload)
 	end
 end)
 
+sendMoneyToBankOffline = function(id,amount)
+	local result = SqlFunc('oxmysql','fetchAll','SELECT '..playeraccounts..' FROM '..playertable..' WHERE '..playeridentifier..' = ?', { id })
+	local accounts = json.decode(result[1][playeraccounts])
+	accounts.bank += amount
+	SqlFunc('oxmysql','execute','UPDATE '..playertable..' SET '..playeraccounts..' = ? WHERE '..playeridentifier..' = ?', {json.encode(accounts), id})
+end
+
 RemoveStockFromStore = function(data)
 	local stores = GlobalState.Stores
 	local success = false
@@ -154,12 +164,25 @@ RemoveStockFromStore = function(data)
 						stores[v.label].items[itemtype][itemname].stock = tonumber(stores[v.label].items[itemtype][itemname].stock) - data.amount
 						local price = stores[v.label].items[itemtype][itemname].price and tonumber(stores[v.label].items[itemtype][itemname].price) or CheckItemData(data)
 						if price then
-							if v.cashier then -- if cashier is enable store money to cashier
-								if not stores[v.label].cashier then stores[v.label].cashier = {} end
-								if stores[v.label].cashier[data.money] == nil then stores[v.label].cashier[data.money] = 0 end
-								stores[v.label].cashier[data.money] = tonumber(stores[v.label].cashier[data.money]) + (tonumber(price) * data.amount)
+							if shared.SendtoBank and data.money == 'bank' then
+								-- todo
+								-- exports.bankingresource:SendToBank(source,money)
+								local receive = (tonumber(price) * data.amount) * 0.95 -- 5% fee
+								local owner = GetPlayerFromIdentifier(stores[v.label].owner)
+								if owner then
+									owner.addAccountMoney(data.money,receive)
+								else
+									sendMoneyToBankOffline(stores[v.label].owner, receive)
+								end
 							else
-								stores[v.label].money[data.money] = tonumber(stores[v.label].money[data.money]) + (tonumber(price) * data.amount)
+								if v.cashier then -- if cashier is enable store money to cashier
+									if not stores[v.label].cashier then stores[v.label].cashier = {} end
+									data.money = data.money:gsub('bank', 'money')
+									if stores[v.label].cashier[data.money] == nil then stores[v.label].cashier[data.money] = 0 end
+									stores[v.label].cashier[data.money] = tonumber(stores[v.label].cashier[data.money]) + (tonumber(price) * data.amount)
+								else
+									stores[v.label].money[data.money] = tonumber(stores[v.label].money[data.money]) + (tonumber(price) * data.amount)
+								end
 							end
 						end
 						success = true
@@ -433,6 +456,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 	if not hasitem then
 		return 'invalidamount'
 	end
+
 	data.type = data.type:gsub('Wallet',data.moneytype) -- check payment type
 	local money = xPlayer.getAccount(data.type:lower()).money
 	if xPlayer.getAccount(data.type:lower()).money >= total then

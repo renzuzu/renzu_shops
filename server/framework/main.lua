@@ -8,6 +8,23 @@ elseif shared.framework == 'QBCORE' then
 	stored = 'state'
 	garage_id = 'garage'
 	type_ = 'vehicle'
+	playertable = 'players'
+	playeridentifier = 'citizenid'
+	playeraccounts = 'money'
+end
+
+function GetPlayerFromIdentifier(identifier)
+	self = {}
+	if shared.framework == 'ESX' then
+		local player = ESX.GetPlayerFromIdentifier(identifier)
+		self.src = player and player.source
+		return player
+	else
+		local getsrc = QBCore.Functions.GetSource(identifier)
+		if not getsrc then return end
+		self.src = getsrc
+		return GetPlayerFromId(self.src)
+	end
 end
 
 function GetPlayerFromId(src)
@@ -33,6 +50,10 @@ function GetPlayerFromId(src)
 		end
 		selfcore.data.addMoney = function(value)
 				QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney('cash',tonumber(value))
+			return true
+		end
+		selfcore.data.addAccountMoney = function(type, value)
+			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney(type,tonumber(value))
 			return true
 		end
 		selfcore.data.removeMoney = function(value)

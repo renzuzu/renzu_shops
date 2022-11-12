@@ -11,7 +11,7 @@ shared.defaultStock = {
 	VehicleShop = 10,
 	BlackMarketArms = 20,
 } -- default to all items in store when newly purchased
-
+shared.SendtoBank = false -- if true owner will receive money to owned bank account
 shared.VehicleKeys = function(plate,source) -- vehicle keys (replace the exports with your vehicle keys script) (server export)
 	-- first parameter expected is plate
 	local sendvehiclekeys
