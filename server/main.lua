@@ -189,7 +189,7 @@ end
 -- /addstockall General 1 999
 lib.addCommand('group.admin', {'addstockall', 'addstock'}, function(source, args)
     AddStockInternal(args.shop,args.index,args.count,args.item)
-end, {'shop:string', 'index:string', 'count:number', 'item:string'})
+end, {'shop:string', 'index:string', 'count:number', 'item:?string'})
 
 AddStockInternal = function(shop,index,count,item)
 	local stores = GlobalState.Stores
