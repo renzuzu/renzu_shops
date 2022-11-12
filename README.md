@@ -1,24 +1,6 @@
 # renzu_shops
 Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_lib.
 
-# Status
-- WIP but ready for testing.
-
-# TASKS or can be contributed from Forking.
-- ✅ Create Item Datas for ox_inventory data/items.lua format. ( for default samples preconfigured items ) (easy)
-- ✅ Create Admin Menus to manage player shops. ( intermediate )
-- ✅ Add Transfer Ownership to Store Management ( normal )
-- ✅ Tweak Shipping Job Missions. fix or optimise zones, Trailer Spawning properly and etc.. (normal)
-- Enhance or Add more Effects to data/item-customisation.lua ( intermediate )
-- Change Blip Sprites. (very easy)
-- ✅ Support Multiple Frameworks. (easy)
-- Support Item Customisation to Movable Shops correctly. (intermediate)
-- ✅ replace scenario based when cooking to TaskPlay (easy)
-- ✅ Add Job based Access to Store Managing
-- ✅ Supports Ox_inventory Shop Default UI (experimental)
-- ✅ Support Adding New Item to store via Store Manage Menu (optional admin or player)
-- Store Logs
-
 # Features
 - Support All types of Shops
 - Categorized Shop
@@ -116,5 +98,18 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 ![image](https://user-images.githubusercontent.com/82306584/200501383-3cedc4e9-8c29-4b35-97c2-db818e35b9e6.png)
 
 
-
+# TASKS or can be contributed from Forking.
+- ✅ Create Item Datas for ox_inventory data/items.lua format. ( for default samples preconfigured items ) (easy)
+- ✅ Create Admin Menus to manage player shops. ( intermediate )
+- ✅ Add Transfer Ownership to Store Management ( normal )
+- ✅ Tweak Shipping Job Missions. fix or optimise zones, Trailer Spawning properly and etc.. (normal)
+- Enhance or Add more Effects to data/item-customisation.lua ( intermediate )
+- Change Blip Sprites. (very easy)
+- ✅ Support Multiple Frameworks. (easy)
+- Support Item Customisation to Movable Shops correctly. (intermediate)
+- ✅ replace scenario based when cooking to TaskPlay (easy)
+- ✅ Add Job based Access to Store Managing
+- ✅ Supports Ox_inventory Shop Default UI (experimental)
+- ✅ Support Adding New Item to store via Store Manage Menu (optional admin or player)
+- Store Logs
 
