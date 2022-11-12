@@ -734,42 +734,44 @@ self.EditItem = function(data, store, cat)
 				end
 			end
 		})
-		table.insert(options,{
-			title = 'Deposit '..item,
-			description = 'Deposit '..item..' from your inventory',
-			arrow = true,
-			onSelect = function(args)
-				local input = lib.inputDialog('Deposit :'..item, {'How many:'})
-				if not input then return end
-				local value = tonumber(input[1]) or 1
-				local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'deposit_item', item = data.name, value = value, metadata = data.metadata})
-				if reason == 'success' then
-					self.SetNotify({
-						title = 'Store Business',
-						description = 'Successfully Deposit x'..value..' '..item,
-						type = 'success'
-					})
+		if self.ShopType ~= 'VehicleShop' then
+			table.insert(options,{
+				title = 'Deposit '..item,
+				description = 'Deposit '..item..' from your inventory',
+				arrow = true,
+				onSelect = function(args)
+					local input = lib.inputDialog('Deposit :'..item, {'How many:'})
+					if not input then return end
+					local value = tonumber(input[1]) or 1
+					local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'deposit_item', item = data.name, value = value, metadata = data.metadata})
+					if reason == 'success' then
+						self.SetNotify({
+							title = 'Store Business',
+							description = 'Successfully Deposit x'..value..' '..item,
+							type = 'success'
+						})
+					end
 				end
-			end
-		})
-		table.insert(options,{
-			title = 'Withdraw '..item,
-			description = 'Withdraw '..item..' to your inventory',
-			arrow = true,
-			onSelect = function(args)
-				local input = lib.inputDialog('Withdraw :'..item, {'How many:'})
-				if not input then return end
-				local value = tonumber(input[1]) or 1
-				local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'withdraw_item', item = data.name, value = value, metadata = data.metadata})
-				if reason == 'success' then
-					self.SetNotify({
-						title = 'Store Business',
-						description = 'Successfully Withdraw x'..value..' '..item,
-						type = 'success'
-					})
+			})
+			table.insert(options,{
+				title = 'Withdraw '..item,
+				description = 'Withdraw '..item..' to your inventory',
+				arrow = true,
+				onSelect = function(args)
+					local input = lib.inputDialog('Withdraw :'..item, {'How many:'})
+					if not input then return end
+					local value = tonumber(input[1]) or 1
+					local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'withdraw_item', item = data.name, value = value, metadata = data.metadata})
+					if reason == 'success' then
+						self.SetNotify({
+							title = 'Store Business',
+							description = 'Successfully Withdraw x'..value..' '..item,
+							type = 'success'
+						})
+					end
 				end
-			end
-		})
+			})
+		end
 
 	if data.disable then
 		table.insert(options, {
