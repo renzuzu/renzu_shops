@@ -271,18 +271,18 @@ lib.callback.register('renzu_shops:createShop', function(source,data)
 	local defaultshops = shared.Shops
 	local ownedshop = shared.OwnedShops[data.type]
 	local index = #ownedshop+1
-	if not data.shared.Shop then return false end
-	if not data.shared.Storeowner then return false end
+	if not data.config.Shop then return false end
+	if not data.config.Storeowner then return false end
 	if ownedshop then
 		table.insert(ownedshop,{
 			moneytype = ownedshop[1].moneytype,
 			label = data.type..' #'..index,
-			coord = data.shared.Storeowner,
-			cashier = data.shared.Cashier,
+			coord = data.config.Storeowner,
+			cashier = data.config.Cashier,
 			price = ownedshop[1].price,
 			supplieritem = {}
 		})
-		table.insert(shared.Shops[data.type].locations,vec3(data.shared.Shop.x,data.shared.Shop.y,data.shared.Shop.z))
+		table.insert(shared.Shops[data.type].locations,vec3(data.config.Shop.x,data.config.Shop.y,data.config.Shop.z))
 		local StoreItem = 'shared.Storeitems.'..data.type
 		local ownedshops = 'return '
 		ownedshops = ownedshops..tprint(ownedshop,nil,StoreItem)
@@ -291,17 +291,17 @@ lib.callback.register('renzu_shops:createShop', function(source,data)
 		default = default..tprint(defaultshops,nil,StoreItem)
 		SaveResourceFile('renzu_shops', path2, default, -1)
 		GlobalState.CreateShop = {
-			loc = vec3(data.shared.Shop.x,data.shared.Shop.y,data.shared.Shop.z),
-			coord = data.shared.Storeowner,
-			cashier = data.shared.Cashier,
+			loc = vec3(data.config.Shop.x,data.config.Shop.y,data.config.Shop.z),
+			coord = data.config.Storeowner,
+			cashier = data.config.Cashier,
 			index = index,
 			type = data.type,
 			label = data.type..' #'..index,
 			shop = {
 				moneytype = ownedshop[1].moneytype,
 				label = data.type..' #'..index,
-				coord = data.shared.Storeowner,
-				cashier = data.shared.Cashier,
+				coord = data.config.Storeowner,
+				cashier = data.config.Cashier,
 				price = ownedshop[1].price,
 				inventory = shared.Storeitems[data.type],
 				supplieritem = shared.Storeitems[data.type],
@@ -320,7 +320,7 @@ lib.callback.register('renzu_shops:createShop', function(source,data)
 			exports.ox_inventory:RegisterSingleShop(data.type, {
 				name = data.type, 
 				inventory = items,
-				coord = vec3(data.shared.Shop.x,data.shared.Shop.y,data.shared.Shop.z)
+				coord = vec3(data.config.Shop.x,data.config.Shop.y,data.config.Shop.z)
 			}, index,false,true)
 		end
 		return true
