@@ -38,6 +38,10 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - Admin Store Management - Manage Store Stocks and everything, Add New Store Via Menu from preconfigured Shop Ownable types.
 - and more.
 
+# Commands
+- /stores - Open Admin store manage
+- /addstock - @param ShopName : string: ex: General @param ShopIndex : number: ex: 1 @param Amount : number: ex: 100 @extraparam ItemName : string: ex: burger
+
 # Preconfigured Shops
 - General 24 / 7 Stores
 - Ammunation
