@@ -12,9 +12,15 @@ shared.defaultStock = {
 	BlackMarketArms = 20,
 } -- default to all items in store when newly purchased
 
-shared.VehicleKeys = function(plate,src) -- vehicle keys (replace the exports with your vehicle keys script) (server export)
-	-- parameter must have nil in first parameter because we use pcall method
-	sendvehiclekeys = exports.renzu_garage.GiveVehicleKey(nil,plate,src)
+shared.VehicleKeys = function(plate,source) -- vehicle keys (replace the exports with your vehicle keys script) (server export)
+	-- first parameter expected is plate
+	local sendvehiclekeys
+	func = function()
+		sendvehiclekeys = exports.renzu_garage.GiveVehicleKey
+	end
+	if pcall(func, result or false) then
+		return sendvehiclekeys(nil,plate,source)
+	end
 end
 
 if shared.framework == 'ESX' then
@@ -71,93 +77,98 @@ for k,v in pairs(Components) do
 end
 
 if not IsDuplicityVersion() then
-	Shops = request('client/main')
-	Shops.LoadJobShops = function()
-		for k,zones in pairs(Shops.JobSpheres) do
-			if zones then
-				if not shared.target and zones.remove then
-					zones:remove()
+	Shops = setmetatable(Shops, {
+		__call = function(self)
+			self = request('client/main')
+			self.LoadJobShops = function()
+				for k,zones in pairs(self.JobSpheres) do
+					if zones then
+						if not shared.target and zones.remove then
+							zones:remove()
+						else
+							exports.ox_target:removeZone(zones)
+						end
+					end
+				end
+				local jobshop = GlobalState.JobShop
+				for k,shops in pairs(shared.OwnedShops) do
+					for k,shop in pairs(shops) do
+						if jobshop[shop.label] == self.PlayerData.job?.name then
+							if not shared.target then
+								self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
+								self.JobSpheres[self.PlayerData.job?.name] = self.temporalspheres[shop.label]
+							else
+								local zone = self.addTarget(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
+								self.JobSpheres[self.PlayerData.job?.name] = zone
+							end
+						end
+					end
+				end
+			end
+			self.Playerloaded = function()
+				if shared.framework == 'ESX' then
+					RegisterNetEvent('esx:playerLoaded', function(xPlayer)
+						self.PlayerData = xPlayer
+						self.LoadShops()
+						self.LoadJobShops()
+					end)
+				elseif shared.framework == 'QBCORE' then
+					RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+						QBCore.Functions.GetPlayerData(function(p)
+							self.PlayerData = p
+							self.LoadShops()
+							self.LoadJobShops()
+							if PlayerData.job ~= nil then
+								self.PlayerData.job.grade = self.PlayerData.job.grade.level
+							end
+							if PlayerData.identifier == nil then
+								self.PlayerData.identifier = self.PlayerData.license
+							end
+						end)
+					end)
+				end
+			end
+			
+			self.GetPlayerData = function()
+				if shared.framework == 'ESX' then
+					return ESX.GetPlayerData()
 				else
-					exports.ox_target:removeZone(zones)
+					local data = promise:new()
+					QBCore.Functions.GetPlayerData(function(playerdata)
+						data:resolve(playerdata)
+					end)
+					return Citizen.Await(data)
 				end
 			end
-		end
-		local jobshop = GlobalState.JobShop
-		for k,shops in pairs(shared.OwnedShops) do
-			for k,shop in pairs(shops) do
-				if jobshop[shop.label] == Shops.PlayerData.job?.name then
-					if not shared.target then
-						Shops.temporalspheres[shop.label] = Shops.Add(shop.coord,'My Store '..shop.label,Shops.StoreOwner,false,shop)
-						Shops.JobSpheres[Shops.PlayerData.job?.name] = Shops.temporalspheres[shop.label]
-					else
-						local zone = Shops.addTarget(shop.coord,'My Store '..shop.label,Shops.StoreOwner,false,shop)
-						Shops.JobSpheres[Shops.PlayerData.job?.name] = zone
-					end
+			
+			self.SetJob = function()
+				if shared.framework == 'ESX' then
+					RegisterNetEvent('esx:setJob', function(job)
+						self.PlayerData.job = job
+						self.LoadJobShops()
+					end)
+				elseif shared.framework == 'QBCORE' then
+					RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
+						self.PlayerData.job = job
+						self.PlayerData.job.grade = self.PlayerData.job.grade.level
+						self.LoadJobShops()
+					end)
 				end
 			end
-		end
-	end
-	Shops.Playerloaded = function()
-		if shared.framework == 'ESX' then
-			RegisterNetEvent('esx:playerLoaded', function(xPlayer)
-				Shops.PlayerData = xPlayer
-				Shops.LoadShops()
-				Shops.LoadJobShops()
+			self.Playerloaded()
+			self.SetJob()
+			self.Handlers()
+			self.StartUp()
+			exports('Shops', function ()
+				return self
 			end)
-		elseif shared.framework == 'QBCORE' then
-			RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-				QBCore.Functions.GetPlayerData(function(p)
-					Shops.PlayerData = p
-					Shops.LoadShops()
-					Shops.LoadJobShops()
-					if PlayerData.job ~= nil then
-						Shops.PlayerData.job.grade = Shops.PlayerData.job.grade.level
-					end
-					if PlayerData.identifier == nil then
-						Shops.PlayerData.identifier = Shops.PlayerData.license
-					end
-				end)
+			RegisterCommand('bubble', function(source,args)
+				local Functions = exports.renzu_shops:Shops()
+				Functions.CreateBubbleSpeechSync({id = GetPlayerServerId(PlayerId()), title = GetPlayerName(PlayerId()), message = args[1], bagname = 'player:', ms = 5000})
 			end)
 		end
-	end
-	
-	Shops.GetPlayerData = function()
-		if shared.framework == 'ESX' then
-			return ESX.GetPlayerData()
-		else
-			local data = promise:new()
-			QBCore.Functions.GetPlayerData(function(playerdata)
-				data:resolve(playerdata)
-			end)
-			return Citizen.Await(data)
-		end
-	end
-	
-	Shops.SetJob = function()
-		if shared.framework == 'ESX' then
-			RegisterNetEvent('esx:setJob', function(job)
-				Shops.PlayerData.job = job
-				Shops.LoadJobShops()
-			end)
-		elseif shared.framework == 'QBCORE' then
-			RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
-				Shops.PlayerData.job = job
-				Shops.PlayerData.job.grade = Shops.PlayerData.job.grade.level
-				Shops.LoadJobShops()
-			end)
-		end
-	end
-	Shops.Playerloaded()
-	Shops.SetJob()
-	Shops.Handlers()
-	Shops.StartUp()
-	exports('Shops', function ()
-		return Shops
-	end)
-	RegisterCommand('bubble', function(source,args)
-		local Functions = exports.renzu_shops:Shops()
-		Functions.CreateBubbleSpeechSync({id = GetPlayerServerId(PlayerId()), title = GetPlayerName(PlayerId()), message = args[1], bagname = 'player:', ms = 5000})
-	end)
+	})
+	return Shops()
 end
 -- example:
 -- local Shop = exports.renzu_shops:Shops()
