@@ -12,14 +12,40 @@ shared.defaultStock = {
 	BlackMarketArms = 20,
 } -- default to all items in store when newly purchased
 shared.SendtoBank = false -- if true owner will receive money to owned bank account
-shared.VehicleKeys = function(plate,source) -- vehicle keys (replace the exports with your vehicle keys script) (server export)
+shared.VehicleKeysType = {
+	['export'] = true, -- if false it will use trigger events
+	['client'] = false, -- if false it will use server event or server exports
+}
+shared.VehicleKeys = function(plate,source) -- vehicle keys
 	-- first parameter expected is plate
 	local sendvehiclekeys
-	func = function()
-		sendvehiclekeys = exports.renzu_garage.GiveVehicleKey
-	end
-	if pcall(func, result or false) then
-		return sendvehiclekeys(nil,plate,source)
+	if IsDuplicityVersion() then
+		if shared.VehicleKeysType['export'] then -- server export edit this if your using server exports vehicle keys
+			func = function()
+				sendvehiclekeys = exports.renzu_garage.GiveVehicleKey -- replace this
+			end
+			if pcall(func, result or false) then
+				return sendvehiclekeys(nil,plate,source)
+			end
+		elseif shared.VehicleKeysType['client'] and shared.VehicleKeysType['export'] then -- do not edit this condition
+			TriggerClientEvent('renzu_shops:Vehiclekeys', source, plate)
+
+		elseif shared.VehicleKeysType['client'] then -- client events from server   edit this if your using client events vehicle keys
+			-- Server Events Keys
+			-- ex TriggerClientEvent('GiveKeys', source, plate) -- this is non existing and example only
+
+		else -- server events from server edit this
+			-- Server Events Keys
+			-- ex TriggerEvent('GiveKeys', plate, source) -- this is non existing and example only
+
+		end
+	elseif not IsDuplicityVersion() then -- client exports edit this if your using exports in client
+		func = function()
+			sendvehiclekeys = exports.renzu_garage.GiveVehicleKey -- replace this
+		end
+		if pcall(func, result or false) then
+			return sendvehiclekeys(nil,plate,source)
+		end
 	end
 end
 

@@ -1573,7 +1573,9 @@ self.Handlers = function()
 	lib.onCache('ped', function(ped)
 		self.playerPed = ped
 	end)
-
+	RegisterNetEvent('renzu_shop:Vehiclekeys', function(plate)
+		return shared.VehicleKeys(plate)
+	end)
 	RegisterNetEvent('renzu_shop:OpenShops', function(data)
 		Wait(500)
 		if self.shopopen then return end
