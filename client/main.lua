@@ -1930,7 +1930,7 @@ self.Handlers = function()
 						end
 						cb(true)
 					end
-				end,{finance = financedata, items = data.items, data = itemdata, index = self.Active.index, type = data.type, shop = self.Active.shop.type or self.shopidentifier, moneytype = self.moneytype})
+				end,{groups = self.Active?.shop?.groups, finance = financedata, items = data.items, data = itemdata, index = self.Active.index, type = data.type, shop = self.Active.shop.type or self.shopidentifier, moneytype = self.moneytype})
 			end
 		elseif data.msg == 'close' then
 			self.Closeui()

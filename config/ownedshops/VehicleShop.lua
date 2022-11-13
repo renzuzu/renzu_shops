@@ -1,5 +1,6 @@
 return {
 	[1] = {
+		--groups = 'police',
 		moneytype = 'money',
 		type = 'vehicle',
 		label = 'Premium Deluxe Motorsports',
@@ -16,6 +17,7 @@ return {
 		camerasetting = {offset = vec3(0.0,-1.2,0.0), fov = 25}
 	},
 	[2] = {
+		--groups = 'police',
 		moneytype = 'money',
 		type = 'vehicle',
 		label = 'Premium Deluxe Motorsports Patoche',
@@ -39,6 +41,7 @@ return {
 		camerasetting = {offset = vec3(0.0,1.0,0.0), fov = -10}
 	},
 	[3] = { -- boat shop
+		--groups = 'police',
 		moneytype = 'money',
 		type = 'vehicle',
 		label = 'Premium Boat Shop',
