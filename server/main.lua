@@ -525,7 +525,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 			Wait(500)
 		end
 		local stores = GlobalState.Stores
-		if data.finance and stores[storeowned] then
+		if storeowned and data.finance and stores[storeowned] then
 			print(data.finance.daily,data.finance.days)
 			local daily = data.finance.daily
 			local days = data.finance.days
