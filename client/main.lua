@@ -1843,12 +1843,23 @@ self.Handlers = function()
 			for k,v in pairs(shop) do
 				itemdata[v.metadata and v.metadata.name or v.name] = v
 			end
+			local totalamount = 0
 			for k,v in pairs(data.items) do
+				totalamount += 1
 				total = total + tonumber(itemdata[v.data.metadata and v.data.metadata.name or v.data.name].price) * tonumber(v.count)
+			end
+			data.type = self.PaymentMethod({amount = total, total = totalamount, type = self.Active.shop.type}) or 'money'
+			local financedata
+			if data.type == 'finance' then
+				finance, financedata = self.Finance({amount = total, total = totalamount, type = self.Active.shop.type})
+				total = financedata.downpayment
+			end
+			if data.type == 'finance' and finance == 'cancel' then
+				return
 			end
 			local confirm = lib.alertDialog({
 				header = 'Confirm Buy',
-				content = 'Are you sure you want to buy?   \n Amount : '..total..' $  \n Method : '..data.type,
+				content = 'Are you sure you want to pay?   \n Amount : '..total..' $  \n Method : '..data.type,
 				centered = true,
 				cancel = true
 			})
@@ -1916,7 +1927,7 @@ self.Handlers = function()
 						end
 						cb(true)
 					end
-				end,{items = data.items, data = itemdata, index = self.Active.index, type = data.type, shop = self.Active.shop.type or self.shopidentifier, moneytype = self.moneytype})
+				end,{finance = financedata, items = data.items, data = itemdata, index = self.Active.index, type = data.type, shop = self.Active.shop.type or self.shopidentifier, moneytype = self.moneytype})
 			end
 		elseif data.msg == 'close' then
 			self.Closeui()
@@ -3174,6 +3185,55 @@ self.TransferOwnerShip = function(store)
 		options = options
 	})
 	lib.showContext('transfershop')
+end
+
+self.PaymentMethod = function(data)
+	local options = {}
+	local index = 3
+	table.insert(options,{ type = "input", label = "Total in Cart", placeholder = data.total , disabled = true})
+	table.insert(options,{ type = "input", label = "Amount to Pay", placeholder = data.amount , disabled = true})
+	local dropdownmenu = {
+		{ value = 'money', label = 'Cash' },
+		{ value = 'bank', label = 'Bank' }
+	}
+	if data.amount >= shared.FinanceMinimum and data.type ~= 'BlackMarketArms' then
+		table.insert(dropdownmenu, { value = 'finance', label = 'Finance' })
+	end
+	table.insert(options,{ type = 'select', label = 'Payment Type', options = dropdownmenu })
+	local input = lib.inputDialog('Select Payment', options)
+	return input[index]
+end
+
+self.Finance = function(data) -- simple financing only. since ox_lib input does not return real time  (like the ox_lib menus) changed amount ex. from slider value. so we cant make advanced finance. unless i implement another NEW UI just for this.
+	local options = {}
+	local retval = 'cancel'
+	local downpayment = data.amount * shared.FinanceDownPayment/100
+	local interest = shared.FinanceInterest/100
+	table.insert(options,{ type = "slider", label = "Down Payment", min = downpayment, max =  downpayment * 2, step = 1})
+	--table.insert(options,{ type = "input", label = "Amount Financed (Interest Rate: "..shared.FinanceInterest.."%)", placeholder = amountfinanced  , disabled = true})
+	table.insert(options,{ type = "slider", label = "Finance Duration (days)", min = 5, max =  shared.FinanceMaxDays, step = 1})
+	local input = lib.inputDialog('Finance Page 1', options)
+	local initialpayment, days = table.unpack(input)
+	local finaldailyamount
+	if input ~= 'cancel' then
+		local options = {}
+		local total = data.amount - initialpayment
+		local amountfinanced = data.amount * (1.0 - (initialpayment / data.amount))
+		local dailyamount = amountfinanced / days
+		local daytomax = days / shared.FinanceMaxDays
+		local interestrate = shared.FinanceInterest/100 - (shared.FinanceInterest - (shared.FinanceInterest * daytomax)) / 100
+		finaldailyamount = dailyamount * ( 1.0 + interestrate )
+		local interestpercent = interestrate * 100
+		table.insert(options,{ type = "input", label = "Initial Payment", placeholder = initialpayment  , disabled = true})
+		table.insert(options,{ type = "input", label = "Amount Financed (Interest Rate: "..interestpercent.."%)", placeholder = amountfinanced  , disabled = true})
+		table.insert(options,{ type = "input", label = "Daily Amount", placeholder = finaldailyamount  , disabled = true})
+		local input = lib.inputDialog('Finance Confirmation', options)
+		retval = true
+		if not input or input == 'cancel' then
+			retval = 'cancel'
+		end
+	end
+	return retval, {daily = finaldailyamount, downpayment = initialpayment, days = days}
 end
 
 self.RemoveShop = function(data)

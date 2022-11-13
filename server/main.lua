@@ -1,6 +1,7 @@
 GlobalState.Shipping = json.decode(GetResourceKvpString('shippingcompany') or '[]') or {}
 GlobalState.Stores = json.decode(GetResourceKvpString('renzu_stores') or '[]') or {}
 GlobalState.MovableShops = json.decode(GetResourceKvpString('movableshops') or '[]') or {}
+GlobalState.FinanceData = json.decode(GetResourceKvpString('financedata') or '[]') or {}
 GlobalState.JobShop = {}
 local Items = {}
 local purchaseorders = {}
@@ -142,11 +143,31 @@ exports.ox_inventory:registerHook('buyItem', function(payload)
 	end
 end)
 
-sendMoneyToBankOffline = function(id,amount)
+ModifyFromBankOffline = function(id,amount,minus)
 	local result = SqlFunc('oxmysql','fetchAll','SELECT '..playeraccounts..' FROM '..playertable..' WHERE '..playeridentifier..' = ?', { id })
 	local accounts = json.decode(result[1][playeraccounts])
-	accounts.bank += amount
+	if not minus then
+		accounts.bank += amount
+	else
+		accounts.bank -= amount
+	end
 	SqlFunc('oxmysql','execute','UPDATE '..playertable..' SET '..playeraccounts..' = ? WHERE '..playeridentifier..' = ?', {json.encode(accounts), id})
+end
+
+GetMoneyFromBankOffline = function(id)
+	local result = SqlFunc('oxmysql','fetchAll','SELECT '..playeraccounts..' FROM '..playertable..' WHERE '..playeridentifier..' = ?', { id })
+	if not result[1] then return end
+	local accounts = json.decode(result[1][playeraccounts])
+	return accounts.bank
+end
+
+SendMoneytoStoreAccount = function(identifier,money,plus)
+	local owner = GetPlayerFromIdentifier(identifier)
+	if owner then
+		owner.addAccountMoney('bank',money)
+	else
+		ModifyFromBankOffline(identifier, money)
+	end
 end
 
 RemoveStockFromStore = function(data)
@@ -167,12 +188,7 @@ RemoveStockFromStore = function(data)
 								-- todo
 								-- exports.bankingresource:SendToBank(source,money)
 								local receive = (tonumber(price) * data.amount) * 0.95 -- 5% fee
-								local owner = GetPlayerFromIdentifier(stores[v.label].owner)
-								if owner then
-									owner.addAccountMoney(data.money,receive)
-								else
-									sendMoneyToBankOffline(stores[v.label].owner, receive)
-								end
+								SendMoneytoStoreAccount(stores[v.label].owner,receive)
 							else
 								if v.cashier then -- if cashier is enable store money to cashier
 									if not stores[v.label].cashier then stores[v.label].cashier = {} end
@@ -452,14 +468,18 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 			end
 		end
 	end
+	if data.finance then
+		total = data.finance.downpayment
+	end
 	if not hasitem then
 		return 'invalidamount'
 	end
-
-	data.type = data.type:gsub('Wallet',data.moneytype) -- check payment type
-	local money = xPlayer.getAccount(data.type:lower()).money
-	if xPlayer.getAccount(data.type:lower()).money >= total then
-		xPlayer.removeAccountMoney(data.type:lower(),total)
+	local moneytype = data.type
+	moneytype = moneytype:gsub('Wallet',moneytype) -- check payment type
+	moneytype = moneytype:gsub('finance','money')
+	local money = xPlayer.getAccount(moneytype:lower()).money
+	if money >= total then
+		xPlayer.removeAccountMoney(moneytype:lower(),total)
 		callback = 'success'
 		for k,v in pairs(customparts) do -- remove custom items from cart as its inserted as custom item metadatas from the recent loop above
 			for k,item in pairs(v) do
@@ -467,9 +487,9 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 					local name = v.data.metadata and v.data.metadata.name or v.data.name
 					if item.name == name then
 						if storeowned then -- storeowned Ownableshops data handler
-							RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, require = v.data.require, index = data.index, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, money = data.type:lower()})
+							RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, require = v.data.require, index = data.index, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, money = moneytype:lower()})
 						elseif movableshop then -- movable shops logic data handler
-							RemoveStockFromStash({addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, type = data.index, money = data.type:lower()})
+							RemoveStockFromStash({addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, type = data.index, money = moneytype:lower()})
 						end
 						if v.count > item.count then
 							data.items[k2].count -= item.count
@@ -483,9 +503,9 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 		end
 		for k,v in pairs(data.items) do
 			if storeowned then -- storeowned Ownableshops data handler
-				RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, require = v.data.require, index = data.index, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, money = data.type:lower()})
+				RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, require = v.data.require, index = data.index, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, money = moneytype:lower()})
 			elseif movableshop then -- movable shops logic data handler
-				RemoveStockFromStash({addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, type = data.index, money = data.type:lower()})
+				RemoveStockFromStash({addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, type = data.index, money = moneytype:lower()})
 			end
 			if data.shop ~= 'VehicleShop' then -- add new item if its not a vehicle type
 				exports.ox_inventory:AddItem(source,v.data.name,v.count,v.data.metadata, false)
@@ -504,9 +524,91 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 			end
 			Wait(500)
 		end
+		local stores = GlobalState.Stores
+		if data.finance and stores[storeowned] then
+			print(data.finance.daily,data.finance.days)
+			local daily = data.finance.daily
+			local days = data.finance.days
+			local finance = {
+				days = days,
+				daily = daily,
+				total = daily * days,
+				owner = stores[storeowned].owner,
+				shop = storeowned,
+				identifier = xPlayer.identifier,
+				bank = xPlayer.getAccount('bank').money
+			}
+			RegisterFinance(finance)
+		end
 		return callback
 	else
 		return 'notenoughmoney'
+	end
+end)
+
+RegisterFinance = function(data)
+	local finance = GlobalState.FinanceData
+	if not finance[data.identifier] then
+		finance[data.identifier] = {max = shared.MaxDebt + data.bank, financed = {}}
+	end
+	if finance[data.identifier].financed then
+		local financedata = {
+			total = data.total,
+			daily = data.daily,
+			shop = data.shop,
+			owner = data.owner,
+			days = data.days
+		}
+		finance[data.identifier].max -= data.total
+		print(financedata,data.total,data.daily,data.shop,data.owner,data.days)
+		table.insert(finance[data.identifier].financed,financedata)
+		GlobalState.FinanceData = finance
+		SetResourceKvp('financedata', json.encode(finance))
+	end
+end
+
+Citizen.CreateThread(function()
+	while true do
+		time = os.date("*t")
+		if time.hour == 0 and time.min == 0 and time.sec == 1 then
+			local finance = GlobalState.FinanceData
+			for debtor,v in pairs(finance) do
+				for k,v in pairs(v.financed) do
+					local xPlayer = GetPlayerFromIdentifier(debtor)
+					if xPlayer then
+						if xPlayer.getAccount('bank').money >= v.daily then
+							xPlayer.removeAccountMoney('bank',v.daily)
+							finance[debtor].max += v.daily
+							finance[debtor].financed[k].total -= v.daily
+							finance[debtor].financed[k].days -= 1
+							if finance[debtor].financed[k].total <= 0 or finance[debtor].financed[k].days == 0 then
+								finance[debtor].financed[k] = nil
+							end
+						else -- penalty fee
+							finance[debtor].max -= finance[debtor].max/10
+							finance[debtor].financed[k].total += v.daily/10
+						end
+					else -- if player is offline
+						local money = GetMoneyFromBankOffline(debtor)
+						if money and tonumber(money) >= v.daily then
+							ModifyFromBankOffline(debtor,v.daily,true)
+							finance[debtor].max += v.daily
+							finance[debtor].financed[k].days -= 1
+							finance[debtor].financed[k].total -= v.daily
+							if finance[debtor].financed[k].total <= 0 or finance[debtor].financed[k].days == 0 then
+								finance[debtor].financed[k] = nil
+							end
+						else -- penalty fee
+							finance[debtor].max -= finance[debtor].max/10
+							finance[debtor].financed[k].total += v.daily/10
+						end
+					end
+				end
+			end
+			SetResourceKvp('financedata', json.encode(finance))
+			GlobalState.FinanceData = finance
+		end
+		Wait(1000)
 	end
 end)
 

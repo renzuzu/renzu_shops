@@ -151,8 +151,8 @@ function plus(cartid,item) {
     totalitem()
 }
 
-function pay(type) {
-    SendData({type:type, items:cart, msg : 'buy'})
+function pay() {
+    SendData({items:cart, msg : 'buy'})
 }
 
 function CloseModal() {
