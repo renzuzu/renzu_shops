@@ -343,22 +343,24 @@ self.StoreManage = function(store)
 						centered = true,
 						cancel = true
 					})
-					local reason = lib.callback.await('renzu_shops:sellstore', false, store)
-					if reason then
-						self.SetNotify({
-							title = 'Store Business',
-							description = store..' has been Sold',
-							type = 'success'
-						})
-						if not shared.target then
-							if self.temporalspheres[store] and self.temporalspheres[store].remove then
-								self.temporalspheres[store]:remove()
-							end
-						else
-							if type(self.temporalspheres[store]) == 'table' and tonumber(self.temporalspheres[store].target) then
-								exports.ox_target:removeZone(self.temporalspheres[store].target)
-							elseif tonumber(self.temporalspheres[store]) then
-								exports.ox_target:removeZone(self.temporalspheres[store])
+					if confirm ~= 'cancel' then
+						local reason = lib.callback.await('renzu_shops:sellstore', false, store)
+						if reason then
+							self.SetNotify({
+								title = 'Store Business',
+								description = store..' has been Sold',
+								type = 'success'
+							})
+							if not shared.target then
+								if self.temporalspheres[store] and self.temporalspheres[store].remove then
+									self.temporalspheres[store]:remove()
+								end
+							else
+								if type(self.temporalspheres[store]) == 'table' and tonumber(self.temporalspheres[store].target) then
+									exports.ox_target:removeZone(self.temporalspheres[store].target)
+								elseif tonumber(self.temporalspheres[store]) then
+									exports.ox_target:removeZone(self.temporalspheres[store])
+								end
 							end
 						end
 					end
