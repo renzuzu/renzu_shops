@@ -3,7 +3,7 @@ return {
 		moneytype = 'money',
 		label = 'General Store #1', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(25.931,-1350.181,29.32), -- owner manage coord
-		cashier = vec3(24.48,-1347.23,29.49), -- cashier coord for robbing or onduty ondemand
+		cashier = vec3(24.11,-1347.37,29.49), -- cashier coord for robbing or onduty ondemand
 		price = 1000000,
 		supplieritem = shared.Storeitems.General,
 	},
@@ -11,7 +11,7 @@ return {
 		moneytype = 'money',
 		label = 'General Store #2', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(-3047.7958984375,585.60412597656,7.90892), -- owner manage coord
-		cashier = vec3(-3038.9069824219,584.55187988281,7.9089), -- cashier coord for robbing or onduty ondemand
+		cashier = vec3(-3039.18,584.10,7.90), -- cashier coord for robbing or onduty ondemand
 		price = 1000000,
 		supplieritem = shared.Storeitems.General,
 	},

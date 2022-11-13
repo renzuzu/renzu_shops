@@ -55,30 +55,28 @@ end
 
 self.lastdata = nil
 self.addTarget = function(coord,msg,callback,server,var,delete,auto)
-	return exports.ox_target:addBoxZone({
-		coords = coord+vec3(0.0,0.0,0.2),
-		size = vec3(1.5, 2, 1.5),
-		rotation = 45,
-		debug = false,
+	return exports.qtarget:AddBoxZone(msg, coord+vec3(0.0,0.0,0.12), 0.99,1.5, {
+		name = msg,
 		drawSprite = true,
+		debugPoly = false,
+		heading = 45,
+		minZ = coord.z-0.5,
+		maxZ = coord.z+1.0,
+	}, {
 		options = {
 			{
-				distance = 1.5,
-				groups = var.shop?.groups,
-				onSelect = function()
+				icon = 'fas fa-shopping-basket',
+				label = msg,
+				job = var.shop?.groups,
+				action = function()
 					self.Active = lib.table.deepclone(var)
 					self.lastdata = var.index
 					self.movabletype = var.type
 					callback(var)
-				end,
-				name = msg,
-				icon = 'fas fa-shopping-basket',
-				label = msg,
-				canInteract = function(entity, distance, coords, name)
-					return true
 				end
-			}
-		}
+			},
+		},
+		distance = 1.5
 	})
 end
 
