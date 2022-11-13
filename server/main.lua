@@ -74,6 +74,12 @@ CreateThread(function()
 	end
 	GlobalState.JobShop = jobshop
 	TryInstallItems()
+	Citizen.CreateThreadNow(function()
+		local success, result = pcall(MySQL.scalar.await,'SELECT `job` FROM `'..vehicletable..'`') -- check if job column is exist
+		if not success then
+			SqlFunc('oxmysql','execute','ALTER TABLE `'..vehicletable..'` ADD COLUMN `job` VARCHAR(32) NULL') -- add job column
+		end
+	end)
 end)
 
 getShopDataByLabel = function(id)
@@ -510,12 +516,6 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 			if data.shop ~= 'VehicleShop' then -- add new item if its not a vehicle type
 				exports.ox_inventory:AddItem(source,v.data.name,v.count,v.data.metadata, false)
 			else -- else if vehicle type add it to player vehicles table
-				if data.groups then -- check if its a job vehicle
-					local success, result = pcall(MySQL.scalar.await,'SELECT `job` FROM `'..vehicletable..'`') -- check if job column is exist
-					if not success then
-						SqlFunc('oxmysql','execute','ALTER TABLE `'..vehicletable..'` ADD COLUMN `job` VARCHAR(32) NULL') -- add job column
-					end
-				end
 				for i = 1, tonumber(v.count) do
 					callback = GenPlate()
 					SqlFunc('oxmysql','execute','INSERT INTO '..vehicletable..' (`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`) VALUES (@plate, @'..vehiclemod..', @'..owner..', @'..stored..', @job)',{
