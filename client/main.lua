@@ -1847,10 +1847,11 @@ self.Handlers = function()
 			end
 			local totalamount = 0
 			for k,v in pairs(data.items) do
-				totalamount += 1
+				totalamount += tonumber(v.count)
 				total = total + tonumber(itemdata[v.data.metadata and v.data.metadata.name or v.data.name].price) * tonumber(v.count)
 			end
 			data.type = self.PaymentMethod({amount = total, total = totalamount, type = self.Active.shop.type}) or self.Active?.shop?.moneytype or 'money'
+			if data.type == 'cancel' then return end
 			local financedata
 			if data.type == 'finance' then
 				finance, financedata = self.Finance({amount = total, total = totalamount, type = self.Active.shop.type})
@@ -3207,7 +3208,7 @@ self.PaymentMethod = function(data)
 	end
 	table.insert(options,{ type = 'select', label = 'Payment Type', options = dropdownmenu })
 	local input = lib.inputDialog('Select Payment', options)
-	return input and input[index]
+	return type(input) == 'table' and input[index] or 'cancel'
 end
 
 self.Finance = function(data) -- simple financing only. since ox_lib input does not return real time  (like the ox_lib menus) changed amount ex. from slider value. so we cant make advanced finance. unless i implement another NEW UI just for this.
