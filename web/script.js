@@ -58,9 +58,6 @@ window.addEventListener('message', function (table) {
         if (lastshop !== event.data.label) { removeall() }
         lastshop = event.data.label
         moneytype = event.data.moneytype || 'money'
-        if (moneytype == 'black_money') {
-            getEl('bank').style.display = 'none'
-        }
         getEl('metadatas').style.display = 'none'
         getEl('money').innerHTML = event.data.wallet[moneytype]
         shoptype = event.data.type
