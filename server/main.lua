@@ -1249,9 +1249,8 @@ lib.callback.register('renzu_shops:ondemandpay', function(source,data)
 end)
 
 local movableentity = {}
-AddStateBagChangeHandler('renzu_shops:playerStateBags' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated) -- replicate Client State
-	Wait(0)
-	local net = tonumber(bagName:gsub('player:', ''), 10)
+
+lib.callback.register('renzu_shops:playerStateBags', function(source,value)
 	local entity = NetworkGetEntityFromNetworkId(value.entity)
 	local state = Entity(entity).state
 	value.data.ts = os.time()
@@ -1264,6 +1263,22 @@ AddStateBagChangeHandler('renzu_shops:playerStateBags' --[[key filter]], nil --[
 		state:set(value.name, nil, true)
 	end
 end)
+
+-- AddStateBagChangeHandler('renzu_shops:playerStateBags' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated) -- replicate Client State
+-- 	Wait(0)
+-- 	local net = tonumber(bagName:gsub('player:', ''), 10)
+-- 	local entity = NetworkGetEntityFromNetworkId(value.entity)
+-- 	local state = Entity(entity).state
+-- 	value.data.ts = os.time()
+-- 	if value.data.bagname == 'player:' then
+-- 		state = Player(tonumber(value.entity)).state
+-- 	end
+-- 	state:set(value.name, value.data, true)
+-- 	if value.data.remove then
+-- 		Wait(2000)
+-- 		state:set(value.name, nil, true)
+-- 	end
+-- end)
 
 AddStateBagChangeHandler('movableentity' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated) -- saves entities from client
 	Wait(0)

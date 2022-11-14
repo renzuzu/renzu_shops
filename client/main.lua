@@ -2366,12 +2366,18 @@ self.SetClientStateBags = function(value)
 	if value.data.bagname == 'player:' then
 		entity = value.entity
 	end
-	LocalPlayer.state:set('renzu_shops:playerStateBags', {
+	-- LocalPlayer.state:set('renzu_shops:playerStateBags', {
+	-- 	entity = entity, 
+	-- 	name = value.name, 
+	-- 	data = value.data,
+	-- 	ts = GetGameTimer()+math.random(1,999)
+	-- }, true)
+	local setState = lib.callback.await('renzu_shops:playerStateBags', false, {
 		entity = entity, 
 		name = value.name, 
 		data = value.data,
 		ts = GetGameTimer()+math.random(1,999)
-	}, true)
+	})
 end
 self.bike = {}
 self.bikecoords = {}
