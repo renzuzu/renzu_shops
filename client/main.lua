@@ -203,7 +203,9 @@ self.Cashier = function(data)
 	local storedata = {index = data.index, type = data.type, offset = data.offset, money = data.moneytype}
 	local options = {}
 	local stores = GlobalState.Stores
-	if self.duty[data.label] and stores[data.label].owner == self.PlayerData.identifier then
+	if self.duty[data.label] and stores[data.label].owner == self.PlayerData.identifier
+	or stores[data.label] and stores[data.label]?.employee[self.PlayerData.identifier]
+	or stores[data.label]?.job == self.PlayerData.job.name then
 		local cashier = stores[data.label].cashier and stores[data.label].cashier[data.moneytype] or 0
 		table.insert(options,{
 			title = 'Withdraw Money from Cashier',
@@ -240,7 +242,9 @@ self.Cashier = function(data)
 				self.OnDemand(data,'store',storedata)
 			end
 		})
-	elseif not self.duty[data.label] and stores[data.label] and stores[data.label].owner == self.PlayerData.identifier then
+	elseif not self.duty[data.label] and stores[data.label] and stores[data.label].owner == self.PlayerData.identifier
+		or stores[data.label] and stores[data.label]?.employee[self.PlayerData.identifier]
+		or stores[data.label]?.job == self.PlayerData.job.name then
 		table.insert(options,{
 			title = 'Duty On & Ondemand Selling',
 			description = 'Duty as a Store Clerk : Start Ondemand Selling',
@@ -289,14 +293,6 @@ self.Cashier = function(data)
 							type = 'error'
 						})
 					end
-					-- local reason = lib.callback.await('renzu_shops:editstore', false, {store = data.label, type = 'withdraw_cashier', item = data.moneytype, value = value})
-					-- if reason == 'success' then
-					-- 	self.SetNotify({
-					-- 		title = 'Store Business',
-					-- 		description = 'Successfully Withdraw '..value..'$',
-					-- 		type = 'success'
-					-- 	})
-					-- end
 				end
 			end
 		})
