@@ -33,69 +33,69 @@ function GetPlayerFromId(src)
 	if shared.framework == 'ESX' then
 		return ESX.GetPlayerFromId(self.src)
 	elseif shared.framework == 'QBCORE' then
-		Player = QBCore.Functions.GetPlayer(self.src)
-		if not Player then return end
-		if Player.identifier == nil then
-			Player.identifier = Player.PlayerData.license
+		xPlayer = QBCore.Functions.GetPlayer(self.src)
+		if not xPlayer then return end
+		if xPlayer.identifier == nil then
+			xPlayer.identifier = xPlayer.PlayerData.license
 		end
-		if Player.citizenid == nil then
-			Player.citizenid = Player.PlayerData.citizenid
+		if xPlayer.citizenid == nil then
+			xPlayer.citizenid = xPlayer.PlayerData.citizenid
 		end
-		if Player.job == nil then
-			Player.job = Player.PlayerData.job
+		if xPlayer.job == nil then
+			xPlayer.job = xPlayer.PlayerData.job
 		end
 
-		Player.getMoney = function(value)
-			return Player.PlayerData.money['cash']
+		xPlayer.getMoney = function(value)
+			return xPlayer.PlayerData.money['cash']
 		end
-		Player.addMoney = function(value)
+		xPlayer.addMoney = function(value)
 				QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney('cash',tonumber(value))
 			return true
 		end
-		Player.addAccountMoney = function(type, value)
+		xPlayer.addAccountMoney = function(type, value)
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney(type,tonumber(value))
 			return true
 		end
-		Player.removeMoney = function(value)
+		xPlayer.removeMoney = function(value)
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney('cash',tonumber(value))
 			return true
 		end
-		Player.getAccount = function(type)
+		xPlayer.getAccount = function(type)
 			if type == 'money' then
 				type = 'cash'
 			end
-			return {money = Player.PlayerData.money[type]}
+			return {money = xPlayer.PlayerData.money[type]}
 		end
-		Player.removeAccountMoney = function(type,val)
+		xPlayer.removeAccountMoney = function(type,val)
 			if type == 'money' then
 				type = 'cash'
 			end
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney(type,tonumber(val))
 			return true
 		end
-		Player.showNotification = function(msg)
+		xPlayer.showNotification = function(msg)
 			TriggerEvent('QBCore:Notify',self.src, msg)
 			return true
 		end
-		Player.addInventoryItem = function(item,amount,info,slot)
+		xPlayer.addInventoryItem = function(item,amount,info,slot)
 			local info = info
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddItem(item,amount,slot or false,info)
 		end
-		Player.removeInventoryItem = function(item,amount,slot)
+		xPlayer.removeInventoryItem = function(item,amount,slot)
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveItem(item, amount, slot or false)
 		end
-		Player.getInventoryItem = function(item)
+		xPlayer.getInventoryItem = function(item)
 			local gi = QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.GetItemByName(item) or {count = 0}
 			gi.count = gi.amount or 0
 			return gi
 		end
-		Player.getGroup = function()
+		xPlayer.getGroup = function()
 			return QBCore.Functions.IsOptin(self.src)
 		end
-		if Player.source == nil then
-			Player.source = self.src
+		if xPlayer.source == nil then
+			xPlayer.source = self.src
 		end
-		return Player
+		return xPlayer
 	end
 end
 
@@ -104,9 +104,9 @@ Inventory.AddItem = function(source,item,count,metadata,slot)
 		return exports.ox_inventory:AddItem(source,item,count,metadata,slot)
 	else
 		if item == 'money' then
-			local Player = GetPlayerFromId(source)
+			local xPlayer = GetPlayerFromId(source)
 
-			if not Player then 
+			if not xPlayer then 
 				if not tonumber(source) then
 					source = source:gsub('Hotdog:','')
 					source = source:gsub('Burger:','')
@@ -115,7 +115,7 @@ Inventory.AddItem = function(source,item,count,metadata,slot)
 				end
 				return
 			end
-			Player.addMoney(count)
+			xPlayer.addMoney(count)
 		else
 			local added = exports['qb-inventory']:AddItem(source, item, count, slot, metadata)
 			if not added then
@@ -134,14 +134,14 @@ Inventory.RemoveItem = function(source,item,count,metadata,slot)
 		return exports.ox_inventory:RemoveItem(source, item, count, metadata, slot)
 	else
 		if item == 'money' then
-			local Player = GetPlayerFromId(source)
+			local xPlayer = GetPlayerFromId(source)
 			if not tonumber(source) then
 				source = source:gsub('Hotdog:','')
 				source = source:gsub('Burger:','')
 				source = source:gsub('Taco:','')
 				GetPlayerFromIdentifier(source).removeMoney('money',count)
 			end
-			Player.removeMoney(count)
+			xPlayer.removeMoney(count)
 		else
 			local removed = exports['qb-inventory']:RemoveItem(source, item, count, slot, metadata) 
 			if not removed then
