@@ -1,6 +1,8 @@
 ESX,QBCORE = nil, nil
 shared = {}
 shared.framework = 'ESX' -- ESX || QBCORE
+shared.inventory = 'ox_inventory' -- 'ox_inventory' or 'qb-inventory' -- QBCORE is BETA and WIP, will only work with my qb-inventory forked https://github.com/renzuzu/qb-inventory
+
 -- use ox_inventory Shops UI (experimental feature) only with my forked ox_inventory REPO https://github.com/renzuzu/ox_inventory
 shared.oxShops = false -- if true this resource will use ox_inventory Shops UI instead of built in UI
 shared.allowplayercreateitem = false -- if false only admin can create new items via /stores
@@ -111,6 +113,13 @@ if not IsDuplicityVersion() then
 	Shops = setmetatable(Shops, {
 		__call = function(self)
 			self = request('client/main')
+			self.ImagesPath = function(item)
+				if shared.inventory == 'ox_inventory' then
+					return 'https://cfx-nui-ox_inventory/web/images/'..item..'.png'
+				else
+					return 'https://cfx-nui-qb-inventory/html/images/'..item..'.png'
+				end
+			end
 			self.LoadJobShops = function()
 				for k,zones in pairs(self.JobSpheres) do
 					if zones then
@@ -124,7 +133,7 @@ if not IsDuplicityVersion() then
 				local jobshop = GlobalState.JobShop
 				for k,shops in pairs(shared.OwnedShops) do
 					for k,shop in pairs(shops) do
-						if jobshop[shop.label] == self.PlayerData.job?.name then
+						if self.PlayerData and self.PlayerData.job and jobshop[shop.label] == self.PlayerData.job?.name then
 							if not shared.target then
 								self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 								self.JobSpheres[self.PlayerData.job?.name] = self.temporalspheres[shop.label]
@@ -145,17 +154,16 @@ if not IsDuplicityVersion() then
 					end)
 				elseif shared.framework == 'QBCORE' then
 					RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-						QBCore.Functions.GetPlayerData(function(p)
-							self.PlayerData = p
-							self.LoadShops()
-							self.LoadJobShops()
-							if PlayerData.job ~= nil then
-								self.PlayerData.job.grade = self.PlayerData.job.grade.level
-							end
-							if PlayerData.identifier == nil then
-								self.PlayerData.identifier = self.PlayerData.license
-							end
-						end)
+						Wait(1500)
+						self.PlayerData = QBCore.Functions.GetPlayerData()
+						if self.PlayerData.job ~= nil then
+							self.PlayerData.job.grade = self.PlayerData.job.grade.level
+						end
+						if self.PlayerData.identifier == nil then
+							self.PlayerData.identifier = self.PlayerData.license
+						end
+						self.LoadShops()
+						self.LoadJobShops()
 					end)
 				end
 			end
@@ -164,11 +172,14 @@ if not IsDuplicityVersion() then
 				if shared.framework == 'ESX' then
 					return ESX.GetPlayerData()
 				else
-					local data = promise:new()
-					QBCore.Functions.GetPlayerData(function(playerdata)
-						data:resolve(playerdata)
-					end)
-					return Citizen.Await(data)
+					local Player = QBCore.Functions.GetPlayerData()
+					if Player.job ~= nil then
+						Player.job.grade = Player.job.grade.level
+					end
+					if Player.identifier == nil then
+						Player.identifier = Player.license
+					end
+					return Player
 				end
 			end
 			

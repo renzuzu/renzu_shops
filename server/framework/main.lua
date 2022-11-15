@@ -2,7 +2,7 @@ if shared.framework == 'ESX' then
 	vehicletable = 'owned_vehicles'
 	vehiclemod = 'vehicle'
 elseif shared.framework == 'QBCORE' then
-	vehicletable = 'player_vehicles '
+	vehicletable = 'player_vehicles'
 	vehiclemod = 'mods'
 	owner = 'license'
 	stored = 'state'
@@ -33,68 +33,124 @@ function GetPlayerFromId(src)
 	if shared.framework == 'ESX' then
 		return ESX.GetPlayerFromId(self.src)
 	elseif shared.framework == 'QBCORE' then
-		selfcore = {}
-		selfcore.data = QBCore.Functions.GetPlayer(self.src)
-		if selfcore.data.identifier == nil then
-			selfcore.data.identifier = selfcore.data.PlayerData.license
+		Player = QBCore.Functions.GetPlayer(self.src)
+		if not Player then return end
+		if Player.identifier == nil then
+			Player.identifier = Player.PlayerData.license
 		end
-		if selfcore.data.citizenid == nil then
-			selfcore.data.citizenid = selfcore.data.PlayerData.citizenid
+		if Player.citizenid == nil then
+			Player.citizenid = Player.PlayerData.citizenid
 		end
-		if selfcore.data.job == nil then
-			selfcore.data.job = selfcore.data.PlayerData.job
+		if Player.job == nil then
+			Player.job = Player.PlayerData.job
 		end
 
-		selfcore.data.getMoney = function(value)
-			return selfcore.data.PlayerData.money['cash']
+		Player.getMoney = function(value)
+			return Player.PlayerData.money['cash']
 		end
-		selfcore.data.addMoney = function(value)
+		Player.addMoney = function(value)
 				QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney('cash',tonumber(value))
 			return true
 		end
-		selfcore.data.addAccountMoney = function(type, value)
+		Player.addAccountMoney = function(type, value)
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney(type,tonumber(value))
 			return true
 		end
-		selfcore.data.removeMoney = function(value)
+		Player.removeMoney = function(value)
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney('cash',tonumber(value))
 			return true
 		end
-		selfcore.data.getAccount = function(type)
+		Player.getAccount = function(type)
 			if type == 'money' then
 				type = 'cash'
 			end
-			return {money = selfcore.data.PlayerData.money[type]}
+			return {money = Player.PlayerData.money[type]}
 		end
-		selfcore.data.removeAccountMoney = function(type,val)
+		Player.removeAccountMoney = function(type,val)
 			if type == 'money' then
 				type = 'cash'
 			end
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney(type,tonumber(val))
 			return true
 		end
-		selfcore.data.showNotification = function(msg)
+		Player.showNotification = function(msg)
 			TriggerEvent('QBCore:Notify',self.src, msg)
 			return true
 		end
-		selfcore.data.addInventoryItem = function(item,amount,info,slot)
+		Player.addInventoryItem = function(item,amount,info,slot)
 			local info = info
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddItem(item,amount,slot or false,info)
 		end
-		selfcore.data.removeInventoryItem = function(item,amount,slot)
+		Player.removeInventoryItem = function(item,amount,slot)
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveItem(item, amount, slot or false)
 		end
-		selfcore.data.getInventoryItem = function(item)
+		Player.getInventoryItem = function(item)
 			local gi = QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.GetItemByName(item) or {count = 0}
 			gi.count = gi.amount or 0
 			return gi
 		end
-		selfcore.data.getGroup = function()
+		Player.getGroup = function()
 			return QBCore.Functions.IsOptin(self.src)
 		end
-		if selfcore.data.source == nil then
-			selfcore.data.source = self.src
+		if Player.source == nil then
+			Player.source = self.src
 		end
-		return selfcore.data
+		return Player
+	end
+end
+
+Inventory.AddItem = function(source,item,count,metadata,slot)
+	if shared.inventory == 'ox_inventory' then
+		return exports.ox_inventory:AddItem(source,item,count,metadata,slot)
+	else
+		if item == 'money' then
+			local Player = GetPlayerFromId(source)
+
+			if not Player then 
+				if not tonumber(source) then
+					source = source:gsub('Hotdog:','')
+					source = source:gsub('Burger:','')
+					source = source:gsub('Taco:','')
+					GetPlayerFromIdentifier(source).addAccountMoney('money',count)
+				end
+				return
+			end
+			Player.addMoney(count)
+		else
+			local added = exports['qb-inventory']:AddItem(source, item, count, slot, metadata)
+			if not added then
+				if not slot then
+					local stash = exports['qb-inventory']:GetStashItems(source)
+					slot = exports['qb-inventory']:GetFirstSlotByItem(stash, item, info)
+				end
+				exports['qb-inventory']:AddToStash(source, slot, otherslot, item, count, metadata)
+			end
+		end
+	end
+end
+
+Inventory.RemoveItem = function(source,item,count,metadata,slot)
+	if shared.inventory == 'ox_inventory' then
+		return exports.ox_inventory:RemoveItem(source, item, count, metadata, slot)
+	else
+		if item == 'money' then
+			local Player = GetPlayerFromId(source)
+			if not tonumber(source) then
+				source = source:gsub('Hotdog:','')
+				source = source:gsub('Burger:','')
+				source = source:gsub('Taco:','')
+				GetPlayerFromIdentifier(source).removeMoney('money',count)
+			end
+			Player.removeMoney(count)
+		else
+			local removed = exports['qb-inventory']:RemoveItem(source, item, count, slot, metadata) 
+			if not removed then
+				if not slot then
+					local stash = exports['qb-inventory']:GetStashItems(source)
+					slot = exports['qb-inventory']:GetFirstSlotByItem(stash, item, info)
+				end
+				exports['qb-inventory']:RemoveFromStash(source, slot, item, count, metadata) 
+			end
+		end
 	end
 end

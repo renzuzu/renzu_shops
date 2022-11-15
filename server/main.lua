@@ -3,6 +3,7 @@ GlobalState.Stores = json.decode(GetResourceKvpString('renzu_stores') or '[]') o
 GlobalState.MovableShops = json.decode(GetResourceKvpString('movableshops') or '[]') or {}
 GlobalState.FinanceData = json.decode(GetResourceKvpString('financedata') or '[]') or {}
 GlobalState.JobShop = {}
+Inventory = {}
 local Items = {}
 local purchaseorders = {}
 vehicletable = 'owned_vehicles'
@@ -49,7 +50,7 @@ CreateThread(function()
 				end
 			end
 		end
-	else -- if above condition is not possible , we will override ox_inventory shops
+	elseif shared.inventory == 'ox_inventory' then -- if above condition is not possible , we will override ox_inventory shops
 		for k,v in pairs(shared.Shops) do -- overide default ox inventory shops. temporary logic
 			exports.ox_inventory:RegisterShop(k, {
 				name = k, 
@@ -62,7 +63,7 @@ CreateThread(function()
 			})
 		end
 	end
-	local items = exports.ox_inventory:Items()
+	local items = Inventory.GetItems()
 	for k,v in pairs(items) do
 		Items[v.name] = v.label
 	end
@@ -81,6 +82,49 @@ CreateThread(function()
 		end
 	end)
 end)
+
+Inventory.SearchItems = function(source, method, item)
+	if shared.inventory == 'ox_inventory' then
+		return exports.ox_inventory:Search(source, method, item)
+	else
+		local Player = QBCore.Functions.GetPlayer(source)
+		local items = {}
+		if not Player then
+			items = exports['qb-inventory']:GetStashItems(source)
+			if not items then return {} end
+		else
+			items = Player.PlayerData.items
+		end
+		local count = 0
+		if method == 'count' then
+			for k,v in pairs(items) do
+				if item == v.name then
+					count += 1
+				end
+			end
+			return count
+		else
+			local data = {}
+			for k,v in pairs(items) do
+				if item == v.name then
+					v.count = v.amount
+					v.metadata = v.info
+					v.slot = k
+					data[k] = v
+				end
+			end
+			return data
+		end
+	end
+end
+
+Inventory.GetItems = function()
+	if GetResourceState('ox_inventory') ~= 'started' then
+		return QBCore.Shared.Items
+	else
+		return exports.ox_inventory:Items()
+	end
+end
 
 getShopDataByLabel = function(id)
 	local stores = GlobalState.Stores
@@ -124,7 +168,7 @@ CheckItemData = function(data)
 	return false
 end
 
-if not shared.oxShops then
+if not shared.oxShops and shared.inventory == 'ox_inventory' then
 	lib.callback.register('ox_inventory:openShop', function(source, data)
 		TriggerClientEvent('renzu_shop:OpenShops',source, {type = data.type, id = data.id})
 		SetTimeout(1,function()
@@ -134,28 +178,31 @@ if not shared.oxShops then
 	end)
 end
 
-exports.ox_inventory:registerHook('buyItem', function(payload)
-	if not shared.oxShops then return end
-	local data = payload
-	local conf = shared.OwnedShops[data.ShopName]
-	local stores = GlobalState.Stores
-	data.ShopIndex = tonumber(data.ShopIndex)
-	if conf then
-		local store = conf[data.ShopIndex] and conf[data.ShopIndex].label
-		local name = data.metadata and data.metadata.name or data.item
-		if stores[store] then
-			RemoveStockFromStore({shop = data.ShopName, metadata = data.metadata, index = data.ShopIndex, item = data.item, amount = tonumber(data.count), price = data.price, money = data.currency})
+if shared.inventory == 'ox_inventory' then
+	exports.ox_inventory:registerHook('buyItem', function(payload)
+		if not shared.oxShops then return end
+		local data = payload
+		local conf = shared.OwnedShops[data.ShopName]
+		local stores = GlobalState.Stores
+		data.ShopIndex = tonumber(data.ShopIndex)
+		if conf then
+			local store = conf[data.ShopIndex] and conf[data.ShopIndex].label
+			local name = data.metadata and data.metadata.name or data.item
+			if stores[store] then
+				RemoveStockFromStore({shop = data.ShopName, metadata = data.metadata, index = data.ShopIndex, item = data.item, amount = tonumber(data.count), price = data.price, money = data.currency})
+			end
 		end
-	end
-end)
+	end)
+end
 
-ModifyFromBankOffline = function(id,amount,minus)
+ModifyFromBankOffline = function(id,amount,minus,type)
+	if type == nil then type = 'bank' end
 	local result = SqlFunc('oxmysql','fetchAll','SELECT '..playeraccounts..' FROM '..playertable..' WHERE '..playeridentifier..' = ?', { id })
 	local accounts = json.decode(result[1][playeraccounts])
 	if not minus then
-		accounts.bank += amount
+		accounts[type] += amount
 	else
-		accounts.bank -= amount
+		accounts[type] -= amount
 	end
 	SqlFunc('oxmysql','execute','UPDATE '..playertable..' SET '..playeraccounts..' = ? WHERE '..playeridentifier..' = ?', {json.encode(accounts), id})
 end
@@ -228,9 +275,9 @@ RemoveStockFromStash = function(data)
 	data.items = items
 	local stash = GetStashData(data)
 	if stash[data.metadata and data.metadata.name or data.item] >= data.amount then
-		exports.ox_inventory:RemoveItem(data.identifier, data.item, data.amount, data.metadata) -- remove item from stash inventory
+		Inventory.RemoveItem(data.identifier, data.item, data.amount, data.metadata) -- remove item from stash inventory
 		if data.addmoney then
-			exports.ox_inventory:AddItem(data.identifier, data.money, data.price * data.amount) -- add money directly to stash inventory
+			Inventory.AddItem(data.identifier, data.money, data.price * data.amount) -- add money directly to stash inventory
 		end
 		return true
 	end
@@ -395,7 +442,7 @@ lib.callback.register('renzu_shops:removestock', function(source,data)
 	if storeowned then
 		local removed = RemoveStockFromStore({shop = data.type, metadata = data.metadata, index = data.index, item = data.name, amount = tonumber(data.count), price = data.price, money = data.money:lower()})
 		if removed and data.citizen then
-			exports.ox_inventory:AddItem(data.citizen, data.name, data.count, data.metadata) -- add money directly to stash inventory
+			Inventory.AddItem(data.citizen, data.name, data.count, data.metadata) -- add money directly to stash inventory
 			return true
 		elseif removed then
 			return true
@@ -514,7 +561,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 				RemoveStockFromStash({addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, type = data.index, money = moneytype:lower()})
 			end
 			if data.shop ~= 'VehicleShop' then -- add new item if its not a vehicle type
-				exports.ox_inventory:AddItem(source,v.data.name,v.count,v.data.metadata, false)
+				Inventory.AddItem(source,v.data.name,v.count,v.data.metadata, false)
 			else -- else if vehicle type add it to player vehicles table
 				for i = 1, tonumber(v.count) do
 					callback = GenPlate()
@@ -533,7 +580,6 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 		end
 		local stores = GlobalState.Stores
 		if storeowned and data.finance and stores[storeowned] then
-			print(data.finance.daily,data.finance.days)
 			local daily = data.finance.daily
 			local days = data.finance.days
 			local finance = {
@@ -567,7 +613,6 @@ RegisterFinance = function(data)
 			days = data.days
 		}
 		finance[data.identifier].max -= data.total
-		print(financedata,data.total,data.daily,data.shop,data.owner,data.days)
 		table.insert(finance[data.identifier].financed,financedata)
 		GlobalState.FinanceData = finance
 		SetResourceKvp('financedata', json.encode(finance))
@@ -771,12 +816,12 @@ lib.callback.register("renzu_shops:robstore", function(source,data)
 		local stores = GlobalState.Stores
 		if not stores[data.store] then -- if store is not owned
 			local amount = math.random(15000,30000)
-			exports.ox_inventory:AddItem(source, data.item, amount)
+			Inventory.AddItem(source, data.item, amount)
 			return true
 		else -- if store is owned by player
 			local money = stores[data.store].cashier[data.item] or 0
 			stores[data.store].cashier[data.item] = 0
-			exports.ox_inventory:AddItem(source, data.item, money)
+			Inventory.AddItem(source, data.item, money)
 			GlobalState.Stores = stores
 			return true
 		end
@@ -799,7 +844,7 @@ GetStashData = function(data)
 			item = v.metadata.name
 			metadata = true
 		end
-		local data = exports.ox_inventory:Search(data.identifier, 'slots', v.name)
+		local data = Inventory.SearchItems(data.identifier, 'slots', v.name)
 		result[item] = 0
 		if data then
 			for k,v in pairs(data) do
@@ -824,7 +869,7 @@ lib.callback.register("renzu_shops:getStashData", function(source,data)
 end)
 
 GetItemCountSingle = function(item,source)
-	return exports.ox_inventory:Search(source,'count', item)
+	return Inventory.SearchItems(source,'count', item)
 end
 
 lib.callback.register("renzu_shops:craftitem", function(source,data)
@@ -843,10 +888,10 @@ lib.callback.register("renzu_shops:craftitem", function(source,data)
 			end
 			if haverequired then
 				for k,v in pairs(v.ingredients or {}) do
-					exports.ox_inventory:RemoveItem(inventoryid, k, v, nil)
+					Inventory.RemoveItem(inventoryid, k, v, nil)
 				end
 				if not data.dontreceive then
-					exports.ox_inventory:AddItem(inventoryid, v.name, 1, v.metadata or {})
+					Inventory.AddItem(inventoryid, v.name, 1, v.metadata or {})
 				end
 			end
 		elseif v.metadata and not v.metadata.name and v.name == data.item or not v.metadata and v.name == data.item then
@@ -858,10 +903,10 @@ lib.callback.register("renzu_shops:craftitem", function(source,data)
 			end
 			if haverequired then
 				for k,v in pairs(v.ingredients) do
-					exports.ox_inventory:RemoveItem(inventoryid, k, v, nil)
+					Inventory.RemoveItem(inventoryid, k, v, nil)
 				end
 				if not data.dontreceive then
-					exports.ox_inventory:AddItem(inventoryid, v.name, 1, nil)
+					Inventory.AddItem(inventoryid, v.name, 1, nil)
 				end
 			end
 		end
@@ -872,7 +917,11 @@ lib.callback.register("renzu_shops:getmovableshopdata", function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
 	local identifier = data.type..':'..xPlayer.identifier
-	exports.ox_inventory:RegisterStash(identifier, data.type, 40, 40000, false)
+	if shared.inventory == 'ox_inventory' then
+		exports.ox_inventory:RegisterStash(identifier, data.type, 40, 40000, false)
+	elseif shared.inventory == 'qb-inventory' then
+		exports['qb-inventory']:RegisterStash(identifier)
+	end
 	return GlobalState.MovableShops[identifier]
 end)
 
@@ -926,7 +975,11 @@ AddEventHandler('entityCreated', function(entity)
 				Wait(1)
 				ent:set('movableshop', {identifier = identifier, type = v.shopname, selling = true}, true)
 				ent:set('movableshopspawned', {identifier = v.identifier, type = v.shopname}, true)
-				exports.ox_inventory:RegisterStash(identifier, v.shopname, 40, 40000, false)
+				if shared.inventory == 'ox_inventory' then
+					exports.ox_inventory:RegisterStash(identifier, v.shopname, 40, 40000, false)
+				elseif shared.inventory == 'qb-inventory' then
+					exports['qb-inventory']:RegisterStash(identifier)
+				end
 			end
 		end
 	end
@@ -1111,7 +1164,7 @@ AddStockstoStore = function(data)
 end
 
 GetItemCount = function(item,metadata,source) -- temporary until ox search functions works correctly as i am having issues getting correct results with search with the metadata table or strings, bite me
-	local data = exports.ox_inventory:Search(source, 'slots', item)
+	local data = Inventory.SearchItems(source, 'slots', item)
 	local count = 0
 	for k,v in pairs(data) do
 		if v.metadata and v.metadata.name == metadata then -- our identifier to identify custom items
@@ -1147,10 +1200,10 @@ lib.callback.register('renzu_shops:editstore', function(source,data)
 		if data.metadata and data.metadata.name then
 			count = GetItemCount(data.item,data.metadata.name,source)
 		else
-			count = exports.ox_inventory:Search(source, 'count', data.item)
+			count = Inventory.SearchItems(source, 'count', data.item)
 		end
 		if tonumber(data.value) and count >= data.value and data.value > 0 then
-			exports.ox_inventory:RemoveItem(source, data.item, data.value, data.metadata and data.metadata.name and data.metadata or nil, slot)
+			Inventory.RemoveItem(source, data.item, data.value, data.metadata and data.metadata.name and data.metadata or nil, slot)
 			if stores[data.store].items[itemtype][itemname] == nil then stores[data.store].items[itemtype][itemname] = {} end
 			local stock = stores[data.store].items[itemtype][itemname].stock
 			if not stock then stores[data.store].items[itemtype][itemname].stock = 0 end
@@ -1172,7 +1225,7 @@ lib.callback.register('renzu_shops:editstore', function(source,data)
 			stores[data.store].items[itemtype][itemname].stock = tonumber(stores[data.store].items[itemtype][itemname].stock) - data.value
 			SetResourceKvp('renzu_stores', json.encode(stores))
 			GlobalState.Stores = stores
-			exports.ox_inventory:AddItem(source, data.item, data.value, data.metadata or {})
+			Inventory.AddItem(source, data.item, data.value, data.metadata or {})
 			if canregister and shared.oxShops then
 				local name, index, storedata = getShopDataByLabel(data.store)
 				SetOxInvShopStock({name = name, index = index, item = itemname, value = -data.value})
@@ -1243,13 +1296,12 @@ lib.callback.register('renzu_shops:ondemandpay', function(source,data)
 		end
 		if total > 0 then
 			purchaseorders[source] = nil
-			exports.ox_inventory:AddItem(source, 'money', total)
+			Inventory.AddItem(source, 'money', total)
 		end
 	end
 end)
 
 local movableentity = {}
-
 lib.callback.register('renzu_shops:playerStateBags', function(source,value)
 	local entity = NetworkGetEntityFromNetworkId(value.entity)
 	local state = Entity(entity).state
@@ -1264,27 +1316,11 @@ lib.callback.register('renzu_shops:playerStateBags', function(source,value)
 	end
 end)
 
--- AddStateBagChangeHandler('renzu_shops:playerStateBags' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated) -- replicate Client State
--- 	Wait(0)
--- 	local net = tonumber(bagName:gsub('player:', ''), 10)
--- 	local entity = NetworkGetEntityFromNetworkId(value.entity)
--- 	local state = Entity(entity).state
--- 	value.data.ts = os.time()
--- 	if value.data.bagname == 'player:' then
--- 		state = Player(tonumber(value.entity)).state
--- 	end
--- 	state:set(value.name, value.data, true)
--- 	if value.data.remove then
--- 		Wait(2000)
--- 		state:set(value.name, nil, true)
--- 	end
--- end)
-
 AddStateBagChangeHandler('movableentity' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated) -- saves entities from client
 	Wait(0)
 	local net = tonumber(bagName:gsub('player:', ''), 10)
 	if not movableentity[net] then movableentity[net] = {} end
-	table.insert(movableentity[net],value)
+	table.insert(movableentity[net],value.nets)
 end)
 
 RegisterCommand('delmov', function(source, args)
@@ -1296,7 +1332,7 @@ AddStateBagChangeHandler('createpurchaseorder' --[[key filter]], nil --[[bag fil
 	Wait(0)
 	local net = tonumber(bagName:gsub('player:', ''), 10)
 	if not value then return end
-	purchaseorders[net] = value
+	purchaseorders[net] = value.purchase
 end)
 
 DeletePlayerMovableEntity = function(src, all) -- Delete Entities owned by player

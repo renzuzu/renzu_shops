@@ -12,10 +12,17 @@ self.PlayerData = {}
 self.JobSpheres = {}
 self.StartUp = function()
 	self.PlayerData = self.GetPlayerData()
+	self.GetItems = function()
+		if GetResourceState('ox_inventory') ~= 'started' then
+			return QBCore.Shared.Items
+		else
+			return exports.ox_inventory:Items()
+		end
+	end
 	Citizen.CreateThread(function()
 		player = LocalPlayer.state
 		Wait(2000)
-		itemLists = exports.ox_inventory:Items()
+		itemLists = self.GetItems()
 		for k,v in pairs(itemLists) do
 			self.Items[v.name] = v.label
 		end
@@ -55,7 +62,7 @@ end
 
 self.lastdata = nil
 self.addTarget = function(coord,msg,callback,server,var,delete,auto)
-	return exports.qtarget:AddBoxZone(msg, coord+vec3(0.0,0.0,0.12), 0.99,1.5, {
+	return exports.qtarget:AddBoxZone(msg, coord+vec3(0.0,0.0,0.12), 1.09,1.6, {
 		name = msg,
 		drawSprite = true,
 		debugPoly = false,
@@ -124,7 +131,7 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 				data:remove()
 			end
 			callback(data.var)
-			while LocalPlayer.state.invOpen and callback == self.OpenShop do
+			while LocalPlayer.state.invOpen and callback == self.OpenShop and shared.inventory == 'ox_inventory' do
 				TriggerEvent('ox_inventory:closeInventory')
 				Wait(10)
 			end
@@ -510,7 +517,7 @@ self.EmployeeManage = function(store)
 			description = 'Add nearby citizen to your employee list',
 			arrow = true,
 			onSelect = function(args)
-				local players = lib.getNearbyPlayers(cache.coords, 50.0, true)
+				local players = lib.getNearbyPlayers(GetEntityCoords(cache.ped), 50.0, true)
 				self.AddEmployee({players = players, store = store})
 			end
 		},
@@ -1562,7 +1569,20 @@ self.Closeui = function()
 end
 
 self.GetItemCount = function(item)
-	return exports.ox_inventory:Search('count', item)
+	if shared.inventory == 'ox_inventory' then
+		return exports.ox_inventory:Search('count', item)
+	else
+		local items = {}
+		for k,v in pairs(QBCore.Functions.GetPlayerData().items) do
+			if item == v.name then
+				v.count = v.amount
+				v.metadata = v.info
+				v.slot = k
+				items[k] = v
+			end
+		end
+		return items
+	end
 end
 
 self.worldoffset = {}
@@ -2183,7 +2203,12 @@ self.MovableShopStart = function(data)
 	end
 	local nets = {}
 	table.insert(nets,NetworkGetNetworkIdFromEntity(self.movableentity[self.movabletype]))
-	LocalPlayer.state:set('movableentity',nets,true)
+	--LocalPlayer.state:set('movableentity',nets,true)
+	self.SetClientStateBags({
+		entity = GetPlayerServerId(PlayerId()), 
+		name = 'movableentity', 
+		data = {bagname = 'player:', nets = nets},
+	})
 	local identifier = self.movabletype..':'..self.PlayerData.identifier
 	self.SetClientStateBags({
 		entity = self.movableentity[self.movabletype], 
@@ -2366,18 +2391,18 @@ self.SetClientStateBags = function(value)
 	if value.data.bagname == 'player:' then
 		entity = value.entity
 	end
-	-- LocalPlayer.state:set('renzu_shops:playerStateBags', {
-	-- 	entity = entity, 
-	-- 	name = value.name, 
-	-- 	data = value.data,
-	-- 	ts = GetGameTimer()+math.random(1,999)
-	-- }, true)
 	local setState = lib.callback.await('renzu_shops:playerStateBags', false, {
 		entity = entity, 
 		name = value.name, 
 		data = value.data,
 		ts = GetGameTimer()+math.random(1,999)
 	})
+	-- LocalPlayer.state:set('renzu_shops:playerStateBags', {
+	-- 	entity = entity, 
+	-- 	name = value.name, 
+	-- 	data = value.data,
+	-- 	ts = GetGameTimer()+math.random(1,999)
+	-- }, true)
 end
 self.bike = {}
 self.bikecoords = {}
@@ -2457,7 +2482,13 @@ self.OpenMovableShop = function(data)
 		arrow = true,
 		onSelect = function(args)
 			local identifier = self.movabletype..':'..self.PlayerData.identifier
-			TriggerEvent('ox_inventory:openInventory', 'stash', {id = identifier, name = self.movabletype, slots = 40, weight = 40000, coords = GetEntityCoords(self.movableentity[self.movabletype])})
+			if shared.inventory == 'ox_inventory' then
+				TriggerEvent('ox_inventory:openInventory', 'stash', {id = identifier, name = self.movabletype, slots = 40, weight = 40000, coords = GetEntityCoords(self.movableentity[self.movabletype])})
+			elseif shared.inventory == 'qb-inventory' then
+				TriggerServerEvent('inventory:server:OpenInventory', 'stash', identifier, {})
+				TriggerServerEvent("InteractSound_SV:PlayOnSource", "StashOpen", 0.4)
+				TriggerEvent("inventory:client:SetCurrentStash", identifier)
+			end
 		end
 	})
 	table.insert(options,{
@@ -2750,9 +2781,14 @@ self.CreateOndemandOrder = function(items,ped,type,storedata)
 	end
 	local message = ''
 	for k,v in pairs(self.purchaseorder) do
-		message = message..'<img src="https://cfx-nui-ox_inventory/web/images/'..v.img..'.png" style="height:40px; width:40px;"> i want 1x of '..v.label..' <br>'
+		message = message..'<img src="'..self.ImagesPath(v.img)..'" style="height:40px; width:40px;"> i want 1x of '..v.label..' <br>'
 	end
-	LocalPlayer.state:set('createpurchaseorder', self.purchaseorder, true)
+	--LocalPlayer.state:set('createpurchaseorder', self.purchaseorder, true)
+	self.SetClientStateBags({
+		entity = GetPlayerServerId(PlayerId()), 
+		name = 'createpurchaseorder', 
+		data = {bagname = 'player:', purchase = self.purchaseorder}
+	})
 	local wait_time = math.random(20000,40000)
 	self.CreateBubbleSpeechSync({id = ped, title = customer, message = message, bagname = 'entity:', ms = wait_time, store = storedata})
 	local allserve = true
@@ -3155,7 +3191,7 @@ end
 
 self.TransferOwnerShip = function(store)
 	local options = {}
-	local players = lib.getNearbyPlayers(cache.coords, 50.0, true)
+	local players = lib.getNearbyPlayers(GetEntityCoords(cache.ped), 50.0, true)
 	for k,v in pairs(players) do
 		table.insert(options,{
 			title = GetPlayerName(v.id),
