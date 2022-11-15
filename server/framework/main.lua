@@ -53,6 +53,7 @@ function GetPlayerFromId(src)
 			return true
 		end
 		xPlayer.addAccountMoney = function(type, value)
+			type = type:gsub('money', 'cash')
 			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney(type,tonumber(value))
 			return true
 		end
