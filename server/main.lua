@@ -1163,12 +1163,14 @@ AddStockstoStore = function(data)
 	GlobalState.Stores = stores
 end
 
-GetItemCount = function(item,metadata,source) -- temporary until ox search functions works correctly as i am having issues getting correct results with search with the metadata table or strings, bite me
+GetItemCount = function(item,metadata,source)
 	local data = Inventory.SearchItems(source, 'slots', item)
 	local count = 0
+	local slot = {}
 	for k,v in pairs(data) do
-		if v.metadata and v.metadata.name == metadata then -- our identifier to identify custom items
-			count = count + 1
+		if v.metadata and v.metadata.name == metadata and not slot[v.slot] then -- our identifier to identify custom items
+			count += v.count
+			slot[v.slot] = true
 		end
 	end
 	return count
