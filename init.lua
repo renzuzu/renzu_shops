@@ -1,8 +1,7 @@
 ESX,QBCORE = nil, nil
 shared = {}
 shared.framework = 'ESX' -- ESX || QBCORE
-shared.inventory = 'ox_inventory' -- 'ox_inventory' or 'qb-inventory' -- QBCORE is BETA and WIP, will only work with my qb-inventory forked https://github.com/renzuzu/qb-inventory
-
+shared.inventory = 'ox_inventory' -- 'ox_inventory' or 'qb-inventory'
 -- use ox_inventory Shops UI (experimental feature) only with my forked ox_inventory REPO https://github.com/renzuzu/ox_inventory
 shared.oxShops = false -- if true this resource will use ox_inventory Shops UI instead of built in UI
 shared.allowplayercreateitem = false -- if false only admin can create new items via /stores
@@ -104,9 +103,39 @@ shared.OwnedShops = request('config/ownedshops/init')
 shared.MovableShops = request('config/movableshop')
 request('config/shipping')
 -- insert additional datas
-for k,v in pairs(Components) do
-	table.insert(shared.Storeitems.Ammunation,v)
-	table.insert(shared.Storeitems.BlackMarketArms,v)
+if shared.inventory == 'ox_inventory' then
+	for k,v in pairs(Components) do
+		table.insert(shared.Storeitems.Ammunation,v)
+		table.insert(shared.Storeitems.BlackMarketArms,v)
+	end
+elseif shared.inventory == 'qb-inventory' then
+	local weapons = {}
+	Components = {}
+	Citizen.CreateThreadNow(function()
+		Wait(1000)
+		local weaponshared = QBCore.Shared.Weapons
+		for k,v in pairs(weaponshared) do
+			Wait(0)
+			local data = exports['qb-weapons']:getConfigWeaponAttachments(v.name:upper()) -- if there is a way to fetch single all the datas of weapon atachment from qbweapons it will be more opt
+			if data then
+				for k,weapon in pairs(data) do
+					if not Components[weapon.item] then Components[weapon.item] = {} end
+					Components[weapon.item] = {
+						name = weapon.item,
+						label = weaponshared[weapon.item] and weaponshared[weapon.item].label or k,
+						type = weapon.type,
+						price = 1500,
+						category = 'attachments',
+						client = { component = {weapon.component}}
+					}
+				end
+			end
+		end
+		for k,v in pairs(Components) do
+			table.insert(shared.Storeitems.Ammunation,v)
+			table.insert(shared.Storeitems.BlackMarketArms,v)
+		end
+	end)
 end
 
 if not IsDuplicityVersion() then
@@ -114,10 +143,21 @@ if not IsDuplicityVersion() then
 		__call = function(self)
 			self = request('client/main')
 			self.ImagesPath = function(item)
+				local url = ''
 				if shared.inventory == 'ox_inventory' then
-					return 'https://cfx-nui-ox_inventory/web/images/'..item..'.png'
+					if item then
+						url = 'https://cfx-nui-ox_inventory/web/images/'..item..'.png'
+					else
+						url = 'https://cfx-nui-ox_inventory/web/images/'
+					end
+					return url
 				else
-					return 'https://cfx-nui-qb-inventory/html/images/'..item..'.png'
+					if item then
+						url = 'https://cfx-nui-qb-inventory/html/images/'..item:lower()..'.png'
+					else
+						url = 'https://cfx-nui-qb-inventory/html/images/'
+					end
+					return url
 				end
 			end
 			self.LoadJobShops = function()

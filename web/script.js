@@ -18,6 +18,7 @@
 }
 let getEl = function( id ) { return document.getElementById( id )}
 let metadatas = undefined
+let imgpath = ''
 let itemids = {}
 let uiopen = false
 let position = 1;
@@ -54,6 +55,7 @@ window.addEventListener('message', function (table) {
     if (event.data.open) {
         getEl('shop').style.display = 'block'
         uiopen = true
+        imgpath = event.data.imgpath
         getEl('shopname').innerHTML = event.data.label
         if (lastshop !== event.data.label) { removeall() }
         lastshop = event.data.label
@@ -182,7 +184,7 @@ function ItemCallback(model,index) {
         })
     } else if (shoptype == 'BlackMarketArms' || shoptype == 'Ammunation') {
         getEl('metacontent').innerHTML = ''
-        getEl('metaimg').src = `https://cfx-nui-ox_inventory/web/images/${model}.png`
+        getEl('metaimg').src = `${imgpath}${model}.png`
         SendData({item:model, msg : 'getAvailableAttachments'}, function(cb){
             let data = JSON.parse(cb)
             if (!data[1]) { return }
@@ -208,7 +210,7 @@ function ItemCallback(model,index) {
         })
     } else {
         getEl('metacontent').innerHTML = ''
-        getEl('metaimg').src = `https://cfx-nui-ox_inventory/web/images/${model}.png`
+        getEl('metaimg').src = `${imgpath}${model}.png`
         if (items[index].customise) {
             getEl('metadatas').style.display = 'block'
             itemcustomise = index
@@ -254,11 +256,30 @@ async function CustomiseItem(data) {
 
 var cartid = 0
 
+function table_matches(t1, t2) {
+	let type1 = typeof(t1)
+    let type2 = typeof(t2)
+	if (type1 !== type2) { return false }
+	if (type1 !== 'object' && type2 !== 'object') { return t1 == t2 }
+
+    for (const i in t1) {
+        let v2 = t2[i]
+	    if (v2 == undefined || !table_matches(t1[i],v2)) { return false }
+    }
+
+    for (const i in t2) {
+        let v1 = t1[i]
+	    if (v1 == undefined || !table_matches(v1,t2[i])) { return false }
+    }
+	return true
+}
+
 function FindCartIDFromDefaultItem(data) {
     if (data.metadatas == undefined) {
         // try find existing cartid
         for (const i in cart) {
-            if (cart[i].metadatas == undefined && cart[i].data.name == data.item.name) {
+            if (cart[i].metadatas == undefined && cart[i].data.name == data.item.name && data.item.metadatas == undefined && 
+                cart[i].data.name == data.item.name && table_matches(data.item.metadata || {}, cart[i].data.metadata || {})) {
                 return i
             }
         }
@@ -286,7 +307,6 @@ async function AddtoCart(item,qty) {
     cartid = findcartid !== false && findcartid || cartid+1
     if (cart[cartid]) {
         cart[cartid].count += parseInt(amount)
-        console.log(cart[cartid].count)
         amount = cart[cartid].count
     } else {
         cart[cartid] = {slotid: item, count : parseInt(amount), data : items[item], vehicle: {livery: liveryid, color: colorid, liverymod: liverymod}, metadatas: metadatas}
@@ -318,7 +338,7 @@ async function AddtoCart(item,qty) {
                 </td>
                 <td>
                     <div class="product-img">
-                        <img id="${cartid}_cartimg" src="https://cfx-nui-ox_inventory/web/images/${items[item].name}.png" alt="" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+items[item].name+`.jpg';this.onerror=defaultimg(this)">
+                        <img id="${cartid}_cartimg" src="${imgpath}${items[item].name}.png" alt="" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+items[item].name+`.jpg';this.onerror=defaultimg(this)">
                     </div>
                 </td>
                 <td>
@@ -388,7 +408,7 @@ async function ShowCats(i) {
         }
         var ui = `
         <div id="${i}_main" class="category">
-            <a href="#" onclick="ShopCats('${i}')"><img id="${i}_cat" src="https://cfx-nui-ox_inventory/web/images/${catimg[i]}.png" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+catimg[i]+`.jpg';this.onerror=defaultimg(this)">
+            <a href="#" onclick="ShopCats('${i}')"><img id="${i}_cat" src="${imgpath}${catimg[i]}.png" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+catimg[i]+`.jpg';this.onerror=defaultimg(this)">
                 <h2>
                     ${i} 
                 </h2>
@@ -464,10 +484,12 @@ async function ShopItems(shop, cat) {
             if (!uiopen) { break }
             var data = shop.inventory[i]
             items[i] = data
+            itemids[data.name] = i
         }
     } else {
         lastcat = cat
     }
+
     getEl('shopbox').innerHTML = ''
     await delay(100)
     for (const i in shop.inventory) {
@@ -485,11 +507,10 @@ async function ShopItems(shop, cat) {
             imgname = data.metadata.image || data.name
             label = data.metadata.label || data.label
         }
-        itemids[data.name] = i
         if (enable || data.disable !== true && cat == data.category) {
             var iddiv = makeid(10)
             // items[i] = data
-            let image = validimage[imgname] || `https://cfx-nui-ox_inventory/web/images/${imgname}.png`
+            let image = validimage[imgname] || `${imgpath}${imgname}.png`
             if (!show && shoptype == 'VehicleShop') { show = true; ItemCallback(data.name) }
             var addons = `<h2 class="customizable">⚙️ Addons</h2>`
             var component = ''

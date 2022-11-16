@@ -122,7 +122,15 @@ Inventory.AddItem = function(source,item,count,metadata,slot)
 			if not added then
 				if not slot then
 					local stash = exports['qb-inventory']:GetStashItems(source)
-					slot = exports['qb-inventory']:GetFirstSlotByItem(stash, item, info)
+					slot = exports['qb-inventory']:GetFirstSlotByItem(stash, item, metadata)
+					if not slot then
+						for i = 1, 50 do
+							if not stash[i] then
+								slot = i
+								break
+							end
+						end
+					end
 				end
 				exports['qb-inventory']:AddToStash(source, slot, otherslot, item, count, metadata)
 			end
@@ -148,7 +156,15 @@ Inventory.RemoveItem = function(source,item,count,metadata,slot)
 			if not removed then
 				if not slot then
 					local stash = exports['qb-inventory']:GetStashItems(source)
-					slot = exports['qb-inventory']:GetFirstSlotByItem(stash, item, info)
+					slot = exports['qb-inventory']:GetFirstSlotByItem(stash, item, metadata)
+					if not slot then
+						for i = 1, 50 do
+							if not stash[i] then
+								slot = i
+								break
+							end
+						end
+					end
 				end
 				exports['qb-inventory']:RemoveFromStash(source, slot, item, count, metadata) 
 			end

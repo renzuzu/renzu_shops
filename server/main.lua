@@ -98,15 +98,15 @@ Inventory.SearchItems = function(source, method, item)
 		local count = 0
 		if method == 'count' then
 			for k,v in pairs(items) do
-				if item == v.name then
-					count += 1
+				if item:lower() == v.name:lower() then
+					count += v.amount
 				end
 			end
 			return count
 		else
 			local data = {}
 			for k,v in pairs(items) do
-				if item == v.name then
+				if item:lower() == v.name:lower() then
 					v.count = v.amount
 					v.metadata = v.info
 					v.slot = k
@@ -139,6 +139,8 @@ getShopDataByLabel = function(id)
 	return false
 end
 
+exports('getShopDataByLabel', getShopDataByLabel)
+
 isStoreOwned = function(store,index)
 	local stores = GlobalState.Stores
 	local shop = false
@@ -155,9 +157,13 @@ isStoreOwned = function(store,index)
 	return shop, shop and stores[shop]
 end
 
+exports('isStoreOwned', isStoreOwned)
+
 isMovableShop = function(type)
 	return shared.MovableShops[type] or false
 end
+
+exports('isMovableShop', isMovableShop)
 
 CheckItemData = function(data)
 	for k,v in pairs(shared.Storeitems[data.shop]) do
@@ -264,6 +270,8 @@ RemoveStockFromStore = function(data)
 	return success
 end
 
+exports('RemoveStockFromStore', RemoveStockFromStore)
+
 RemoveStockFromStash = function(data)
 	local shopdata = shared.MovableShops[data.type].menu
 	local items = {}
@@ -283,6 +291,8 @@ RemoveStockFromStash = function(data)
 	end
 	return false
 end
+
+exports('RemoveStockFromStash', RemoveStockFromStash)
 
 -- @args[1] = store type
 -- @args[2] = storeindex
@@ -326,6 +336,8 @@ AddStockInternal = function(shop,index,count,item)
 	return success
 end
 
+exports('AddStockInternal', AddStockInternal)
+
 lib.addCommand('group.admin', {'storeadmin', 'stores'}, function(source, args)
 	local stores = GlobalState.Stores
 	local ply = Player(source).state
@@ -366,7 +378,8 @@ function tprint (tbl, indent,supplier)
 end
 
 GlobalState.CreateShop = {}
-lib.callback.register('renzu_shops:createShop', function(source,data)
+
+CreateShop = function(data)
 	local path = 'config/ownedshops/'..data.type..'.lua'
 	local path2 = 'config/defaultshops.lua'
 	local defaultshops = shared.Shops
@@ -427,6 +440,12 @@ lib.callback.register('renzu_shops:createShop', function(source,data)
 		return true
 	end
 	return false
+end
+
+exports('CreateShop', CreateShop)
+
+lib.callback.register('renzu_shops:createShop', function(source,data)
+	return CreateShop(data)
 end)
 
 lib.callback.register('renzu_shops:addstock', function(source,data)
@@ -434,10 +453,7 @@ lib.callback.register('renzu_shops:addstock', function(source,data)
 	return AddStockInternal(data.shop,data.index,data.count,data.item)
 end)
 
-lib.callback.register('renzu_shops:removestock', function(source,data)
-	local source = source
-	local xPlayer = GetPlayerFromId(source)
-	local identifier = data.type..':'..xPlayer.identifier
+RemoveStock = function(data)
 	local storeowned, shopdata = isStoreOwned(data.type,data.index) -- check if this store has been owned by player
 	if storeowned then
 		local removed = RemoveStockFromStore({shop = data.type, metadata = data.metadata, index = data.index, item = data.name, amount = tonumber(data.count), price = data.price, money = data.money:lower()})
@@ -450,8 +466,17 @@ lib.callback.register('renzu_shops:removestock', function(source,data)
 			return false
 		end
 	else
-		return RemoveStockFromStash({identifier = identifier, metadata = data.metadata, item = data.name, amount = tonumber(data.count), price = data.price, type = data.type, money = 'money'})
+		return RemoveStockFromStash({identifier = data.identifier, metadata = data.metadata, item = data.name, amount = tonumber(data.count), price = data.price, type = data.type, money = 'money'})
 	end
+end
+
+exports('RemoveStock', RemoveStock)
+
+lib.callback.register('renzu_shops:removestock', function(source,data)
+	local source = source
+	local xPlayer = GetPlayerFromId(source)
+	data.identifier = data.type..':'..xPlayer.identifier
+	return RemoveStock(data)
 end)
 
 function hasLicense(name, xPlayer)
@@ -462,6 +487,8 @@ function hasLicense(name, xPlayer)
 		return xPlayer?.PlayerData?.metadata?.licences[name]
 	end
 end
+
+exports('hasLicense', hasLicense)
 
 lib.callback.register('renzu_shops:buyitem', function(source,data)
 	local source = source
@@ -510,9 +537,26 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 		end
 		if newdata then
 			if string.find(name:upper(), "WEAPON_") then
+				local component = 'components'
+				if shared.framework == 'QBCORE' then
+					component = 'attachments'
+				end
 				if not data.items[k].data.metadata then data.items[k].data.metadata = {} end -- incase metadata is not define in shop items.
-				if not data.items[k].data.metadata['components'] then data.items[k].data.metadata['components'] = {} end
-				data.items[k].data.metadata['components'] = metadata
+				if not data.items[k].data.metadata[component] then data.items[k].data.metadata[component] = {} end
+				local meta = {}
+				if shared.framework == 'QBCORE' then
+					for k,item in pairs(metadata) do
+						local componentsdata = Components[item]
+						table.insert(meta, {
+							component = componentsdata?.client?.component[1],
+							label = componentsdata.label,
+							item = item,
+							type = componentsdata.type,
+						})
+						metadata = meta
+					end
+				end
+				data.items[k].data.metadata[component] = metadata
 			else
 				if not data.items[k].data.metadata then data.items[k].data.metadata = {} end
 				if not data.items[k].data.metadata['customise'] then data.items[k].data.metadata['customise'] = {} end
@@ -619,6 +663,8 @@ RegisterFinance = function(data)
 	end
 end
 
+exports('RegisterFinance', RegisterFinance)
+
 Citizen.CreateThread(function()
 	while true do
 		time = os.date("*t")
@@ -664,40 +710,63 @@ Citizen.CreateThread(function()
 	end
 end)
 
+isShopAlreadyOwned = function(id)
+	return GlobalState.Stores[id] ~= nil
+end
+
+exports('isShopAlreadyOwned', isShopAlreadyOwned)
+
+BuyStore = function(data)
+	local stores = GlobalState.Stores
+	stores[data.label] = {owner = data.identifier, money = {money = 0, black_money = 0}, items = {normal = {}, custom = {}}, employee = {}, cashier = { money = 0, black_money = 0}}
+	SetResourceKvp('renzu_stores', json.encode(stores))
+	GlobalState.Stores = stores
+	AddStockInternal(data.shopName,data.shopIndex,shared.defaultStock[data.shopName])
+	if shared.oxShops and canregister and data.shopName ~= 'VehicleShop' then
+		local items = {}
+		local stores = GlobalState.Stores
+		local storeitems = stores[data.label].items
+		for k,v in pairs(data.supplieritem) do
+			local name = v.metadata and v.metadata.name or v.name
+			local itemtype = v.metadata and v.metadata.name and 'custom' or 'normal'
+			v.currency = data.moneytype or 'money'
+			v.count = storeitems[itemtype] and storeitems[itemtype][name] and storeitems[itemtype][name].stock 
+			or shared.defaultStock[data.shopName]
+			v.count = tonumber(v.count) or shared.defaultStock[data.shopName]
+			table.insert(items,v)
+		end
+		exports.ox_inventory:RegisterSingleShop(data.shopName, {
+			name = data.label, 
+			inventory = items,
+			coord = shared.Shops[data.shopName].locations[data.shopIndex]
+		}, data.shopIndex,false,true)
+	end
+	return true
+end
+
+exports('BuyStore', BuyStore)
+
 lib.callback.register("renzu_shops:buystore", function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
 	if xPlayer.getAccount('money').money >= data.price then
-		local stores = GlobalState.Stores
-		if not stores[data.label] then
+		data.identifier = xPlayer.identifier
+		if not isShopAlreadyOwned(data.label) then
 			xPlayer.removeAccountMoney('money', data.price)
-			stores[data.label] = {owner = xPlayer.identifier, money = {money = 0, black_money = 0}, items = {normal = {}, custom = {}}, employee = {}, cashier = { money = 0, black_money = 0}}
-			SetResourceKvp('renzu_stores', json.encode(stores))
-			GlobalState.Stores = stores
-			AddStockInternal(data.shopName,data.shopIndex,shared.defaultStock[data.shopName])
-			if shared.oxShops and canregister and data.shopName ~= 'VehicleShop' then
-				local items = {}
-				local stores = GlobalState.Stores
-				local storeitems = stores[data.label].items
-				for k,v in pairs(data.supplieritem) do
-					local name = v.metadata and v.metadata.name or v.name
-					local itemtype = v.metadata and v.metadata.name and 'custom' or 'normal'
-					v.currency = data.moneytype or 'money'
-					v.count = storeitems[itemtype] and storeitems[itemtype][name] and storeitems[itemtype][name].stock 
-					or shared.defaultStock[data.shopName]
-					v.count = tonumber(v.count) or shared.defaultStock[data.shopName]
-					table.insert(items,v)
-				end
-				exports.ox_inventory:RegisterSingleShop(data.shopName, {
-					name = data.label, 
-					inventory = items,
-					coord = shared.Shops[data.shopName].locations[data.shopIndex]
-				}, data.shopIndex,false,true)
-			end
-			return true
+			return BuyStore(data)
 		end
 	end
 end)
+
+local RemoveStore = function(id)
+	local stores = GlobalState.Stores
+	stores[id] = nil
+	SetResourceKvp('renzu_stores', json.encode(stores))
+	GlobalState.Stores = stores
+	return true
+end
+
+exports('RemoveStore', RemoveStore)
 
 GlobalState.AvailableStore = {}
 lib.callback.register("renzu_shops:sellstore", function(source,store)
@@ -705,9 +774,6 @@ lib.callback.register("renzu_shops:sellstore", function(source,store)
 	local xPlayer = GetPlayerFromId(source)
 	local stores = GlobalState.Stores
 	if stores[store] and stores[store].owner == xPlayer.identifier then
-		stores[store] = nil
-		SetResourceKvp('renzu_stores', json.encode(stores))
-		GlobalState.Stores = stores
 		for k,shops in pairs(shared.OwnedShops) do
 			for k,v in pairs(shops) do
 				if v.label == store then
@@ -718,35 +784,43 @@ lib.callback.register("renzu_shops:sellstore", function(source,store)
 		end
 		Wait(1000)
 		GlobalState.AvailableStore = {ts = os.time(), store = store}
+		RemoveStore(store)
 		return true
 	end
 end)
+
+CreateCustomItem = function(store)
+	local stores = GlobalState.Stores
+	if not stores[store].customitems then stores[store].customitems = {} end
+	local url = string.find(data.image or '', "http") or false
+	local metadata = { -- ox_inventory supported only
+		label = data.label, -- custom label name to set from metadatas
+		name = data.itemname, -- identifier important
+		[data.status] = data.statusvalue,
+		description = data.description,
+		functions = data.functions,
+		animations = data.animations,
+	}
+	if string.find(data.image or '', "http") then
+		metadata.imageurl = data.image
+	else
+		metadata.image = data.image
+	end
+	local itemdata = {name = CustomItems.Default, price = data.price , category = data.category, metadata = metadata}
+	stores[store].customitems[data.itemname] = itemdata
+	SetResourceKvp('renzu_stores', json.encode(stores))
+	GlobalState.Stores = stores
+	return true
+end
+
+exports('CreateCustomItem', CreateCustomItem)
 
 lib.callback.register("renzu_shops:createitem", function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
 	local stores = GlobalState.Stores
 	if stores[data.store] and stores[data.store].owner == xPlayer.identifier then
-		if not stores[data.store].customitems then stores[data.store].customitems = {} end
-		local url = string.find(data.image or '', "http") or false
-		local metadata = { -- ox_inventory supported only
-			label = data.label, -- custom label name to set from metadatas
-			name = data.itemname, -- identifier important
-			[data.status] = data.statusvalue,
-			description = data.description,
-			functions = data.functions,
-			animations = data.animations,
-		}
-		if string.find(data.image or '', "http") then
-			metadata.imageurl = data.image
-		else
-			metadata.image = data.image
-		end
-		local itemdata = {name = CustomItems.Default, price = data.price , category = data.category, metadata = metadata}
-		stores[data.store].customitems[data.itemname] = itemdata
-		SetResourceKvp('renzu_stores', json.encode(stores))
-		GlobalState.Stores = stores
-		return true
+		return CreateCustomItem(data)
 	end
 end)
 
@@ -765,20 +839,29 @@ lib.callback.register("renzu_shops:transfershop", function(source,data)
 	return false
 end)
 
+AddAccessToJob = function(data)
+	local stores = GlobalState.Stores
+	stores[data.store].job = data.job
+	GlobalState.Stores = stores
+	SetResourceKvp('renzu_stores', json.encode(stores))
+	local jobshop = GlobalState.JobShop
+	jobshop[data.store] = data.job
+	GlobalState.JobShop = jobshop
+	GlobalState.JobShopNotify = {store = data.store, job = data.job, ts = os.time(), owner = data.owner}
+	return true
+end
+
 GlobalState.JobShopNotify = {}
 lib.callback.register("renzu_shops:shopjobaccess", function(source,store)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
 	local stores = GlobalState.Stores
 	if stores[store] and stores[store].owner == xPlayer.identifier then
-		stores[store].job = xPlayer.job.name
-		GlobalState.Stores = stores
-		SetResourceKvp('renzu_stores', json.encode(stores))
-		local jobshop = GlobalState.JobShop
-		jobshop[store] = xPlayer.job.name
-		GlobalState.JobShop = jobshop
-		GlobalState.JobShopNotify = {store = store, job = xPlayer.job.name, ts = os.time(), owner = xPlayer.identifier}
-		return true
+		AddAccessToJob({
+			job = xPlayer.job.name,
+			owner = xPlayer.identifier,
+			store = store,
+		})
 	end
 	return false
 end)
@@ -861,6 +944,8 @@ GetStashData = function(data)
 	return result
 end
 
+exports('GetStashData', GetStashData)
+
 lib.callback.register("renzu_shops:getStashData", function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
@@ -872,45 +957,52 @@ GetItemCountSingle = function(item,source)
 	return Inventory.SearchItems(source,'count', item)
 end
 
-lib.callback.register("renzu_shops:craftitem", function(source,data)
-	local source = source
-	local items = shared.MovableShops[data.type].menu[data.menu]
-	local xPlayer = GetPlayerFromId(source)
-	local identifier = data.type..':'..xPlayer.identifier
-	local inventoryid = data.stash and identifier or source -- declare where the inventory will be used for removing and adding items
-	for k,v in pairs(items) do
+CraftItems = function(data)
+	for k,v in pairs(data.items) do
 		if v.metadata and v.metadata.name and v.metadata.name == data.item then
 			local haverequired = true
 			for k,v in pairs(v.ingredients) do
-				if GetItemCountSingle(k,inventoryid) < v then
+				if GetItemCountSingle(k,data.inv) < v then
 					haverequired = false
 				end
 			end
 			if haverequired then
 				for k,v in pairs(v.ingredients or {}) do
-					Inventory.RemoveItem(inventoryid, k, v, nil)
+					Inventory.RemoveItem(data.inv, k, v, nil)
 				end
 				if not data.dontreceive then
-					Inventory.AddItem(inventoryid, v.name, 1, v.metadata or {})
+					Inventory.AddItem(data.inv, v.name, 1, v.metadata or {})
 				end
 			end
 		elseif v.metadata and not v.metadata.name and v.name == data.item or not v.metadata and v.name == data.item then
 			local haverequired = true
 			for k,v in pairs(v.ingredients or {}) do
-				if GetItemCountSingle(k,inventoryid) < v then
+				if GetItemCountSingle(k,data.inv) < v then
 					haverequired = false
 				end
 			end
 			if haverequired then
 				for k,v in pairs(v.ingredients) do
-					Inventory.RemoveItem(inventoryid, k, v, nil)
+					Inventory.RemoveItem(data.inv, k, v, nil)
 				end
 				if not data.dontreceive then
-					Inventory.AddItem(inventoryid, v.name, 1, nil)
+					Inventory.AddItem(data.inv, v.name, 1, nil)
 				end
 			end
 		end
 	end
+end
+
+exports('CraftItems', CraftItems)
+
+lib.callback.register("renzu_shops:craftitem", function(source,data)
+	local source = source
+	local items = shared.MovableShops[data.type].menu[data.menu]
+	local xPlayer = GetPlayerFromId(source)
+	local identifier = data.type..':'..xPlayer.identifier
+	data.inv = data.stash and identifier or source -- declare where the inventory will be used for removing and adding items
+	data.items = items
+	return CraftItems(data)
 end)
 
 lib.callback.register("renzu_shops:getmovableshopdata", function(source,data)
@@ -925,28 +1017,36 @@ lib.callback.register("renzu_shops:getmovableshopdata", function(source,data)
 	return GlobalState.MovableShops[identifier]
 end)
 
+AddMovableShopToPlayer = function(data)
+	local plate = nil
+	local movable = GlobalState.MovableShops
+	if data.shop.type == 'vehicle' then
+		plate = GenPlate()
+		SqlFunc('oxmysql','execute','INSERT INTO '..vehicletable..' (plate, '..vehiclemod..', '..owner..', '..stored..') VALUES (@plate, @'..vehiclemod..', @'..owner..', @'..stored..')',{
+			['@plate']   = plate,
+			['@'..vehiclemod..'']   = json.encode({model = data.model, plate = plate, modLivery = -1}),
+			['@'..owner..'']   = data.owner,
+			['@'..stored..''] = 1
+		})
+	end
+	movable[data.identifier] = {identifier = data.owner, money = {money = 0, black_money = 0}, items = {}, plate = plate, type = data.shop.type, shopname = data.type} -- literally plate and type is the only thing we save here as the other datas like money and items are saved using ox_inventory. first plan is to used owned inventory, same with the shop stocking system logic using ox contextmenus,  but instead i tried and successfully used ox inventory since this does not saved vehicle stocks datas.
+	SetResourceKvp('movableshops', json.encode(movable))
+	GlobalState.MovableShops = movable
+	return movable[data.identifier]
+end
+
+exports('AddMovableShopToPlayer', AddMovableShopToPlayer)
+
 lib.callback.register("renzu_shops:buymovableshop", function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
-	local movable = GlobalState.MovableShops
 	local identifier = data.type..':'..xPlayer.identifier
 	if not movable[identifier] then
 		if xPlayer.getAccount('money').money >= data.price then
-			local plate = nil
-			if data.shop.type == 'vehicle' then
-				plate = GenPlate()
-				SqlFunc('oxmysql','execute','INSERT INTO '..vehicletable..' (plate, '..vehiclemod..', '..owner..', '..stored..') VALUES (@plate, @'..vehiclemod..', @'..owner..', @'..stored..')',{
-					['@plate']   = plate,
-					['@'..vehiclemod..'']   = json.encode({model = data.model, plate = plate, modLivery = -1}),
-					['@'..owner..'']   = xPlayer.identifier,
-					['@'..stored..''] = 1
-				})
-			end
 			xPlayer.removeAccountMoney('money', data.price)
-			movable[identifier] = {identifier = xPlayer.identifier, money = {money = 0, black_money = 0}, items = {}, plate = plate, type = data.shop.type, shopname = data.type} -- literally plate and type is the only thing we save here as the other datas like money and items are saved using ox_inventory. first plan is to used owned inventory, same with the shop stocking system logic using ox contextmenus,  but instead i tried and successfully used ox inventory since this does not saved vehicle stocks datas.
-			SetResourceKvp('movableshops', json.encode(movable))
-			GlobalState.MovableShops = movable
-			return movable[identifier]
+			data.owner = xPlayer.identifier
+			data.identifier = identifier
+			return AddMovableShopToPlayer(data)
 		else
 			return false
 		end
@@ -1163,6 +1263,8 @@ AddStockstoStore = function(data)
 	GlobalState.Stores = stores
 end
 
+exports('AddStockstoStore', AddStockstoStore)
+
 GetItemCount = function(item,metadata,source)
 	local data = Inventory.SearchItems(source, 'slots', item)
 	local count = 0
@@ -1176,6 +1278,109 @@ GetItemCount = function(item,metadata,source)
 	return count
 end
 
+SetShopitemPrice = function(data)
+	local stores = GlobalState.Stores
+	if stores[data.store].items[data.itemtype][data.itemname] == nil then stores[data.store].items[data.itemtype][data.itemname] = {} end
+	stores[data.store].items[data.itemtype][data.itemname].price = data.value
+	SetResourceKvp('renzu_stores', json.encode(stores))
+	GlobalState.Stores = stores
+end
+
+exports('SetShopitemPrice', SetShopitemPrice)
+
+DepositItemToStore = function(source,data)
+	local count = 0
+	local stores = GlobalState.Stores
+	if data.metadata and data.metadata.name then
+		count = GetItemCount(data.item,data.metadata.name,source)
+	else
+		count = Inventory.SearchItems(source, 'count', data.item)
+	end
+	if tonumber(data.value) and count >= data.value and data.value > 0 then
+		Inventory.RemoveItem(source, data.item, data.value, data.metadata and data.metadata.name and data.metadata or nil, slot)
+		if stores[data.store].items[data.itemtype][data.itemname] == nil then stores[data.store].items[data.itemtype][data.itemname] = {} end
+		local stock = stores[data.store].items[data.itemtype][data.itemname].stock
+		if not stock then stores[data.store].items[data.itemtype][data.itemname].stock = 0 end
+		stores[data.store].items[data.itemtype][data.itemname].stock = tonumber(stores[data.store].items[data.itemtype][data.itemname].stock) + data.value
+		SetResourceKvp('renzu_stores', json.encode(stores))
+		GlobalState.Stores = stores
+		if canregister and shared.oxShops then
+			local name, index, storedata = getShopDataByLabel(data.store)
+			SetOxInvShopStock({name = name, index = index, item = data.itemname, value = data.value})
+		end
+		return 'success'
+	end
+end
+
+exports('DepositItemToStore', DepositItemToStore)
+
+WithdrawItemFromStore = function(source, data)
+	local stores = GlobalState.Stores
+	if stores[data.store].items[data.itemtype][data.itemname] == nil then stores[data.store].items[data.itemtype][data.itemname] = {} end
+	local count = tonumber(stores[data.store].items[data.itemtype][data.itemname].stock)
+	if tonumber(data.value) and count and count >= data.value and data.value > 0 then
+		stores[data.store].items[data.itemtype][data.itemname].stock = tonumber(stores[data.store].items[data.itemtype][data.itemname].stock) - data.value
+		SetResourceKvp('renzu_stores', json.encode(stores))
+		GlobalState.Stores = stores
+		Inventory.AddItem(source, data.item, data.value, data.metadata or {})
+		if canregister and shared.oxShops then
+			local name, index, storedata = getShopDataByLabel(data.store)
+			SetOxInvShopStock({name = name, index = index, item = data.itemname, value = -data.value})
+		end
+		return 'success'
+	end
+end
+
+exports('WithdrawItemFromStore', WithdrawItemFromStore)
+
+AddMoneyToStore = function(data)
+	local stores = GlobalState.Stores
+	stores[data.store].money[data.item] = tonumber(stores[data.store].money[data.item]) + data.value
+	SetResourceKvp('renzu_stores', json.encode(stores))
+	GlobalState.Stores = stores
+end
+
+exports('AddMoneyToStore', AddMoneyToStore)
+
+RemoveMoneyStore = function(data)
+	local stores = GlobalState.Stores
+	stores[data.store].money[data.item] = tonumber(stores[data.store].money[data.item]) - data.value
+	SetResourceKvp('renzu_stores', json.encode(stores))
+	GlobalState.Stores = stores
+end
+
+exports('RemoveMoneyStore', RemoveMoneyStore)
+
+RemoveMoneyFromCashier = function(data)
+	local stores = GlobalState.Stores
+	if stores[data.store].cashier[data.item] == nil then stores[data.store].cashier[data.item] = 0 end
+	stores[data.store].cashier[data.item] = tonumber(stores[data.store].cashier[data.item]) - data.value
+	SetResourceKvp('renzu_stores', json.encode(stores))
+	GlobalState.Stores = stores
+end
+
+exports('RemoveMoneyFromCashier', RemoveMoneyFromCashier)
+
+EnableDisableStoreItems = function(data)
+	local stores = GlobalState.Stores
+	itemtype = data.metadata and data.metadata.name and 'custom' or 'normal'
+	itemname = data.metadata and data.metadata.name or data.item
+	if stores[data.store].items[itemtype][itemname] == nil then stores[data.store].items[itemtype][itemname] = {} end
+	if data.value == 'disable' then
+		stores[data.store].items[itemtype][itemname].disable = 'disable'
+		SetResourceKvp('renzu_stores', json.encode(stores))
+		GlobalState.Stores = stores
+		return 'success'
+	elseif data.value == 'enable' then
+		stores[data.store].items[itemtype][itemname].disable = nil
+		SetResourceKvp('renzu_stores', json.encode(stores))
+		GlobalState.Stores = stores
+		return 'success'
+	end
+end
+
+exports('EnableDisableStoreItems', EnableDisableStoreItems)
+
 lib.callback.register('renzu_shops:editstore', function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
@@ -1188,95 +1393,41 @@ lib.callback.register('renzu_shops:editstore', function(source,data)
 	local itemtype = nil
 	local itemname = nil
 	if tonumber(data.value) and data.value >= 0 and owned and stores[data.store] and data.type == 'price' then
-		itemtype = data.metadata and data.metadata.name and 'custom' or 'normal'
-		itemname = data.metadata and data.metadata.name or data.item
-		if stores[data.store].items[itemtype][itemname] == nil then stores[data.store].items[itemtype][itemname] = {} end
-		stores[data.store].items[itemtype][itemname].price = data.value
-		SetResourceKvp('renzu_stores', json.encode(stores))
-		GlobalState.Stores = stores
+		data.itemtype = data.metadata and data.metadata.name and 'custom' or 'normal'
+		data.itemname = data.metadata and data.metadata.name or data.item
+		SetShopitemPrice(data)
 		return 'success'
 	elseif owned and stores[data.store] and data.type == 'deposit_item' then
-		itemtype = data.metadata and data.metadata.name and 'custom' or 'normal'
-		itemname = data.metadata and data.metadata.name or data.item
-		local count = 0
-		if data.metadata and data.metadata.name then
-			count = GetItemCount(data.item,data.metadata.name,source)
-		else
-			count = Inventory.SearchItems(source, 'count', data.item)
-		end
-		if tonumber(data.value) and count >= data.value and data.value > 0 then
-			Inventory.RemoveItem(source, data.item, data.value, data.metadata and data.metadata.name and data.metadata or nil, slot)
-			if stores[data.store].items[itemtype][itemname] == nil then stores[data.store].items[itemtype][itemname] = {} end
-			local stock = stores[data.store].items[itemtype][itemname].stock
-			if not stock then stores[data.store].items[itemtype][itemname].stock = 0 end
-			stores[data.store].items[itemtype][itemname].stock = tonumber(stores[data.store].items[itemtype][itemname].stock) + data.value
-			SetResourceKvp('renzu_stores', json.encode(stores))
-			GlobalState.Stores = stores
-			if canregister and shared.oxShops then
-				local name, index, storedata = getShopDataByLabel(data.store)
-				SetOxInvShopStock({name = name, index = index, item = itemname, value = data.value})
-			end
-			return 'success'
-		end
+		data.itemtype = data.metadata and data.metadata.name and 'custom' or 'normal'
+		data.itemname = data.metadata and data.metadata.name or data.item
+		return DepositItemToStore(source,data)
 	elseif owned and stores[data.store] and data.type == 'withdraw_item' then
-		itemtype = data.metadata and data.metadata.name and 'custom' or 'normal'
-		itemname = data.metadata and data.metadata.name or data.item
-		if stores[data.store].items[itemtype][itemname] == nil then stores[data.store].items[itemtype][itemname] = {} end
-		local count = tonumber(stores[data.store].items[itemtype][itemname].stock)
-		if tonumber(data.value) and count and count >= data.value and data.value > 0 then
-			stores[data.store].items[itemtype][itemname].stock = tonumber(stores[data.store].items[itemtype][itemname].stock) - data.value
-			SetResourceKvp('renzu_stores', json.encode(stores))
-			GlobalState.Stores = stores
-			Inventory.AddItem(source, data.item, data.value, data.metadata or {})
-			if canregister and shared.oxShops then
-				local name, index, storedata = getShopDataByLabel(data.store)
-				SetOxInvShopStock({name = name, index = index, item = itemname, value = -data.value})
-			end
-			return 'success'
-		end
+		data.itemtype = data.metadata and data.metadata.name and 'custom' or 'normal'
+		data.itemname = data.metadata and data.metadata.name or data.item
+		return WithdrawItemFromStore(source, data)
 	elseif owned and stores[data.store] and data.type == 'deposit_money' then
 		local count = xPlayer.getAccount(data.item).money
 		if tonumber(data.value) and count and count >= data.value and data.value > 0 then
-			stores[data.store].money[data.item] = tonumber(stores[data.store].money[data.item]) + data.value
-			SetResourceKvp('renzu_stores', json.encode(stores))
-			GlobalState.Stores = stores
+			AddMoneyToStore(data)
 			xPlayer.removeAccountMoney(data.item,data.value)
 			return 'success'
 		end
 	elseif owned and stores[data.store] and data.type == 'withdraw_money' then
 		local count = tonumber(stores[data.store]?.money[data.item])
 		if tonumber(data.value) and count and count >= data.value and data.value > 0 then
-			stores[data.store].money[data.item] = tonumber(stores[data.store].money[data.item]) - data.value
-			SetResourceKvp('renzu_stores', json.encode(stores))
-			GlobalState.Stores = stores
+			RemoveMoneyStore(data)
 			xPlayer.addAccountMoney(data.item,data.value)
 			return 'success'
 		end
 	elseif owned and stores[data.store] and data.type == 'withdraw_cashier' then
 		local count = tonumber(stores[data.store]?.cashier[data.item])
 		if tonumber(data.value) and count and count >= data.value and data.value > 0 then
-			if stores[data.store].cashier[data.item] == nil then stores[data.store].cashier[data.item] = 0 end
-			stores[data.store].cashier[data.item] = tonumber(stores[data.store].cashier[data.item]) - data.value
-			SetResourceKvp('renzu_stores', json.encode(stores))
-			GlobalState.Stores = stores
+			RemoveMoneyFromCashier(data)
 			xPlayer.addAccountMoney(data.item,data.value)
 			return 'success'
 		end
 	elseif owned and stores[data.store] and data.type == 'listing_edit' then
-		itemtype = data.metadata and data.metadata.name and 'custom' or 'normal'
-		itemname = data.metadata and data.metadata.name or data.item
-		if stores[data.store].items[itemtype][itemname] == nil then stores[data.store].items[itemtype][itemname] = {} end
-		if data.value == 'disable' then
-			stores[data.store].items[itemtype][itemname].disable = 'disable'
-			SetResourceKvp('renzu_stores', json.encode(stores))
-			GlobalState.Stores = stores
-			return 'success'
-		elseif data.value == 'enable' then
-			stores[data.store].items[itemtype][itemname].disable = nil
-			SetResourceKvp('renzu_stores', json.encode(stores))
-			GlobalState.Stores = stores
-			return 'success'
-		end
+		return EnableDisableStoreItems(data)
 	end
 	return false
 end)
@@ -1440,6 +1591,8 @@ function GenPlate(prefix)
     return GenPlate(prefix)
 end
 
+exports('GenPlate', GenPlate)
+
 function LetterRand()
     local emptyString = {}
     local randomLetter;
@@ -1496,3 +1649,5 @@ SetOxInvShopStock = function(data)
 		parameter = 'count' -- count, price, currency. or any shop parameter. count will add if item count is existed
 	})
 end
+
+exports('Inventory', Inventory)

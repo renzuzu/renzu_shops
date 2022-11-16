@@ -14,7 +14,17 @@ self.StartUp = function()
 	self.PlayerData = self.GetPlayerData()
 	self.GetItems = function()
 		if GetResourceState('ox_inventory') ~= 'started' then
-			return QBCore.Shared.Items
+			if self.QbItems == nil then
+				local items = {}
+				for k,v in pairs(QBCore.Shared.Items) do
+					if string.find(v.name:upper(), 'WEAPON_') then
+						v.name = v.name:upper()
+					end
+					items[v.name] = v
+				end
+				self.QbItems = items
+			end
+			return self.QbItems
 		else
 			return exports.ox_inventory:Items()
 		end
@@ -1520,7 +1530,7 @@ self.OpenShop = function(data)
 	local black_money = self.GetItemCount('black_money')
 	SendNUIMessage({
 		type = 'shop',
-		data = {moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
 	})
 	SetNuiFocus(not self.shopopen,not self.shopopen)
 	SetNuiFocusKeepInput(false)
@@ -2975,7 +2985,7 @@ self.OpenShopMovable = function(data)
 	local black_money = self.GetItemCount('black_money')
 	SendNUIMessage({
 		type = 'shop',
-		data = {moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
 	})
 	SetNuiFocus(not self.shopopen,not self.shopopen)
 	SetNuiFocusKeepInput(false)

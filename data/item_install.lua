@@ -3,6 +3,16 @@
 -- or modify the items in config/*.lua, data/item_customise.lua
 --- LIST of items you need to install to ox_inventory/data/items.lua
 return {
+	['burger'] = {
+		label = 'Burger',
+		weight = 350,
+		client = {
+			status = { hunger = 200000 },
+			anim = 'eating',
+			prop = 'burger',
+			usetime = 2500
+		},
+	},
 	['hotdogsandwich'] = {
 		label = 'Hot Dog Sandwich',
 		weight = 350,
@@ -15,6 +25,10 @@ return {
 	},
 	['hotdog'] = {
 		label = 'Hotdog',
+		weight = 50
+	},
+	['cola'] = {
+		label = 'Cola',
 		weight = 50
 	},
 	['bread'] = {
