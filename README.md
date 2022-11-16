@@ -41,7 +41,7 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 - ox_inventory (latest)
 - ox_lib (latest)
 - ox_target (optional) can be configured init.lua (default is marker zone type)
-- ESX Legacy only for now.
+- ESX Legacy / QBCORE
 
 # Note
 - this resource will overide/disable ox inventory shops if config.oxShops is false
@@ -67,6 +67,8 @@ Fivem Advanced Shops with stocks and player owned shops using ox_inventory , ox_
 ```
 - Some Experimental Feature to Use like ox inventory Shop UI are required to use my forked version of ox_inventory. (Optional)
 - https://github.com/renzuzu/ox_inventory
+- to USE Full support of qbcore. you need my forked of qb-inventory - 
+- https://github.com/renzuzu/qb-inventory
 
 # DEMO IMAGES
 - General Store
