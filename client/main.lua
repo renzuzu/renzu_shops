@@ -2236,6 +2236,7 @@ self.MovableShopStart = function(data)
 	end
 	self.incockpit = false
 	while not ent.movableshop do Wait(10) end
+	self.movabletextui = false
 	CreateThread(function()
 		local entity = self.movableentity[movabletype]
 		self.startingsell[movabletype] = false
@@ -2248,6 +2249,10 @@ self.MovableShopStart = function(data)
 				self.clerkmode = false
 				if not self.startingsell[movabletype] and #(GetEntityCoords(self.playerPed) - offset) < 1 then
 					sleep = 5
+					if not self.movabletextui then
+						self.movabletextui = true
+						self.OxlibTextUi("Press [E] Open Shop Menu")
+					end
 					self.clerkmode = true
 				elseif not self.clerkmode and not ent.movableshop.selling and data.type == 'object' then
 					sleep = 5
@@ -2278,6 +2283,10 @@ self.MovableShopStart = function(data)
 						end
 					end
 				else
+					if self.movabletextui then
+						self.movabletextui = false
+						lib.hideTextUI()
+					end
 					ent = Entity(entity).state
 					if data.type == 'vehicle' and GetEntitySpeed(entity) < 1 then
 						if not ent.movableshop.selling and self.driving then
@@ -2338,22 +2347,27 @@ self.GotoCockpit = function(data)
 		self.SetEntityControlable(self.movableentity[self.movabletype])
 		AttachEntityToEntity(self.playerPed, self.movableentity[self.movabletype], 19, 1.1, -3.2, 0.6, 0.0, 0.0, -90.0, false, false, false, false, 20, true)
 		FreezeEntityPosition(self.playerPed,true)
-		SetGameplayCamVehicleCamera('taco')
-		SetGameplayCamVehicleCameraName(`taco`)
-		DisableCamCollisionForEntity(self.movableentity[self.movabletype])
-		DisableCamCollisionForEntity(self.playerPed)
-		SetEntityCompletelyDisableCollision(self.playerPed,true,true)
-		SetCamFov(gameplaycam,100.0)
+		SetGameplayCamVehicleCamera('phantom')
+		SetGameplayCamVehicleCameraName(`phantom`)
+		SetCamFov(gameplaycam,200.0)
 		local cockpit = GetOffsetFromEntityInWorldCoords(self.movableentity[self.movabletype], 8.0,-7.0,2.1)
-		self.cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", cockpit, 360.00, 0.00, 0.00, 60.00, false, 0)
+		--self.cam = CreateCamWithParams("DEFAULT_SCRIPTED_CAMERA", cockpit, 360.00, 0.00, 0.00, 60.00, false, 0)
 		--PointCamAtCoord(self.cam, spawn.x, spawn.y, spawn.z+0.1)
-		PointCamAtEntity(self.cam,self.movableentity[self.movabletype],1.0,-1.0,-0.2)
-		SetCamActive(self.cam, true)
-		SetCamFov(self.cam, 45.0)
-		SetCamRot(self.cam, -15.0, 0.0, 252.063)
-		RenderScriptCams(true, true, 3000, true, true)
+		--PointCamAtEntity(self.cam,self.movableentity[self.movabletype],1.0,-1.0,-0.2)
+		--SetCamActive(self.cam, true)
+		--SetCamFov(self.cam, 45.0)
+		--SetCamRot(self.cam, -15.0, 0.0, 252.063)
+		--RenderScriptCams(true, true, 3000, true, true)
 		SetVehicleDoorShut(self.movableentity[self.movabletype],2,0)
 		SetVehicleDoorShut(self.movableentity[self.movabletype],3,0)
+		Citizen.CreateThreadNow(function()
+			while self.incockpit do
+				Wait(1)
+				SetFollowPedCamViewMode(2)
+				DisableCamCollisionForEntity(self.movableentity[self.movabletype])
+				print('gago')
+			end
+		end)
 	else
 		DetachEntity(self.playerPed)
 		self.incockpit = false
