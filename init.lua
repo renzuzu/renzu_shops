@@ -19,8 +19,8 @@ shared.defaultStock = {
 } -- default to all items in store when newly purchased
 shared.SendtoBank = false -- if true owner will receive money to owned bank account
 shared.VehicleKeysType = {
-	['export'] = true, -- if false it will use trigger events
-	['client'] = false, -- if false it will use server event or server exports
+	['export'] = false, -- if false it will use trigger events
+	['client'] = true, -- if false it will use server event or server exports
 }
 shared.VehicleKeys = function(plate,source) -- vehicle keys
 	-- first parameter expected is plate
@@ -38,7 +38,7 @@ shared.VehicleKeys = function(plate,source) -- vehicle keys
 
 		elseif shared.VehicleKeysType['client'] then -- client events from server   edit this if your using client events vehicle keys
 			-- Server Events Keys
-			-- ex TriggerClientEvent('GiveKeys', source, plate) -- this is non existing and example only
+			TriggerClientEvent('vehiclekeys:client:SetOwner', source, plate) -- this is non existing and example only
 
 		else -- server events from server edit this
 			-- Server Events Keys

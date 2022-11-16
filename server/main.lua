@@ -1017,7 +1017,7 @@ lib.callback.register("renzu_shops:getmovableshopdata", function(source,data)
 	return GlobalState.MovableShops[identifier]
 end)
 
-AddMovableShopToPlayer = function(data)
+AddMovableShopToPlayer = function(data,source)
 	local plate = nil
 	local movable = GlobalState.MovableShops
 	if data.shop.type == 'vehicle' then
@@ -1041,12 +1041,13 @@ lib.callback.register("renzu_shops:buymovableshop", function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
 	local identifier = data.type..':'..xPlayer.identifier
+	local movable = GlobalState.MovableShops
 	if not movable[identifier] then
 		if xPlayer.getAccount('money').money >= data.price then
 			xPlayer.removeAccountMoney('money', data.price)
 			data.owner = xPlayer.identifier
 			data.identifier = identifier
-			return AddMovableShopToPlayer(data)
+			return AddMovableShopToPlayer(data,source)
 		else
 			return false
 		end
@@ -1058,6 +1059,9 @@ end)
 lib.callback.register("renzu_shops:getMovableVehicle", function(source,plate)
 	local plate = string.gsub(tostring(plate), '^%s*(.-)%s*$', '%1'):upper()
 	local vehicle = SqlFunc('oxmysql','fetchAll','SELECT * FROM '..vehicletable..' WHERE TRIM(plate) = ? ',{plate})
+	if vehicle[1] then
+		shared.VehicleKeys(plate,source)
+	end
 	return vehicle[1]
 end)
 

@@ -112,7 +112,7 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 		local group = data?.var?.shop?.groups
 		if group and group ~= self.PlayerData?.job?.name then return end
 		local shopboss = self.delivery and callback == self.StoreOwner
-		local drawdist = 1.1
+		local drawdist = 1.5
 		if self.shoptype == 'vehicle' then
 			drawdist = 1.5
 		end
@@ -125,12 +125,11 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 				return
 			end
 		end
-		if data.distance < 1.1 and self.lastdata ~= data.index then
+		if data.distance < 1.5 and self.lastdata ~= data.index then
 			self.Active = lib.table.deepclone(data.var)
 			self.lastdata = data.index
 			self.movabletype = data.var.type
 		end
-		if shared.MovableShops[data.var.type] and self.clerkmode then Wait(20) end
 		if not self.clerkmode then
 			DrawMarker(21, data.coords.x, data.coords.y, data.coords.z, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
 		end
@@ -1763,9 +1762,11 @@ self.Handlers = function()
 		local offset = GetOffsetFromEntityInWorldCoords(entity,worldoffset.x,worldoffset.y,worldoffset.z)
 		if value.selling and not spheres[value.identifier] then
 			spheres[value.identifier] = self.Add(offset,value.type,self.OpenShopMovable,false,{type = value.type, identifier = value.identifier, net = net})
-		elseif not value.selling and spheres[value.identifier].remove then
+		elseif spheres[value.identifier].remove then
 			spheres[value.identifier]:remove()
 			spheres[value.identifier] = nil
+			Wait(100)
+			spheres[value.identifier] = self.Add(offset,value.type,self.OpenShopMovable,false,{type = value.type, identifier = value.identifier, net = net})
 		end
 	end)
 
@@ -2207,97 +2208,102 @@ self.MovableShop = function(data)
 	end
 end
 self.movableentity = {}
+self.startingsell = {}
 self.MovableShopStart = function(data)
-	if not DoesEntityExist(self.movableentity[self.movabletype]) then
-		self.movableentity[self.movabletype] = self.SpawnMovableEntity(data)
+	local movabletype = self.movabletype
+	if not DoesEntityExist(self.movableentity[movabletype]) then
+		self.movableentity[movabletype] = self.SpawnMovableEntity(data)
 	end
 	local nets = {}
-	table.insert(nets,NetworkGetNetworkIdFromEntity(self.movableentity[self.movabletype]))
+	table.insert(nets,NetworkGetNetworkIdFromEntity(self.movableentity[movabletype]))
 	--LocalPlayer.state:set('movableentity',nets,true)
 	self.SetClientStateBags({
 		entity = GetPlayerServerId(PlayerId()), 
 		name = 'movableentity', 
 		data = {bagname = 'player:', nets = nets},
 	})
-	local identifier = self.movabletype..':'..self.PlayerData.identifier
+	local identifier = movabletype..':'..self.PlayerData.identifier
 	self.SetClientStateBags({
-		entity = self.movableentity[self.movabletype], 
+		entity = self.movableentity[movabletype], 
 		name = 'movableshop', 
-		data = {identifier = identifier, type = self.movabletype, selling = true}
+		data = {identifier = identifier, type = movabletype, selling = true}
 	})
-	local ent = Entity(self.movableentity[self.movabletype]).state
+	local ent = Entity(self.movableentity[movabletype]).state
 	self.driving = false
-	self.worldoffset[self.movabletype] = vec3(0.0,1.0,0.5)
+	self.worldoffset[movabletype] = vec3(0.0,1.0,0.5)
 	if data.type == 'vehicle' then
-		self.worldoffset[self.movabletype] = vec3(0.0,-5.0,0.5)
+		self.worldoffset[movabletype] = vec3(0.0,-5.0,0.5)
 	end
 	self.incockpit = false
 	while not ent.movableshop do Wait(10) end
 	CreateThread(function()
-		local entity = self.movableentity[self.movabletype]
-		self.startingsell = false
+		local entity = self.movableentity[movabletype]
+		self.startingsell[movabletype] = false
 		while DoesEntityExist(entity) do
 			local sleep = 1000
-			local worldoffset = self.worldoffset[self.movabletype]
-			local offset = GetOffsetFromEntityInWorldCoords(entity,worldoffset.x,worldoffset.y,worldoffset.z)
-			self.clerkmode = false
-			if not self.startingsell and #(GetEntityCoords(self.playerPed) - offset) < 1 then
-				sleep = 5
-				self.clerkmode = true
-			elseif not self.clerkmode and not ent.movableshop.selling and data.type == 'object' then
-				sleep = 5
-				DisableControlAction(0,75,true)
-				DisableControlAction(27, 75, true)
-				--SetVehicleIndividualDoorsLocked(self.bike[self.movabletype],-1,2)
-				--SetVehicleDoorsLocked(self.bike[self.movabletype],4)
-				if DoesEntityExist(self.bike[self.movabletype]) and not IsPedInAnyVehicle(self.playerPed) then
-					self.startingsell = false
-					local identifier = self.movabletype..':'..self.PlayerData.identifier
-					self.SetClientStateBags({
-						entity = self.movableentity[self.movabletype], 
-						name = 'movableshop', 
-						data = {identifier = identifier, type = self.movabletype, selling = true}
-					})
-					if data.type == 'object' then
-						SetEntityCollision(self.bike[self.movabletype],false,true)
-						FreezeEntityPosition(self.bike[self.movabletype],true)
-						SetEntityAlpha(self.bike[self.movabletype],1,true)
-						DetachEntity(self.movableentity[self.movabletype],true)
-						PlaceObjectOnGroundProperly(self.movableentity[self.movabletype])
-						ClearPedTasks(self.playerPed)
-						ResetPedMovementClipset(self.playerPed,1.0)
-						local bikecoord = GetEntityCoords(self.bike[self.movabletype])
-						self.bikecoords[self.movabletype] = vec4(bikecoord.x,bikecoord.y,bikecoord.z,GetEntityHeading(self.bike[self.movabletype]))
-						self.DeleteEntity(self.bike[self.movabletype])
-						--SetEntityCoords(self.playerPed,coord)
-					end
-				end
-			else
-				ent = Entity(entity).state
-				if data.type == 'vehicle' and GetEntitySpeed(entity) < 1 then
-					if not ent.movableshop.selling and self.driving then
+			local worldoffset = self.worldoffset[movabletype]
+			local offset
+			if worldoffset then
+				offset = GetOffsetFromEntityInWorldCoords(entity,worldoffset.x,worldoffset.y,worldoffset.z)
+				self.clerkmode = false
+				if not self.startingsell[movabletype] and #(GetEntityCoords(self.playerPed) - offset) < 1 then
+					sleep = 5
+					self.clerkmode = true
+				elseif not self.clerkmode and not ent.movableshop.selling and data.type == 'object' then
+					sleep = 5
+					DisableControlAction(0,75,true)
+					DisableControlAction(27, 75, true)
+					--SetVehicleIndividualDoorsLocked(self.bike[movabletype],-1,2)
+					--SetVehicleDoorsLocked(self.bike[movabletype],4)
+					if DoesEntityExist(self.bike[movabletype]) and not IsPedInAnyVehicle(self.playerPed) then
+						self.startingsell[movabletype] = false
+						local identifier = movabletype..':'..self.PlayerData.identifier
 						self.SetClientStateBags({
-							entity = self.movableentity[self.movabletype], 
+							entity = self.movableentity[movabletype], 
 							name = 'movableshop', 
-							data = {identifier = identifier, type = self.movabletype, selling = true}
+							data = {identifier = identifier, type = movabletype, selling = true}
 						})
+						if data.type == 'object' then
+							SetEntityCollision(self.bike[movabletype],false,true)
+							FreezeEntityPosition(self.bike[movabletype],true)
+							SetEntityAlpha(self.bike[movabletype],1,true)
+							DetachEntity(self.movableentity[movabletype],true)
+							PlaceObjectOnGroundProperly(self.movableentity[movabletype])
+							ClearPedTasks(self.playerPed)
+							ResetPedMovementClipset(self.playerPed,1.0)
+							local bikecoord = GetEntityCoords(self.bike[movabletype])
+							self.bikecoords[movabletype] = vec4(bikecoord.x,bikecoord.y,bikecoord.z,GetEntityHeading(self.bike[movabletype]))
+							self.DeleteEntity(self.bike[movabletype])
+							--SetEntityCoords(self.playerPed,coord)
+						end
 					end
-					self.driving = false
-				elseif data.type == 'vehicle' and GetEntitySpeed(entity) > 2 then
-					self.driving = true
-					if ent.movableshop.selling then
-						SetVehicleDoorShut(entity,5,0)
-						self.SetClientStateBags({
-							entity = self.movableentity[self.movabletype], 
-							name = 'movableshop', 
-							data = {identifier = identifier, type = self.movabletype, selling = false}
-						})
+				else
+					ent = Entity(entity).state
+					if data.type == 'vehicle' and GetEntitySpeed(entity) < 1 then
+						if not ent.movableshop.selling and self.driving then
+							self.SetClientStateBags({
+								entity = self.movableentity[movabletype], 
+								name = 'movableshop', 
+								data = {identifier = identifier, type = movabletype, selling = true}
+							})
+						end
+						self.driving = false
+					elseif data.type == 'vehicle' and GetEntitySpeed(entity) > 2 then
+						self.driving = true
+						if ent.movableshop.selling then
+							SetVehicleDoorShut(entity,5,0)
+							self.SetClientStateBags({
+								entity = self.movableentity[movabletype], 
+								name = 'movableshop', 
+								data = {identifier = identifier, type = movabletype, selling = false}
+							})
+						end
 					end
+					local type = movabletype -- supports multiple shop in same loops for the same identifier
+					while data.type == 'vehicle' and #(GetEntityCoords(self.playerPed) - offset) > 2 and not IsPedInAnyVehicle(self.playerPed)
+					or data.type == 'object' and #(GetEntityCoords(self.playerPed) - offset) > 2 do Wait(100) end
+					self.movabletype = type
 				end
-				local movabletype = self.movabletype -- supports multiple shop in same loops for the same identifier
-				while data.type == 'vehicle' and #(GetEntityCoords(self.playerPed) - offset) > 2 and not IsPedInAnyVehicle(self.playerPed)
-				or data.type == 'object' and #(GetEntityCoords(self.playerPed) - offset) > 2 do Wait(100) end
-				self.movabletype = movabletype
 			end
 			if sleep == 5 then 
 				DisableControlAction(0,75,true)
@@ -2312,7 +2318,7 @@ self.MovableShopStart = function(data)
 					self.OpenMovableShop(data)
 				end
 			end
-			if IsDisabledControlJustPressed(0,49) and IsPedInAnyVehicle(self.playerPed) then self.startingsell = true ClearPedTasks(self.playerPed) TaskLeaveVehicle(self.playerPed,self.bike[self.movabletype],262144) end
+			if IsDisabledControlJustPressed(0,49) and IsPedInAnyVehicle(self.playerPed) then self.startingsell[movabletype] = true ClearPedTasks(self.playerPed) TaskLeaveVehicle(self.playerPed,self.bike[movabletype],262144) end
 			Wait(sleep)
 		end
 	end)
@@ -2383,13 +2389,13 @@ self.SpawnMovableEntity = function(data)
 			return
 		end
 		ent = CreateVehicle(model, data.spawn, true, true)
+		while not DoesEntityExist(ent) do Wait(1) end
 		local plate = vehicledata.plate
-		lib.setVehicleProperties(ent, json.decode(vehicledata.vehicle))
 		SetVehicleNumberPlateText(ent,plate)
 	else
 		ent = CreateObject(model, GetEntityCoords(self.playerPed)+vec3(1.0,3.0,0.5), true, true, false)
+		while not DoesEntityExist(ent) do Wait(1) end
 	end
-	while not DoesEntityExist(ent) do Wait(1) end
 	while not NetworkGetEntityIsNetworked(ent) do Wait(1) NetworkRegisterEntityAsNetworked(ent) end
 	self.SetEntityControlable(ent)
 	PlaceObjectOnGroundProperly(ent)
