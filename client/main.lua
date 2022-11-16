@@ -2365,7 +2365,6 @@ self.GotoCockpit = function(data)
 				Wait(1)
 				SetFollowPedCamViewMode(2)
 				DisableCamCollisionForEntity(self.movableentity[self.movabletype])
-				print('gago')
 			end
 		end)
 	else
