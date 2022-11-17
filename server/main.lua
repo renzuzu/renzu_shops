@@ -1,8 +1,3 @@
-GlobalState.Shipping = json.decode(GetResourceKvpString('shippingcompany') or '[]') or {}
-GlobalState.Stores = json.decode(GetResourceKvpString('renzu_stores') or '[]') or {}
-GlobalState.MovableShops = json.decode(GetResourceKvpString('movableshops') or '[]') or {}
-GlobalState.FinanceData = json.decode(GetResourceKvpString('financedata') or '[]') or {}
-GlobalState.JobShop = {}
 Inventory = {}
 local Items = {}
 local purchaseorders = {}
@@ -13,12 +8,15 @@ stored = 'stored'
 playertable = 'users'
 playeridentifier = 'identifier'
 playeraccounts = 'accounts'
+sql = {}
+
 local canregister = false
 local checkox = function()
     _ = exports.ox_inventory.RegisterSingleShop
 end
 
 CreateThread(function()
+	sql = request('server/db/sql')
 	if pcall(checkox) then canregister = true end
 	request('server/framework/main')
 	-- shared.ox_Shops = true . try ox_inventory single create shop
@@ -241,6 +239,7 @@ RemoveStockFromStore = function(data)
 					if stores[v.label].items[itemtype][itemname] == nil then stores[v.label].items[itemtype][itemname] = {} end
 					if stores[v.label].items[itemtype][itemname].stock and tonumber(stores[v.label].items[itemtype][itemname].stock) >= data.amount then
 						stores[v.label].items[itemtype][itemname].stock = tonumber(stores[v.label].items[itemtype][itemname].stock) - data.amount
+						sql.update('renzu_stores','items','shop',v.label,json.encode(stores[v.label].items))
 						local price = stores[v.label].items[itemtype][itemname].price and tonumber(stores[v.label].items[itemtype][itemname].price) or CheckItemData(data)
 						if price then
 							if shared.SendtoBank and data.money == 'bank' then
@@ -254,8 +253,10 @@ RemoveStockFromStore = function(data)
 									data.money = data.money:gsub('bank', 'money')
 									if stores[v.label].cashier[data.money] == nil then stores[v.label].cashier[data.money] = 0 end
 									stores[v.label].cashier[data.money] = tonumber(stores[v.label].cashier[data.money]) + (tonumber(price) * data.amount)
+									sql.update('renzu_stores','cashier','shop',v.label,json.encode(stores[v.label].cashier))
 								else
 									stores[v.label].money[data.money] = tonumber(stores[v.label].money[data.money]) + (tonumber(price) * data.amount)
+									sql.update('renzu_stores','money','shop',v.label,json.encode(stores[v.label].money))
 								end
 							end
 						end
@@ -325,6 +326,7 @@ AddStockInternal = function(shop,index,count,item)
 								if stores[v2.label].items[itemtype][itemname].stock == nil then stores[v2.label].items[itemtype][itemname].stock = 0 end
 								stores[v2.label].items[itemtype][itemname].stock += tonumber(count)
 								if stores[v2.label].items[itemtype][itemname].stock <= 0 then stores[v2.label].items[itemtype][itemname].stock = 0 end
+								sql.update('renzu_stores','items','shop',v2.label,json.encode(stores[v2.label].items))
 							end
 						end
 					end
@@ -502,7 +504,15 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 		hasitem = true
 		local name = v.data.metadata and v.data.metadata.name or v.data.name
 		if v.count > 0 then
-			total = total + tonumber(data.data[name].price) * tonumber(v.count)
+			if shared.inventory == 'ox_inventory' and shopdata ~= 'VehicleShop' then
+				if not exports.ox_inventory:CanCarryItem(source, v.data.name, v.count, v.data.metadata)  then
+					data.items[k] = nil
+				else
+					total = total + tonumber(data.data[name].price) * tonumber(v.count)
+				end
+			else
+				total = total + tonumber(data.data[name].price) * tonumber(v.count)
+			end
 		else
 			data.items[k] = nil
 		end
@@ -568,6 +578,9 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 	if data.finance then
 		total = data.finance.downpayment
 	end
+	if total == 0 then
+		return 'invalidamount'
+	end
 	if not hasitem then
 		return 'invalidamount'
 	end
@@ -575,7 +588,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 	moneytype = moneytype:gsub('Wallet',moneytype) -- check payment type
 	moneytype = moneytype:gsub('finance','money')
 	local money = xPlayer.getAccount(moneytype:lower()).money
-	if money >= total then
+	if money >= total and total > 0 then
 		xPlayer.removeAccountMoney(moneytype:lower(),total)
 		callback = 'success'
 		for k,v in pairs(customparts) do -- remove custom items from cart as its inserted as custom item metadatas from the recent loop above
@@ -646,6 +659,7 @@ end)
 RegisterFinance = function(data)
 	local finance = GlobalState.FinanceData
 	if not finance[data.identifier] then
+		sql.insert('financedata',{data.identifier,shared.MaxDebt + data.bank,'[]'})
 		finance[data.identifier] = {max = shared.MaxDebt + data.bank, financed = {}}
 	end
 	if finance[data.identifier].financed then
@@ -659,7 +673,9 @@ RegisterFinance = function(data)
 		finance[data.identifier].max -= data.total
 		table.insert(finance[data.identifier].financed,financedata)
 		GlobalState.FinanceData = finance
-		SetResourceKvp('financedata', json.encode(finance))
+		sql.update('financedata','max','identifier',data.identifier,finance[data.identifier].max)
+		sql.update('financedata','financed','identifier',data.identifier,json.encode(finance))
+		--SetResourceKvp('financedata', json.encode(finance))
 	end
 end
 
@@ -701,9 +717,11 @@ Citizen.CreateThread(function()
 							finance[debtor].financed[k].total += v.daily/10
 						end
 					end
+					sql.update('financedata','max','identifier',debtor,finance[debtor].max)
+					sql.update('financedata','financed','identifier',debtor,finance[debtor].financed)
 				end
 			end
-			SetResourceKvp('financedata', json.encode(finance))
+			--SetResourceKvp('financedata', json.encode(finance))
 			GlobalState.FinanceData = finance
 		end
 		Wait(1000)
@@ -719,7 +737,16 @@ exports('isShopAlreadyOwned', isShopAlreadyOwned)
 BuyStore = function(data)
 	local stores = GlobalState.Stores
 	stores[data.label] = {owner = data.identifier, money = {money = 0, black_money = 0}, items = {normal = {}, custom = {}}, employee = {}, cashier = { money = 0, black_money = 0}}
-	SetResourceKvp('renzu_stores', json.encode(stores))
+	sql.insert('renzu_stores',{
+		data.label,
+		data.identifier,
+		json.encode({money = 0, black_money = 0}),
+		json.encode({normal = {}, custom = {}}),
+		'[]',
+		json.encode({ money = 0, black_money = 0}),
+		'[]',
+		nil,
+	})
 	GlobalState.Stores = stores
 	AddStockInternal(data.shopName,data.shopIndex,shared.defaultStock[data.shopName])
 	if shared.oxShops and canregister and data.shopName ~= 'VehicleShop' then
@@ -761,7 +788,8 @@ end)
 local RemoveStore = function(id)
 	local stores = GlobalState.Stores
 	stores[id] = nil
-	SetResourceKvp('renzu_stores', json.encode(stores))
+	--SetResourceKvp('renzu_stores', json.encode(stores))
+	sql.delete('renzu_stores','shop',id)
 	GlobalState.Stores = stores
 	return true
 end
@@ -808,7 +836,8 @@ CreateCustomItem = function(store)
 	end
 	local itemdata = {name = CustomItems.Default, price = data.price , category = data.category, metadata = metadata}
 	stores[store].customitems[data.itemname] = itemdata
-	SetResourceKvp('renzu_stores', json.encode(stores))
+	sql.update('renzu_stores','customitems','shop',store,json.encode(stores[store].customitems))
+	--SetResourceKvp('renzu_stores', json.encode(stores))
 	GlobalState.Stores = stores
 	return true
 end
@@ -833,7 +862,8 @@ lib.callback.register("renzu_shops:transfershop", function(source,data)
 		stores[data.store].owner = toPlayer.identifier
 		stores[data.store]?.employee[xPlayer.identifier] = GetPlayerName(source)
 		GlobalState.Stores = stores
-		SetResourceKvp('renzu_stores', json.encode(stores))
+		sql.update('renzu_stores','owner','shop',data.store,toPlayer.identifier)
+		--SetResourceKvp('renzu_stores', json.encode(stores))
 		return true
 	end
 	return false
@@ -843,7 +873,8 @@ AddAccessToJob = function(data)
 	local stores = GlobalState.Stores
 	stores[data.store].job = data.job
 	GlobalState.Stores = stores
-	SetResourceKvp('renzu_stores', json.encode(stores))
+	--SetResourceKvp('renzu_stores', json.encode(stores))
+	sql.update('renzu_stores','job','shop',data.store,data.job)
 	local jobshop = GlobalState.JobShop
 	jobshop[data.store] = data.job
 	GlobalState.JobShop = jobshop
@@ -905,6 +936,7 @@ lib.callback.register("renzu_shops:robstore", function(source,data)
 			local money = stores[data.store].cashier[data.item] or 0
 			stores[data.store].cashier[data.item] = 0
 			Inventory.AddItem(source, data.item, money)
+			sql.update('renzu_stores','cashier','shop',data.store,stores[data.store].cashier)
 			GlobalState.Stores = stores
 			return true
 		end
@@ -1030,7 +1062,16 @@ AddMovableShopToPlayer = function(data,source)
 		})
 	end
 	movable[data.identifier] = {identifier = data.owner, money = {money = 0, black_money = 0}, items = {}, plate = plate, type = data.shop.type, shopname = data.type} -- literally plate and type is the only thing we save here as the other datas like money and items are saved using ox_inventory. first plan is to used owned inventory, same with the shop stocking system logic using ox contextmenus,  but instead i tried and successfully used ox inventory since this does not saved vehicle stocks datas.
-	SetResourceKvp('movableshops', json.encode(movable))
+	sql.insert('movableshops',{
+		data.identifier,
+		data.owner,
+		json.encode({money = 0, black_money = 0}),
+		'[]',
+		plate,
+		data.shop.type,
+		data.type,
+	})
+	--SetResourceKvp('movableshops', json.encode(movable))
 	GlobalState.MovableShops = movable
 	return movable[data.identifier]
 end
@@ -1196,7 +1237,8 @@ lib.callback.register("renzu_shops:removeemployee", function(source,data)
 	local stores = GlobalState.Stores
 	if stores[data.store].employee[data.id] then
 		stores[data.store].employee[data.id] = nil
-		SetResourceKvp('renzu_stores', json.encode(stores))
+		sql.update('renzu_stores','employee','shop',data.store,json.encode(stores[data.store].employee))
+		--SetResourceKvp('renzu_stores', json.encode(stores))
 		GlobalState.Stores = stores
 		return true
 	end
@@ -1223,7 +1265,8 @@ lib.callback.register("renzu_shops:addemployee", function(source,data)
 	if accepted then
 		local stores = GlobalState.Stores
 		stores[data.store].employee[employee.identifier] = employee.name
-		SetResourceKvp('renzu_stores', json.encode(stores))
+		--SetResourceKvp('renzu_stores', json.encode(stores))
+		sql.update('renzu_stores','employee','shop',data.store,json.encode(stores[data.store].employee))
 		GlobalState.Stores = stores
 	end
 	return accepted
@@ -1261,9 +1304,10 @@ AddStockstoStore = function(data)
 				local name, index, storedata = getShopDataByLabel(k)
 				SetOxInvShopStock({name = name, index = index, item = itemname, value = data.data.item.amount})
 			end
+			sql.update('renzu_stores','items','shop',k,json.encode(stores[k].items))
 		end
 	end
-	SetResourceKvp('renzu_stores', json.encode(stores))
+	--SetResourceKvp('renzu_stores', json.encode(stores))
 	GlobalState.Stores = stores
 end
 
@@ -1286,7 +1330,8 @@ SetShopitemPrice = function(data)
 	local stores = GlobalState.Stores
 	if stores[data.store].items[data.itemtype][data.itemname] == nil then stores[data.store].items[data.itemtype][data.itemname] = {} end
 	stores[data.store].items[data.itemtype][data.itemname].price = data.value
-	SetResourceKvp('renzu_stores', json.encode(stores))
+	--SetResourceKvp('renzu_stores', json.encode(stores))
+	sql.update('renzu_stores','items','shop',data.store,json.encode(stores[data.store].items))
 	GlobalState.Stores = stores
 end
 
@@ -1306,7 +1351,8 @@ DepositItemToStore = function(source,data)
 		local stock = stores[data.store].items[data.itemtype][data.itemname].stock
 		if not stock then stores[data.store].items[data.itemtype][data.itemname].stock = 0 end
 		stores[data.store].items[data.itemtype][data.itemname].stock = tonumber(stores[data.store].items[data.itemtype][data.itemname].stock) + data.value
-		SetResourceKvp('renzu_stores', json.encode(stores))
+		--SetResourceKvp('renzu_stores', json.encode(stores))
+		sql.update('renzu_stores','items','shop',data.store,json.encode(stores[data.store].items))
 		GlobalState.Stores = stores
 		if canregister and shared.oxShops then
 			local name, index, storedata = getShopDataByLabel(data.store)
@@ -1324,7 +1370,8 @@ WithdrawItemFromStore = function(source, data)
 	local count = tonumber(stores[data.store].items[data.itemtype][data.itemname].stock)
 	if tonumber(data.value) and count and count >= data.value and data.value > 0 then
 		stores[data.store].items[data.itemtype][data.itemname].stock = tonumber(stores[data.store].items[data.itemtype][data.itemname].stock) - data.value
-		SetResourceKvp('renzu_stores', json.encode(stores))
+		--SetResourceKvp('renzu_stores', json.encode(stores))
+		sql.update('renzu_stores','items','shop',data.store,json.encode(stores[data.store].items))
 		GlobalState.Stores = stores
 		Inventory.AddItem(source, data.item, data.value, data.metadata or {})
 		if canregister and shared.oxShops then
@@ -1340,7 +1387,8 @@ exports('WithdrawItemFromStore', WithdrawItemFromStore)
 AddMoneyToStore = function(data)
 	local stores = GlobalState.Stores
 	stores[data.store].money[data.item] = tonumber(stores[data.store].money[data.item]) + data.value
-	SetResourceKvp('renzu_stores', json.encode(stores))
+	--SetResourceKvp('renzu_stores', json.encode(stores))
+	sql.update('renzu_stores','money','shop',data.store,json.encode(stores[data.store].money))
 	GlobalState.Stores = stores
 end
 
@@ -1349,7 +1397,8 @@ exports('AddMoneyToStore', AddMoneyToStore)
 RemoveMoneyStore = function(data)
 	local stores = GlobalState.Stores
 	stores[data.store].money[data.item] = tonumber(stores[data.store].money[data.item]) - data.value
-	SetResourceKvp('renzu_stores', json.encode(stores))
+	--SetResourceKvp('renzu_stores', json.encode(stores))
+	sql.update('renzu_stores','money','shop',data.store,json.encode(stores[data.store].money))
 	GlobalState.Stores = stores
 end
 
@@ -1359,7 +1408,8 @@ RemoveMoneyFromCashier = function(data)
 	local stores = GlobalState.Stores
 	if stores[data.store].cashier[data.item] == nil then stores[data.store].cashier[data.item] = 0 end
 	stores[data.store].cashier[data.item] = tonumber(stores[data.store].cashier[data.item]) - data.value
-	SetResourceKvp('renzu_stores', json.encode(stores))
+	--SetResourceKvp('renzu_stores', json.encode(stores))
+	sql.update('renzu_stores','cashier','shop',data.store,json.encode(stores[data.store].cashier))
 	GlobalState.Stores = stores
 end
 
@@ -1372,15 +1422,15 @@ EnableDisableStoreItems = function(data)
 	if stores[data.store].items[itemtype][itemname] == nil then stores[data.store].items[itemtype][itemname] = {} end
 	if data.value == 'disable' then
 		stores[data.store].items[itemtype][itemname].disable = 'disable'
-		SetResourceKvp('renzu_stores', json.encode(stores))
+		--SetResourceKvp('renzu_stores', json.encode(stores))
 		GlobalState.Stores = stores
-		return 'success'
 	elseif data.value == 'enable' then
 		stores[data.store].items[itemtype][itemname].disable = nil
-		SetResourceKvp('renzu_stores', json.encode(stores))
+		--SetResourceKvp('renzu_stores', json.encode(stores))
 		GlobalState.Stores = stores
-		return 'success'
 	end
+	sql.update('renzu_stores','items','shop',data.store,json.encode(stores[data.store].items))
+	return 'success'
 end
 
 exports('EnableDisableStoreItems', EnableDisableStoreItems)
@@ -1513,7 +1563,8 @@ end
 
 AddEventHandler('onResourceStop', function(re)
 	if re == GetCurrentResourceName() then
-		SetResourceKvp('renzu_stores', json.encode(GlobalState.Stores))
+		sql.save(GlobalState.Stores)
+		--SetResourceKvp('renzu_stores', json.encode(GlobalState.Stores))
 		DeletePlayerMovableEntity(false,src)
 	end
 end)

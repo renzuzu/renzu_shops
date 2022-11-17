@@ -10,6 +10,7 @@ self.moneytype = {}
 self.itemLists = {}
 self.PlayerData = {}
 self.JobSpheres = {}
+self.Store = 'Stores_%s'
 self.StartUp = function()
 	self.PlayerData = self.GetPlayerData()
 	self.GetItems = function()
@@ -43,6 +44,7 @@ self.StartUp = function()
 						shop.shoptype = k
 						local ownedshopdata = self.GetShopData(k,shopindex)
 						shop.groups = ownedshopdata and ownedshopdata.groups
+						shop.StoreName = ownedshopdata and ownedshopdata.label
 						if not shared.target then
 							self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 						elseif not shop.groups or shop.groups == self.PlayerData.job.name then
@@ -112,9 +114,9 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 		local group = data?.var?.shop?.groups
 		if group and group ~= self.PlayerData?.job?.name then return end
 		local shopboss = self.delivery and callback == self.StoreOwner
-		local drawdist = 1.5
+		local drawdist = 1.2
 		if self.shoptype == 'vehicle' then
-			drawdist = 1.5
+			drawdist = 1.2
 		end
 		if data.var.type and shared.MovableShops[data.var.type] and callback == self.OpenShopMovable then
 			if not NetworkDoesNetworkIdExist(data.var.net) 
@@ -125,7 +127,7 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 				return
 			end
 		end
-		if data.distance < 1.5 and self.lastdata ~= data.index then
+		if data.distance < 1.2 and self.lastdata ~= data.index then
 			self.Active = lib.table.deepclone(data.var)
 			self.lastdata = data.index
 			self.movabletype = data.var.type
@@ -167,15 +169,19 @@ self.ShopBlip = function(data)
 	EndTextCommandSetBlipName(blip)
 end
 
+self.StoreData = function(id)
+	return GlobalState[self.Store:format(id)]
+end
+
 self.LoadShops = function()
 	if self.PlayerData.identifier == nil then return end
-	local stores = GlobalState.Stores or {}
 	for name,shops in pairs(shared.OwnedShops) do
 		for k,shop in pairs(shops) do
+			local storedata = self.StoreData(shop.label)
 			if self.temporalspheres[shop.label] and self.temporalspheres[shop.label].remove then
 				self.temporalspheres[shop.label]:remove()
 			end
-			if not stores[shop.label] then
+			if not storedata then
 				shop.shopName = name
 				shop.shopIndex = k
 				if not shared.target then
@@ -185,8 +191,8 @@ self.LoadShops = function()
 					local id = self.addTarget(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
 					self.temporalspheres[shop.label] = {target = id, spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
 				end
-			elseif stores[shop.label]?.owner == self.PlayerData.identifier 
-			or stores[shop.label].employee[self.PlayerData.identifier] then
+			elseif storedata and storedata?.owner == self.PlayerData.identifier 
+			or storedata and storedata.employee[self.PlayerData.identifier] then
 				if not shared.target then
 					self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				else
@@ -216,75 +222,75 @@ self.LoadShops = function()
 end
 self.duty = {}
 self.Cashier = function(data)
-	local storedata = {index = data.index, type = data.type, offset = data.offset, money = data.moneytype}
+	local storedatas = {index = data.index, type = data.type, offset = data.offset, money = data.moneytype}
 	local options = {}
-	local stores = GlobalState.Stores
-	if self.duty[data.label] and stores[data.label].owner == self.PlayerData.identifier
-	or stores[data.label] and stores[data.label]?.employee[self.PlayerData.identifier]
-	or stores[data.label]?.job == self.PlayerData.job.name then
-		local cashier = stores[data.label].cashier and stores[data.label].cashier[data.moneytype] or 0
+	local storedata = self.StoreData(data.label)
+	if self.duty[data.label] and storedata.owner == self.PlayerData.identifier
+	or storedata?.employee[self.PlayerData.identifier]
+	or storedata?.job == self.PlayerData.job.name then
+		local cashier = storedata?.cashier[data.moneytype] or 0
 		table.insert(options,{
-			title = 'Withdraw Money from Cashier',
-			description = 'Money in Cashier : '..cashier,
+			title = shared.locales.withdrawcashier,
+			description = shared.locales.moneyincashier:format(cashier),
 			arrow = true,
 			onSelect = function(args)
-				local input = lib.inputDialog('Withdraw Cashier Money', {'How many:'})
+				local input = lib.inputDialog(shared.locales.withdrawcashiermoney, {shared.locales.cashierhowmany})
 				if not input then return end
 				local value = tonumber(input[1]) or 1
 				local reason = lib.callback.await('renzu_shops:editstore', false, {store = data.label, type = 'withdraw_cashier', item = data.moneytype, value = value})
 				if reason == 'success' then
 					self.SetNotify({
-						title = 'Store Business',
-						description = 'Successfully Withdraw '..value..'$',
+						title = shared.locales.notify_title,
+						description = shared.locales.successwithdraw:format(value),
 						type = 'success'
 					})
 				end
 			end
 		})
 		table.insert(options,{
-			title = 'Ongoing Purchase Order',
-			description = 'See list of purchase orders from nearby people',
+			title = shared.locales.ongoingpurchaseorder,
+			description = shared.locales.listofpurchaseorder,
 			arrow = true,
 			onSelect = function(args)
-				self.PurchaseOrderList(data,storedata)
+				self.PurchaseOrderList(data,storedatas)
 			end
 		})
 		table.insert(options,{
-			title = 'Duty Off',
-			description = 'Duty of as Store Clerk : Stop Ondemand Selling',
+			title = shared.locales.dutyoff,
+			description = shared.locales.dutyoffasclerk,
 			arrow = true,
 			onSelect = function(args)
 				self.duty[data.label] = false
-				self.OnDemand(data,'store',storedata)
+				self.OnDemand(data,'store',storedatas)
 			end
 		})
-	elseif not self.duty[data.label] and stores[data.label] and stores[data.label].owner == self.PlayerData.identifier
-		or stores[data.label] and stores[data.label]?.employee[self.PlayerData.identifier]
-		or stores[data.label]?.job == self.PlayerData.job.name then
+	elseif not self.duty[data.label] and storedata?.owner == self.PlayerData.identifier
+		or storedata?.employee[self.PlayerData.identifier]
+		or storedata?.job == self.PlayerData.job.name then
 		table.insert(options,{
-			title = 'Duty On & Ondemand Selling',
-			description = 'Duty as a Store Clerk : Start Ondemand Selling',
+			title = shared.locales.dutyonclerk,
+			description = shared.locales.dutyasclerk,
 			arrow = true,
 			onSelect = function(args)
 				self.duty[data.label] = not self.duty[data.label]
 				self.SetNotify({
-					title = 'Store Business',
-					description = 'Successfully Duty as Store Clerk',
+					title = shared.locales.notify_title,
+					description = shared.locales.successduty,
 					type = 'success'
 				})
 				self.Cashier(data)
-				self.OnDemand(data,'store',storedata)
+				self.OnDemand(data,'store',storedatas)
 			end
 		})
 	elseif not self.duty[data.label] then
 		table.insert(options,{
-			title = 'Rob the Cashier',
-			description = 'Force to open the cashier?',
+			title = shared.locales.robtitle,
+			description = shared.locales.robdesc,
 			arrow = true,
 			onSelect = function(args)
 				local confirm = lib.alertDialog({
-					header = 'Confirm',
-					content = 'Do you really want to rob this store?',
+					header = shared.locales.robconfirmhead,
+					content = shared.locales.confirmrob,
 					centered = true,
 					cancel = true
 				})
@@ -296,16 +302,16 @@ self.Cashier = function(data)
 							local rob = lib.callback.await('renzu_shops:robstore', false, {store = data.label, item = data.moneytype})
 							if rob then
 								self.SetNotify({
-									title = 'Store Business',
-									description = ' You Successfully Rob This Store',
+									title = shared.locales.notify_title,
+									description = shared.locales.successrob,
 									type = 'success'
 								})
 							end
 						end
 					else
 						self.SetNotify({
-							title = 'Store Business',
-							description = ' This store cannot be rob right now',
+							title = shared.locales.notify_title,
+							description = shared.locales.successrobdesc,
 							type = 'error'
 						})
 					end
@@ -315,7 +321,7 @@ self.Cashier = function(data)
 	end
 	lib.registerContext({
 		id = 'cashier',
-		title = 'My Cashier',
+		title = shared.locales.mycashier,
 		onExit = function()
 		end,
 		options = options
@@ -327,31 +333,31 @@ self.StoreManage = function(store)
 	self.adminmode = false
 	local options = {
 		{
-			title = 'Manage Store',
-			description = 'Manage Store items and Store Finance',
+			title = shared.locales.managestore,
+			description = shared.locales.managestoredesc,
 			arrow = true,
 			menu = 'manage_store',
 		}
 	}
-	local stores = GlobalState.Stores
-	if stores[store].owner == self.PlayerData.identifier then
+	local storedata = self.StoreData(store)
+	if storedata?.owner == self.PlayerData.identifier then
 		table.insert(options,{
-			title = 'Transfer Ownership',
-			description = 'Transfer the Shop Business to other Citizen',
+			title = shared.locales.tranferowner,
+			description = shared.locales.transferownerdesc,
 			arrow = true,
 			onSelect = function(args)
 				self.TransferOwnerShip(store)
 			end,
 		})
 		table.insert(options,{
-			title = 'Sell Store',
-			description = 'Sell your store',
+			title = shared.locales.sellstoretitle,
+			description = shared.locales.sellstoredesc,
 			arrow = true,
 			onSelect = function(args)
 				CreateThread(function()
 					local confirm = lib.alertDialog({
-						header = 'Confirm',
-						content = 'Do you really want to sell this store?',
+						header = shared.locales.confirmtitle,
+						content = shared.locales.confirmsell,
 						centered = true,
 						cancel = true
 					})
@@ -359,8 +365,8 @@ self.StoreManage = function(store)
 						local reason = lib.callback.await('renzu_shops:sellstore', false, store)
 						if reason then
 							self.SetNotify({
-								title = 'Store Business',
-								description = store..' has been Sold',
+								title = shared.locales.notify_title,
+								description = shared.locales.hasbeensold:format(store),
 								type = 'success'
 							})
 							if not shared.target then
@@ -382,7 +388,7 @@ self.StoreManage = function(store)
 	end
 	lib.registerContext({
 		id = 'storeowner',
-		title = 'My Bussiness',
+		title = shared.locales.mybusinesstitle,
 		onExit = function()
 		end,
 		options = options
@@ -392,32 +398,32 @@ end
 self.ManageStoreMenu = function(store)
 	local options = {
 		{
-			title = 'Store Inventory',
-			description = 'Manage Store Stocks',
+			title = shared.locales.storeinventorytitle,
+			description = shared.locales.managestocks,
 			arrow = true,
 			onSelect = function(args)
 				return self.ManageInventory(store)
 			end
 		},
 		{
-			title = 'Finance Management',
-			description = 'Here you can withdraw and deposit a money',
+			title = shared.locales.financemanagement,
+			description = shared.locales.financedesc,
 			arrow = true,
 			menu = 'finance_manage',
 		}
 	}
-	local stores = GlobalState.Stores
-	if stores[store].owner == self.PlayerData.identifier or self.adminmode then
+	local storedata = self.StoreData(store)
+	if storedata?.owner == self.PlayerData.identifier or self.adminmode then
 		table.insert(options,{
-			title = 'Employee Management',
-			description = 'Here you can add employee to help you manage your store',
+			title = shared.locales.employeemanage,
+			description = shared.locales.employeedesc,
 			arrow = true,
 			menu = 'employee_manage',
 		})
 	end
 	lib.registerContext({
 		id = 'manage_store',
-		title = 'Manage Store',
+		title = shared.locales.managestore,
 		menu = self.adminmode and 'storeadminlist' or 'storeowner',
 		onExit = function()
 		end,
@@ -426,20 +432,20 @@ self.ManageStoreMenu = function(store)
 end
 
 self.StoreOwner = function(data)
-	local stores = GlobalState.Stores
+	local storedata = self.StoreData(data.label)
 	self.currentstore = data.label
 	self.shoptype = data.type
 	self.moneytype = data.moneytype
-	if stores[self.currentstore] and stores[self.currentstore].owner == self.PlayerData.identifier
-	or stores[self.currentstore] and stores[self.currentstore]?.employee[self.PlayerData.identifier]
-	or stores[self.currentstore]?.job == self.PlayerData.job.name then
+	if storedata?.owner == self.PlayerData.identifier
+	or storedata?.employee[self.PlayerData.identifier]
+	or storedata?.job == self.PlayerData.job.name then
 		self.FinanceManage(self.currentstore,data.moneytype)
 		self.EmployeeManage(self.currentstore)
 		self.ManageStoreMenu(self.currentstore)
 		self.StoreManage(self.currentstore)
 		lib.showContext('storeowner')
 	else
-		self.SetNotify({title = 'Store Business',description = 'You Are Fired',type = 'error'})
+		self.SetNotify({title = shared.locales.notify_title,description = shared.locales.fired,type = 'error'})
 		if self.temporalspheres[self.currentstore] and self.temporalspheres[self.currentstore].spheres?.remove then
 			self.temporalspheres[self.currentstore].spheres:remove()
 		end
@@ -456,18 +462,18 @@ self.RemoveEmployee = function(data)
 	local options = {}
 	for k,v in pairs(data.employee) do
 		table.insert(options,{
-			title = 'Fire '..v,
-			description = 'Remove '..v..' to your Store Employees',
+			title = shared.locales.firetitle:format(v),
+			description = shared.locales.firedesc:format(v),
 			arrow = true,
 			onSelect = function(args)
 				local reason = lib.callback.await('renzu_shops:removeemployee', false, {store = data.store, id = k})
-				self.SetNotify({title = 'Store Business',description = 'Successfully Remove '..v,type = 'success'})
+				self.SetNotify({title = shared.locales.notify_title,description = shared.locales.successfiredesc:format(v),type = 'success'})
 			end
 		})
 	end
 	lib.registerContext({
 		id = 'remove_employee',
-		title = 'Fire Employees',
+		title = shared.locales.fireheader,
 		menu = 'employee_manage',
 		onExit = function()
 
@@ -482,26 +488,26 @@ self.AddEmployee = function(data)
 	for k,v in pairs(data.players) do
 		table.insert(options,{
 			title = GetPlayerName(v.id),
-			description = 'Citizen ID #'..GetPlayerServerId(v.id),
+			description = shared.locales.citizenid:format(GetPlayerServerId(v.id)),
 			arrow = true,
 			onSelect = function(args)
 				local reason = lib.callback.await('renzu_shops:addemployee', false, {store = data.store, id = GetPlayerServerId(v.id)})
 				if reason == true then
 					self.SetNotify({
-						title = 'Store Business',
-						description = 'Offer Accepted by '..GetPlayerName(v.id),
+						title = shared.locales.notify_title,
+						description = shared.locales.offeracceptedby:format(GetPlayerServerId(v.id)),
 						type = 'success'
 					})
 				elseif reason == 'already' then
 					self.SetNotify({
-						title = 'Store Business',
-						description = GetPlayerName(v.id)..' is Already Employed to this Store',
+						title = shared.locales.notify_title,
+						description = shared.locales.alreadyemployed:format(GetPlayerServerId(v.id)),
 						type = 'error'
 					})
 				else
 					self.SetNotify({
-						title = 'Store Business',
-						description = 'Offer Declined by '..GetPlayerName(v.id),
+						title = shared.locales.notify_title,
+						description = shared.locales.offerdeclined:format(GetPlayerServerId(v.id)),
 						type = 'error'
 					})
 				end
@@ -510,7 +516,7 @@ self.AddEmployee = function(data)
 	end
 	lib.registerContext({
 		id = 'add_employee',
-		title = 'Invite Employees',
+		title = shared.locales.inviteemployee,
 		menu = 'employee_manage',
 		onExit = function()
 		end,
@@ -520,10 +526,11 @@ self.AddEmployee = function(data)
 end
 
 self.EmployeeManage = function(store)
+	local storedata = self.StoreData(store)
 	local options = {
 		{
-			title = 'Add Employee',
-			description = 'Add nearby citizen to your employee list',
+			title = shared.locales.addemployee,
+			description = shared.locales.addemployeedesc,
 			arrow = true,
 			onSelect = function(args)
 				local players = lib.getNearbyPlayers(GetEntityCoords(cache.ped), 50.0, true)
@@ -531,29 +538,27 @@ self.EmployeeManage = function(store)
 			end
 		},
 		{
-			title = 'Remove Employee',
-			description = 'Remove Your Employees',
+			title = shared.locales.removeemployee,
+			description = shared.locales.removeemployeedesc,
 			arrow = true,
 			onSelect = function(args)
-				local stores = GlobalState.Stores
-				if stores[store].employee then
-					self.RemoveEmployee({employee = stores[store].employee, store = store})
+				if storedata?.employee then
+					self.RemoveEmployee({employee = storedata.employee, store = store})
 				end
 			end
 		},
 	}
-	local stores = GlobalState.Stores
-	if stores[store].owner == self.PlayerData.identifier then
+	if storedata?.owner == self.PlayerData.identifier then
 		table.insert(options,{ -- will be improved later, like with grade system
-			title = 'Add Job Access',
-			description = 'Give Management Access to your Current Job   \n : ('..self.PlayerData.job.name..')',
+			title = shared.locales.addjobaccess,
+			description = shared.locales.addjobtocurrent:format(self.PlayerData.job.name),
 			arrow = true,
 			onSelect = function(args)
 				local reason = lib.callback.await('renzu_shops:shopjobaccess', false, store)
 				if reason then
 					self.SetNotify({
-						title = 'Store Business',
-						description = 'Successfully Add '..self.PlayerData.job.name..'',
+						title = shared.locales.notify_title,
+						description = shared.locales.successfulladdjob:format(self.PlayerData.job.name),
 						type = 'success'
 					})
 				end
@@ -562,7 +567,7 @@ self.EmployeeManage = function(store)
 	end
 	lib.registerContext({
 		id = 'employee_manage',
-		title = 'Manage Employees',
+		title = shared.locales.manageemployee,
 		menu = 'manage_store',
 		onExit = function()
 		end,
@@ -571,59 +576,60 @@ self.EmployeeManage = function(store)
 end
 
 self.FinanceManage = function(store,money)
+	local storedata = self.StoreData(store)
 	lib.registerContext({
 		id = 'finance_manage',
-		title = 'Manage Finance',
+		title = shared.locales.financemanage,
 		menu = 'manage_store',
 		onExit = function()
 		end,
 		options = {
 			{
-				title = 'Total Money in Vault: '..GlobalState.Stores[store].money[money]..'$',
+				title = shared.locales.totalmoneyvault:format(storedata.money[money]),
 			},
 			{
-				title = 'Withdraw Money',
-				description = 'withdraw money to your pocket',
+				title = shared.locales.withdrawvault,
+				description = shared.locales.topocket,
 				arrow = true,
 				onSelect = function(args)
-					local input = lib.inputDialog('Withdraw Store Money', {'How many:'})
+					local input = lib.inputDialog(shared.locales.withdrawvault, {shared.locales.cashierhowmany})
 					if not input then return end
 					local value = tonumber(input[1]) or 1
 					local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'withdraw_money', item = money, value = value})
 					if reason == 'success' then
 						self.SetNotify({
-							title = 'Store Business',
-							description = 'Successfully Withdraw '..value..'$',
+							title = shared.locales.notify_title,
+							description = shared.locales.successwithdrawvault:format(value),
 							type = 'success'
 						})
 					else
 						self.SetNotify({
-							title = 'Store Business',
-							description = 'Not Enough '..self.Items[money]..' Withdraw '..value..'$',
+							title = shared.locales.notify_title,
+							description = shared.locales.notenoughtvaultmoney:format(self.Items[money],value),
 							type = 'error'
 						})
 					end
 				end
 			},
 			{
-				title = 'Deposit Money',
-				description = 'deposit money from your pocket',
+				title = shared.locales.depositmoneytitle,
+				description = shared.locales.depositpocket,
 				arrow = true,
 				onSelect = function(args)
-					local input = lib.inputDialog('Deposit Money to Store :', {'How many:'})
+					local input = lib.inputDialog(shared.locales.deposittostore, {shared.locales.cashierhowmany})
 					if not input then return end
 					local value = tonumber(input[1]) or 1
 					local reason = lib.callback.await('renzu_shops:editstore', false, {store = store, type = 'deposit_money', item = money, value = value})
 					if reason == 'success' then
 						self.SetNotify({
-							title = 'Store Business',
-							description = 'Successfully Deposit '..value..'$',
+							title = shared.locales.notify_title,
+							description = shared.locales.successdeposit:format(value),
 							type = 'success'
 						})
 					else
 						self.SetNotify({
-							title = 'Store Business',
-							description = 'Not Enough '..self.Items[money]..' Deposit '..value..'$',
+							title = shared.locales.notify_title,
+							description =shared.locales.successdeposit:format(self.Items[money],value),
 							type = 'error'
 						})
 					end
@@ -933,7 +939,6 @@ self.CreateItem = function(data)
 end
 
 self.ManageInventory = function(store)
-	local data = GlobalState.Stores
 	local inventory = {}
 	local stocks = {}
 	local prices = {}
@@ -950,12 +955,12 @@ self.ManageInventory = function(store)
 	end
 	local storeinventory = {}
 	local options = {}
-	local stores = data
+	local storedata = self.StoreData(store)
 	local cats = {}
 	local catitems = {}
 	local ItemInventory = lib.table.deepclone(inventory)
-	if stores[store].customitems then
-		for k,v in pairs(stores[store].customitems) do
+	if storedata?.customitems then
+		for k,v in pairs(storedata.customitems) do
 			table.insert(ItemInventory,v)
 		end
 	end
@@ -963,7 +968,6 @@ self.ManageInventory = function(store)
 	local addcategory = false
 	for k,v in pairs(ItemInventory) do
 		local item = v
-		local storedata = stores[store]
 		local storeitems = storedata.items
 		local itemdata = storeitems.normal[item.name]
 		local originalprice = self.CheckItemPrice(item.name)
@@ -1400,8 +1404,8 @@ end
 
 self.BuyStore = function(data)
 	local data = data
-	local stores = GlobalState.Stores
-	if stores[data.label] then return end
+	local storedata = self.StoreData(data.label)
+	if storedata then return end
 	local confirm = lib.alertDialog({
 		header = data.label,
 		content = 'Do you really want to purchase ?\n Price: '..data.price..' $',
@@ -1441,12 +1445,12 @@ end
 self.OpenShop = function(data)
 	if self.shopopen then return end
 	local data = lib.table.deepclone(data)
-	local stores = GlobalState.Stores
 	-- shop data of defaults shops
 	if not self.Active or  not self.Active.shop then return end
 	data.shop.inventory = data.shop.inventory or shared.Storeitems[data.type]
 	self.Active.shop.inventory = data.shop.inventory
 	self.Active.shop.type = data.type
+	self.Active.shop.StoreName = data.shop.StoreName
 	for k,v in pairs(data.shop.inventory) do
 		data.shop.inventory[k].disable = false
 		data.shop.inventory[k].label = v.metadata and v.metadata.label or self.Items[v.name] or v.label
@@ -1461,6 +1465,7 @@ self.OpenShop = function(data)
 	for type,v in pairs(ownedshops) do
 		for k,v2 in pairs(v) do
 			if k == data.index and type == data.type then
+				local storedata = self.StoreData(v2.label)
 				self.moneytype = v2.moneytype
 				data.shop.label = v2.label
 				data.shop.inventory = v2.supplieritem
@@ -1473,17 +1478,16 @@ self.OpenShop = function(data)
 						data.shop.inventory[k].component = self.GetWeaponComponents(v.name,true)
 					end
 				end
-				if stores[v2.label] then
+				if storedata then
 					storename = v2.label
 					local ItemInventory = lib.table.deepclone(v2.supplieritem)
-					if stores[v2.label].customitems then
-						for k,v in pairs(stores[v2.label].customitems) do
+					if storedata.customitems then
+						for k,v in pairs(storedata.customitems) do
 							v.disable = false
 							table.insert(ItemInventory,v)
 						end
 					end
 					for k,item in pairs(ItemInventory) do
-						local storedata = stores[v2.label]
 						local storeitems = storedata.items
 						local itemdata = storeitems.normal[item.name]
 						local price = itemdata?.price
@@ -1652,8 +1656,8 @@ self.Handlers = function()
 
 	AddStateBagChangeHandler("AvailableStore", "global", function(bagName, key, value)
 		Wait(1000)
-		local stores = GlobalState.Stores
-		if not stores[value.store] then
+		local storedata = self.StoreData(value.store)
+		if not storedata then
 			for name,shop in pairs(shared.OwnedShops) do
 				for k,v in pairs(shop) do
 					if v.label == value.store then
@@ -1775,7 +1779,6 @@ self.Handlers = function()
 		if not value then return end
 		if value.job ~= self.PlayerData.job.name then return end
 		if value.owner == self.PlayerData.identifier then return end
-		local stores = GlobalState.Stores
 		for name,shop in pairs(shared.OwnedShops) do
 			for k,v in pairs(shop) do
 				if v.label == value.store then
@@ -1832,7 +1835,7 @@ self.Handlers = function()
 	end)
 	livery = false,
 	RegisterNUICallback('nuicb', function(data, cb)
-		local shop = self.Active.shop.inventory
+		local shop = self.Active?.shop?.inventory
 		local itemdata = {}
 		if not shop then self.Closeui() end
 		for k,v in pairs(shop) do
@@ -1877,11 +1880,11 @@ self.Handlers = function()
 				totalamount += tonumber(v.count)
 				total = total + tonumber(itemdata[v.data.metadata and v.data.metadata.name or v.data.name].price) * tonumber(v.count)
 			end
-			data.type = self.PaymentMethod({amount = total, total = totalamount, type = self.Active.shop.type}) or self.Active?.shop?.moneytype or 'money'
+			data.type = self.PaymentMethod({amount = total, total = totalamount, type = self.Active.shop.type, name = self.Active.shop.StoreName}) or self.Active?.shop?.moneytype or 'money'
 			if data.type == 'cancel' then return end
 			local financedata
 			if data.type == 'finance' then
-				finance, financedata = self.Finance({amount = total, total = totalamount, type = self.Active.shop.type})
+				finance, financedata = self.Finance({amount = total, total = totalamount, type = self.Active.shop.type, name = self.Active.shop.StoreName})
 				total = financedata.downpayment
 			end
 			if data.type == 'finance' and finance == 'cancel' then
@@ -2983,6 +2986,7 @@ self.OpenShopMovable = function(data)
 	data.shop.label = data.type
 	self.Active.index = data.type
 	self.moneytype = 'money'
+	self.Active.shop.StoreName = 'movable'
 	local shopdata = shared.MovableShops[data.type].menu
 	local items = {}
 	for category,v in pairs(shopdata) do
@@ -3270,7 +3274,7 @@ self.PaymentMethod = function(data)
 	else
 		dropdownmenu[1] = { value = 'black_money', label = 'Black Money' }
 	end
-	if data.amount >= shared.FinanceMinimum and data.type ~= 'BlackMarketArms' then
+	if data.amount >= shared.FinanceMinimum and data.type ~= 'BlackMarketArms' and self.StoreData(data.name) then
 		table.insert(dropdownmenu, { value = 'finance', label = 'Finance' })
 	end
 	table.insert(options,{ type = 'select', label = 'Payment Type', options = dropdownmenu })

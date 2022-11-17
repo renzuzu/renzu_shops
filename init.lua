@@ -1,5 +1,6 @@
 ESX,QBCORE = nil, nil
 shared = {}
+shared.lang = 'en' -- look config/locales/%s.lua eg. 'en' for en.lua | to create new language, create a new file ex. es.lua
 shared.framework = 'ESX' -- ESX || QBCORE
 shared.inventory = 'ox_inventory' -- 'ox_inventory' or 'qb-inventory'
 -- use ox_inventory Shops UI (experimental feature) only with my forked ox_inventory REPO https://github.com/renzuzu/ox_inventory
@@ -101,6 +102,7 @@ shared.Storeitems = request('config/storeitems')
 shared.Shops = request('config/defaultshops')
 shared.OwnedShops = request('config/ownedshops/init')
 shared.MovableShops = request('config/movableshop')
+shared.locales = request('config/locales/'..shared.lang)
 request('config/shipping')
 -- insert additional datas
 if shared.inventory == 'ox_inventory' then

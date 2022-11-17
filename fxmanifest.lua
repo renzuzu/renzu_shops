@@ -1,6 +1,7 @@
 fx_version 'cerulean'
 lua54 'yes'
 game 'gta5'
+
 shared_scripts {
 	'@ox_lib/init.lua',
 	'data/*.lua',
@@ -26,5 +27,6 @@ files {
 	'web/levelup.gif',
     'web/audio/*.ogg',
 	'config/ownedshops/*.lua',
+	'config/locales/*.lua',
 	'config/*.lua',
 }
