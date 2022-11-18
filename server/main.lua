@@ -1569,13 +1569,12 @@ AddEventHandler('onResourceStop', function(re)
 	end
 end)
 
-RegisterServerEvent("esx_multicharacter:relog")
-AddEventHandler('esx_multicharacter:relog', function()
+RegisterNetEvent('esx_multicharacter:relog', function()
 	local source = source
 	DeletePlayerMovableEntity(source)
 end)
 
-AddEventHandler("playerDropped",function()
+RegisterNetEvent("playerDropped",function()
 	local source = source
 	DeletePlayerMovableEntity(source)
 end)
