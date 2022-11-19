@@ -372,6 +372,8 @@ self.StoreManage = function(store)
 							if not shared.target then
 								if self.temporalspheres[store] and self.temporalspheres[store].remove then
 									self.temporalspheres[store]:remove()
+								elseif self.temporalspheres[store] and self.temporalspheres[store].spheres then
+									self.temporalspheres[store].spheres:remove()
 								end
 							else
 								if type(self.temporalspheres[store]) == 'table' and tonumber(self.temporalspheres[store].target) then
@@ -3001,6 +3003,33 @@ self.OpenShopMovable = function(data)
 			local name = v.metadata and v.metadata.name or v.name
 			table.insert(inventory, {stock = itemdata[name],name = v.name, category = category, price = v.price, metadata = v.metadata, disable = false, label = self.Items[name] or v.metadata and v.metadata.label or v.name})
 		end
+	end
+	data.shop.inventory = inventory
+	self.Active.shop.inventory = inventory
+	local money = self.GetItemCount('money')
+	local black_money = self.GetItemCount('black_money')
+	SendNUIMessage({
+		type = 'shop',
+		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+	})
+	SetNuiFocus(not self.shopopen,not self.shopopen)
+	SetNuiFocusKeepInput(false)
+	self.shopopen = not self.shopopen
+end
+
+self.OpenShopBooth = function(data)
+	self.Active.shop = {}
+	self.shopidentifier = data.identifier
+	data.shop = {}
+	data.shop.label = data.type
+	self.Active.index = data.type
+	self.moneytype = 'money'
+	self.Active.shop.StoreName = 'Booth'
+	local inventory = {}
+	local stash = lib.callback.await('renzu_shops:GetInventoryData', false, data.identifier)
+	for category,v in pairs(stash) do
+		local name = v.metadata and v.metadata.name or v.name
+		table.insert(inventory, {stock = v.count,name = v.name, category = category, price = v.price or 1, metadata = v.metadata, disable = false, label = self.Items[name] or v.metadata and v.metadata.label or v.name})
 	end
 	data.shop.inventory = inventory
 	self.Active.shop.inventory = inventory

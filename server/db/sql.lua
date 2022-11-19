@@ -13,40 +13,37 @@ local db = setmetatable({},{
 			return MySQL.query(str:format(name,column,where),{data,update})
 		end
 
-		self.select = function(name, where, update)
-			local str = 'SELECT * FROM %s WHERE %s = ?'
-			return MySQL.query(str:format(name,where),{update})
-		end
-
 		self.delete = function(name, where, update)
 			local str = 'DELETE FROM %s WHERE %s = ?'
 			return MySQL.query(str:format(name,where),{update})
 		end
 
 		self.save = function(data)
-			for shopname,v in pairs(data) do
-				local select = self.select('renzu_stores', 'shop', shopname)
-				if select then
-					for k,v in pairs(v) do
-						if type(v) == 'table' then
-							self.update('renzu_stores',k,'shop',shopname,json.encode(v))
-						else
-							self.update('renzu_stores',k,'shop',shopname,v)
+			Citizen.CreateThreadNow(function()
+				for shopname,v in pairs(data) do
+					local select = MySQL.query.await('SELECT * FROM `renzu_stores` WHERE `shop` = ?', {shopname})
+					if select then
+						for k,v in pairs(v) do
+							if type(v) == 'table' then
+								self.update('renzu_stores',k,'shop',shopname,json.encode(v))
+							else
+								self.update('renzu_stores',k,'shop',shopname,v)
+							end
 						end
+					else
+						self.insert('renzu_stores',{
+							shopname,
+							v.owner,
+							json.encode(v['money'] or {}),
+							json.encode(v['items'] or {}),
+							json.encode(v['employee'] or {}),
+							json.encode(v['cashier'] or {}),
+							json.encode(v['customitems'] or {}),
+							v['job'],
+						})
 					end
-				else
-					self.insert('renzu_stores',{
-						shopname,
-						v.owner,
-						json.encode(v['money'] or {}),
-						json.encode(v['items'] or {}),
-						json.encode(v['employee'] or {}),
-						json.encode(v['cashier'] or {}),
-						json.encode(v['customitems'] or {}),
-						v['job'],
-					})
 				end
-			end
+			end)
 		end
 		return self
 	end
@@ -199,6 +196,12 @@ for k,v in pairs(MySQL.query.await('SELECT * FROM financedata', {  }) or {}) do
 	end
 end
 
+for k,v in pairs(shared.OwnedShops) do
+	local str = 'Stores_%s'
+	for k,v in pairs(v) do
+		GlobalState[str:format(v.label)] = nil
+	end
+end
 AddStateBagChangeHandler("Stores", "global", function(bagName, key, value)
 	Wait(0)
 	if not value then return end
@@ -213,5 +216,4 @@ GlobalState.Stores = Stores
 GlobalState.MovableShops = Movable
 GlobalState.FinanceData = Financed
 GlobalState.JobShop = {}
-
 return Sql

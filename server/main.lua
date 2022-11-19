@@ -791,6 +791,7 @@ local RemoveStore = function(id)
 	--SetResourceKvp('renzu_stores', json.encode(stores))
 	sql.delete('renzu_stores','shop',id)
 	GlobalState.Stores = stores
+	GlobalState['Stores_'..id] = nil
 	return true
 end
 
@@ -943,6 +944,29 @@ lib.callback.register("renzu_shops:robstore", function(source,data)
 	end
 	return false
 end)
+
+lib.callback.register("renzu_shops:GetInventoryData", function(source,identifier)
+	return GetInventoryData(identifier)
+end)
+
+GetInventoryData = function(source)
+	local booths = GlobalState.Booths
+	local items = {}
+	for k,v in pairs(booths) do
+		if k == source then
+			for k,v in pairs(v.placedapplications) do
+				if v.type == 'storage' then
+					local inventory = exports.ox_inventory:GetInventoryItems(v.appid)
+					for k,v in pairs(inventory) do
+						print(k,v.name)
+						table.insert(items,v)
+					end
+				end
+			end
+		end
+	end
+	return items
+end
 
 GetStashData = function(data)
 	local items = {}
@@ -1561,11 +1585,15 @@ DeletePlayerMovableEntity = function(src, all) -- Delete Entities owned by playe
 	end
 end
 
+AddEventHandler('txAdmin:events:serverShuttingDown', function()
+	sql.save(GlobalState.Stores)
+end)
+
 AddEventHandler('onResourceStop', function(re)
 	if re == GetCurrentResourceName() then
-		sql.save(GlobalState.Stores)
 		--SetResourceKvp('renzu_stores', json.encode(GlobalState.Stores))
 		DeletePlayerMovableEntity(false,src)
+		Wait(1210)
 	end
 end)
 
