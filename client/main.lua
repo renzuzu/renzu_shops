@@ -148,6 +148,11 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 			end
 			if callback == self.OpenShop then
 				TriggerScreenblurFadeIn(0)
+				Wait(1000)
+				if self.shopopen then
+					SetNuiFocus(true,true)
+					SetNuiFocusKeepInput(false)
+				end
 			end
 		end
 	end
@@ -1535,11 +1540,11 @@ self.OpenShop = function(data)
 	local black_money = self.GetItemCount('black_money')
 	SendNUIMessage({
 		type = 'shop',
-		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
 	})
-	SetNuiFocus(not self.shopopen,not self.shopopen)
+	SetNuiFocus(true,true)
 	SetNuiFocusKeepInput(false)
-	self.shopopen = not self.shopopen
+	self.shopopen = true
 end
 
 self.format_int = function(number)
@@ -1568,9 +1573,9 @@ end
 self.Closeui = function()
 	SendNUIMessage({
 		type = 'shop',
-		data = {open = not self.shopopen, shop = data}
+		data = {open = false, shop = data}
 	})
-	SetNuiFocus(not self.shopopen,not self.shopopen)
+	SetNuiFocus(false,false)
 	SetNuiFocusKeepInput(false)
 	self.shopopen = not self.shopopen
 	TriggerScreenblurFadeOut(0)
@@ -3010,14 +3015,15 @@ self.OpenShopMovable = function(data)
 	local black_money = self.GetItemCount('black_money')
 	SendNUIMessage({
 		type = 'shop',
-		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
 	})
-	SetNuiFocus(not self.shopopen,not self.shopopen)
+	SetNuiFocus(true,true)
 	SetNuiFocusKeepInput(false)
 	self.shopopen = not self.shopopen
 end
 
 self.OpenShopBooth = function(data)
+	if GlobalState.BoothShops[data.identifier] ~= nil and GlobalState.BoothShops[data.identifier] then return end
 	self.Active.shop = {}
 	self.shopidentifier = data.identifier
 	data.shop = {}
@@ -3026,10 +3032,11 @@ self.OpenShopBooth = function(data)
 	self.moneytype = 'money'
 	self.Active.shop.StoreName = 'Booth'
 	local inventory = {}
+	local boothdata = GlobalState.BoothItems[data.identifier]
 	local stash = lib.callback.await('renzu_shops:GetInventoryData', false, data.identifier)
 	for category,v in pairs(stash) do
 		local name = v.metadata and v.metadata.name or v.name
-		table.insert(inventory, {stock = v.count,name = v.name, category = category, price = v.price or 1, metadata = v.metadata, disable = false, label = self.Items[name] or v.metadata and v.metadata.label or v.name})
+		table.insert(inventory, {stock = v.count,name = v.name, category = boothdata and boothdata[name] and boothdata[name].category or 'Default', price = boothdata and boothdata[name] and boothdata[name].price or 1, metadata = v.metadata, disable = false, label = self.Items[name] or v.metadata and v.metadata.label or v.name})
 	end
 	data.shop.inventory = inventory
 	self.Active.shop.inventory = inventory
