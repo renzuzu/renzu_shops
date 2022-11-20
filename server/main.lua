@@ -142,17 +142,19 @@ exports('getShopDataByLabel', getShopDataByLabel)
 isStoreOwned = function(store,index)
 	local stores = GlobalState.Stores
 	local shop = false
-	for k,v in pairs(shared.OwnedShops) do
-		if store == k then
+	local shoptype = nil
+	for type,v in pairs(shared.OwnedShops) do
+		if store == type then
 			for k,v in pairs(v) do
 				if index == k and stores[v.label] then
 					shop = v.label
+					shoptype = type
 					break
 				end
 			end
 		end
 	end
-	return shop, shop and stores[shop]
+	return shop, shop and stores[shop], shoptype
 end
 
 exports('isStoreOwned', isStoreOwned)
@@ -495,7 +497,7 @@ exports('hasLicense', hasLicense)
 lib.callback.register('renzu_shops:buyitem', function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
-	local storeowned, shopdata = isStoreOwned(data.shop,data.index) -- check if this store has been owned by player
+	local storeowned, shopdata, shoptype = isStoreOwned(data.shop,data.index) -- check if this store has been owned by player
 	local movableshop = isMovableShop(data.index) -- check if this store is a movable type
 	local hasitem = false
 	local total = 0
@@ -504,7 +506,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 		hasitem = true
 		local name = v.data.metadata and v.data.metadata.name or v.data.name
 		if v.count > 0 then
-			if shared.inventory == 'ox_inventory' and shopdata ~= 'VehicleShop' then
+			if shared.inventory == 'ox_inventory' and data.shop ~= 'VehicleShop' then
 				if not exports.ox_inventory:CanCarryItem(source, v.data.name, v.count, v.data.metadata)  then
 					data.items[k] = nil
 				else
@@ -597,7 +599,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 					local name = v.data.metadata and v.data.metadata.name or v.data.name
 					if item.name == name then
 						if storeowned then -- storeowned Ownableshops data handler
-							RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, require = v.data.require, index = data.index, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, money = moneytype:lower()})
+							RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, index = data.index, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, money = moneytype:lower()})
 						elseif movableshop then -- movable shops logic data handler
 							RemoveStockFromStash({addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, type = data.index, money = moneytype:lower()})
 						end
