@@ -231,8 +231,8 @@ self.Cashier = function(data)
 	local options = {}
 	local storedata = self.StoreData(data.label)
 	if self.duty[data.label] and storedata.owner == self.PlayerData.identifier
-	or storedata?.employee[self.PlayerData.identifier]
-	or storedata?.job == self.PlayerData.job.name then
+	or storedata and storedata?.employee[self.PlayerData.identifier]
+	or storedata and storedata?.job == self.PlayerData.job.name then
 		local cashier = storedata?.cashier[data.moneytype] or 0
 		table.insert(options,{
 			title = shared.locales.withdrawcashier,
@@ -270,8 +270,8 @@ self.Cashier = function(data)
 			end
 		})
 	elseif not self.duty[data.label] and storedata?.owner == self.PlayerData.identifier
-		or storedata?.employee[self.PlayerData.identifier]
-		or storedata?.job == self.PlayerData.job.name then
+		or storedata and storedata?.employee[self.PlayerData.identifier]
+		or storedata and storedata?.job == self.PlayerData.job.name then
 		table.insert(options,{
 			title = shared.locales.dutyonclerk,
 			description = shared.locales.dutyasclerk,
