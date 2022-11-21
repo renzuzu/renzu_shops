@@ -1143,6 +1143,7 @@ self.StartDelivery = function(var)
 		else
 			self.pickupzone = self.Add(data.point,'Pick Up '..label,self.DelivertoStore,false,var,false)
 		end
+		shared.VehicleKeys(GetVehicleNumberPlateText(self.Vehicle))
 		truckblip = AddBlipForEntity(self.Vehicle)
 		self.SetBlip(truckblip,477,26,'My Delivery Truck')
 		DoScreenFadeIn(333)
@@ -1162,6 +1163,7 @@ end
 self.deliveryzone = nil
 self.delivery = false
 self.trailertransport = nil
+DoScreenFadeIn(533)
 self.DelivertoVehicleShop = function(var)
 	local data = var.data
 	self.pickupzone:remove()
@@ -1171,7 +1173,8 @@ self.DelivertoVehicleShop = function(var)
 	self.delivery = true
 	DoScreenFadeOut(333)
 	Wait(350)
-	self.trailertransport = CreateVehicle(GetHashKey('tr4'), data.point[1],data.point[2],data.point[3],data.point[4], true, true)
+	lib.requestModel(joaat('tr4'))
+	self.trailertransport = CreateVehicle(joaat('tr4'), data.point[1],data.point[2],data.point[3],data.point[4], true, true)
 	while not DoesEntityExist(self.trailertransport) do Wait(1) end
 	self.SetEntityControlable(self.trailertransport)
 	SetEntityHeading(self.Vehicle,data.point[4])
