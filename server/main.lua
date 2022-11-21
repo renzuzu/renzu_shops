@@ -1081,9 +1081,9 @@ AddMovableShopToPlayer = function(data,source)
 	local movable = GlobalState.MovableShops
 	if data.shop.type == 'vehicle' then
 		plate = GenPlate()
-		local sqldata = {plate,json.encode({model = data.shop.model, plate = plate, modLivery = -1}),xPlayer.identifier,1,data.groups or 'civ'}
+		local sqldata = {plate,json.encode({model = data.shop.model, plate = plate, modLivery = -1}),data.owner,1,data.groups or 'civ'}
 		if shared.framework == 'QBCORE' then
-			table.insert(sqldata,xPlayer.citizenid)
+			table.insert(sqldata,data.citizenid)
 			table.insert(sqldata,data.shop.model)
 			table.insert(sqldata,'pillboxgarage')
 			table.insert(sqldata,data.shop.modelname)
