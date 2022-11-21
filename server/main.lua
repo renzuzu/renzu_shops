@@ -11,11 +11,15 @@ playeraccounts = 'accounts'
 sql = {}
 
 local canregister = false
+
+if not lib then return print('^1 ox_lib is '..GetResourceState('ox_lib')..' - This Resource will not work without ox_lib https://github.com/overextended/ox_lib ^0') end
+if GetResourceState('oxmysql') ~= 'started' then return print('^1 oxmysql is '..GetResourceState('oxmysql')..' - This Resource will not work without oxmysql https://github.com/overextended/oxmysql ^0') end
 local checkox = function()
     _ = exports.ox_inventory.RegisterSingleShop
 end
 
 CreateThread(function()
+	Wait(1000)
 	sql = request('server/db/sql')
 	if pcall(checkox) then canregister = true end
 	request('server/framework/main')
@@ -1739,3 +1743,4 @@ SetOxInvShopStock = function(data)
 end
 
 exports('Inventory', Inventory)
+lib.versionCheck('renzuzu/renzu_shops')
