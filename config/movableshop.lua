@@ -52,6 +52,7 @@ return {
 		label = 'Attack A Taco', -- name of shop
 		type = 'vehicle', -- declare type of movable shop. Object is spawnable object, while vehicle is a automobile.
 		model = `taco`, -- model name
+		modelname = 'taco', -- qbcore compat
 		coord = vec3(21.721435546875,-1600.9423828125,29.282648086), -- buying coordinates
 		spawn = vec4(25.488815307617,-1590.5723876953,29.102367401123,227.42039489746), -- spawn location of vehicle
 		price = 500000,

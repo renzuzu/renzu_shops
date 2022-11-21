@@ -1,6 +1,10 @@
+insertstr = 'INSERT INTO %s (%s) VALUES (%s)'
 if shared.framework == 'ESX' then
 	vehicletable = 'owned_vehicles'
 	vehiclemod = 'vehicle'
+	garage = 'Garage A'
+	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`'
+	values = '?, ?, ?, ?, ?'
 elseif shared.framework == 'QBCORE' then
 	vehicletable = 'player_vehicles'
 	vehiclemod = 'mods'
@@ -11,6 +15,9 @@ elseif shared.framework == 'QBCORE' then
 	playertable = 'players'
 	playeridentifier = 'citizenid'
 	playeraccounts = 'money'
+	garage = 'pillboxgarage'
+	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`, `citizenid`, `hash`, `garage`, `vehicle`'
+	values = '?, ?, ?, ?, ?, ?, ?, ?, ?'
 end
 
 function GetPlayerFromIdentifier(identifier)

@@ -624,13 +624,14 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 			else -- else if vehicle type add it to player vehicles table
 				for i = 1, tonumber(v.count) do
 					callback = GenPlate()
-					SqlFunc('oxmysql','execute','INSERT INTO '..vehicletable..' (`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`) VALUES (@plate, @'..vehiclemod..', @'..owner..', @'..stored..', @job)',{
-						['@plate']   = callback,
-						['@'..vehiclemod..'']   = json.encode({model = GetHashKey(v.data.name), plate = callback, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),
-						['@'..owner..'']   = xPlayer.identifier,
-						['@'..stored..''] = 1,
-						['@job'] = data.groups or 'civ'
-					})
+					local sqldata = {callback,json.encode({model = GetHashKey(v.data.name), plate = callback, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),xPlayer.identifier,1,data.groups or 'civ'}
+					if shared.framework == 'QBCORE' then
+						table.insert(sqldata,xPlayer.citizenid)
+						table.insert(sqldata,joaat(v.data.name))
+						table.insert(sqldata,'pillboxgarage')
+						table.insert(sqldata,v.data.name)
+					end
+					MySQL.insert.await(insertstr:format(vehicletable,columns,values),sqldata)
 					Wait(100)
 					shared.VehicleKeys(callback,source)
 				end
@@ -1080,12 +1081,14 @@ AddMovableShopToPlayer = function(data,source)
 	local movable = GlobalState.MovableShops
 	if data.shop.type == 'vehicle' then
 		plate = GenPlate()
-		SqlFunc('oxmysql','execute','INSERT INTO '..vehicletable..' (plate, '..vehiclemod..', '..owner..', '..stored..') VALUES (@plate, @'..vehiclemod..', @'..owner..', @'..stored..')',{
-			['@plate']   = plate,
-			['@'..vehiclemod..'']   = json.encode({model = data.model, plate = plate, modLivery = -1}),
-			['@'..owner..'']   = data.owner,
-			['@'..stored..''] = 1
-		})
+		local sqldata = {plate,json.encode({model = data.shop.model, plate = plate, modLivery = -1}),xPlayer.identifier,1,data.groups or 'civ'}
+		if shared.framework == 'QBCORE' then
+			table.insert(sqldata,xPlayer.citizenid)
+			table.insert(sqldata,data.shop.model)
+			table.insert(sqldata,'pillboxgarage')
+			table.insert(sqldata,data.shop.modelname)
+		end
+		MySQL.insert.await(insertstr:format(vehicletable,columns,values),sqldata)
 	end
 	movable[data.identifier] = {identifier = data.owner, money = {money = 0, black_money = 0}, items = {}, plate = plate, type = data.shop.type, shopname = data.type} -- literally plate and type is the only thing we save here as the other datas like money and items are saved using ox_inventory. first plan is to used owned inventory, same with the shop stocking system logic using ox contextmenus,  but instead i tried and successfully used ox inventory since this does not saved vehicle stocks datas.
 	sql.insert('movableshops',{
@@ -1114,6 +1117,7 @@ lib.callback.register("renzu_shops:buymovableshop", function(source,data)
 			xPlayer.removeAccountMoney('money', data.price)
 			data.owner = xPlayer.identifier
 			data.identifier = identifier
+			data.citizenid = xPlayer.citizenid
 			return AddMovableShopToPlayer(data,source)
 		else
 			return false
