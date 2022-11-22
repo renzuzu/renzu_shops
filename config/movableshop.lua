@@ -1,7 +1,8 @@
 return {
-	Hotdog = {
+	Hotdog = { -- cart
 		label = 'Chihuahua Hot Dogs',
 		type = 'object',
+		vehicle = `cruiser`,
 		model = `prop_hotdogstand_01`,
 		coord = vec3(40.149337768555,-1000.8768920898,29.408),
 		price = 500000,
@@ -13,21 +14,22 @@ return {
 			},
 			Drinks = {
 				[1] = {name = 'water', price = 20},
-				[2] = {name = 'cola', price = 50},
-				[3] = {name = 'cola', price = 80, metadata = {name = 'ecoladiet', thirst = 250000, label = 'Diet Coke', image = 'cola'}}
+				--[2] = {name = 'cola', price = 50},
+				--[3] = {name = 'cola', price = 80, metadata = {name = 'ecoladiet', thirst = 250000, label = 'Diet Coke', image = 'cola'}}
 			}
 		},
 		blip = {
 			id = 375, colour = 69, scale = 0.6
 		},
-		pos = vec3(-0.2 ,1.4,-0.95),
-		rot = vec3(2.55,0.65,100.2)
+		pos = vec3(-0.7,0.1,-0.6),
+		rot = vec3(-1.5,2.3,-87.199999999999),
 	},
 
-	Burger = {
+	Burger = { -- cart
 		label = 'Beefy Bills Burger Bar',
 		type = 'object',
 		model = `prop_burgerstand_01`,
+		vehicle = `cruiser`,
 		coord = vec3(369.01425170898,-371.02331542969,46.757801055908),
 		price = 500000,
 		menu = {
@@ -45,10 +47,10 @@ return {
 		blip = {
 			id = 375, colour = 69, scale = 0.6
 		},
-		pos = vec3(-0.2 ,1.4,-0.95),
-		rot = vec3(2.55,0.65,100.2)
+		pos = vec3(-0.7,0.1,-0.6),
+		rot = vec3(-1.5,2.3,-87.199999999999),
 	},
-	Taco = {
+	Taco = { -- vehicle type
 		label = 'Attack A Taco', -- name of shop
 		type = 'vehicle', -- declare type of movable shop. Object is spawnable object, while vehicle is a automobile.
 		model = `taco`, -- model name
@@ -71,7 +73,63 @@ return {
 		blip = {
 			id = 375, colour = 69, scale = 0.6
 		},
-		pos = vec3(-0.2 ,1.4,-0.95),
-		rot = vec3(2.55,0.65,100.2)
+		pos = vec3(-0.7,0.1,-0.6),
+		rot = vec3(-1.5,2.3,-87.199999999999),
+	},
+
+	HotdogTruck = {
+		label = 'Chihuahua Hot Dogs',
+		type = 'object',
+		vehicle = `bison`,
+		truck = true,
+		model = `prop_food_van_01`,
+		coord = vector3(49.34, -1000.36, 29.36),
+		price = 500000,
+		menu = {
+			Food = {
+				[1] = {name = 'hotdogsandwich', price = 50, metadata = {}, ingredients = {hotdog = 1, bread = 1, tomatosauce = 1}},
+				[2] = {name = 'hotdogsandwich', price = 80, ingredients = {hotdog = 1, bread = 1, cheese = 1, tomatosauce = 1}, metadata = {name = 'cheesedogsandwich', hunger = 150000, label = 'Cheese Dog  Sandwich', image = 'hotdog'}},
+				[3] = {name = 'hotdogsandwich', price = 120, ingredients = {hotdog = 2, bread = 1, tomatosauce = 1}, metadata = {name = 'jumbohotdogsandwich', hunger = 350000, label = 'Jumbo Hot Dog Sandwich', image = 'hotdog'}},
+			},
+			Drinks = {
+				[1] = {name = 'water', price = 20},
+				--[2] = {name = 'cola', price = 50},
+				--[3] = {name = 'cola', price = 80, metadata = {name = 'ecoladiet', thirst = 250000, label = 'Diet Coke', image = 'cola'}}
+			}
+		},
+		blip = {
+			id = 375, colour = 69, scale = 0.6
+		},
+		pos = vec3(0.3,-6.15,0.15),
+		rot = vec3(0.0,0.2,-182.1),
+
+	},
+
+	DonutTruck = {
+		label = 'Donut',
+		type = 'object',
+		vehicle = `bison`,
+		truck = true,
+		model = `prop_food_van_02`,
+		coord = vector3(-228.92, 286.29, 92.19),
+		price = 500000,
+		menu = {
+			Food = {
+				[1] = {name = 'hotdogsandwich', price = 50, metadata = {}, ingredients = {hotdog = 1, bread = 1, tomatosauce = 1}},
+				[2] = {name = 'hotdogsandwich', price = 80, ingredients = {hotdog = 1, bread = 1, cheese = 1, tomatosauce = 1}, metadata = {name = 'cheesedogsandwich', hunger = 150000, label = 'Cheese Dog  Sandwich', image = 'hotdog'}},
+				[3] = {name = 'hotdogsandwich', price = 120, ingredients = {hotdog = 2, bread = 1, tomatosauce = 1}, metadata = {name = 'jumbohotdogsandwich', hunger = 350000, label = 'Jumbo Hot Dog Sandwich', image = 'hotdog'}},
+			},
+			Drinks = {
+				[1] = {name = 'water', price = 20},
+				--[2] = {name = 'cola', price = 50},
+				--[3] = {name = 'cola', price = 80, metadata = {name = 'ecoladiet', thirst = 250000, label = 'Diet Coke', image = 'cola'}}
+			}
+		},
+		blip = {
+			id = 375, colour = 69, scale = 0.6
+		},
+		pos = vec3(0.4,-6.8,0.2),
+		rot = vec3(0.0,0.25,89.45),
+
 	},
 }

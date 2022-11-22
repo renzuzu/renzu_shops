@@ -20,6 +20,7 @@ self.StartUp = function()
 				for k,v in pairs(QBCore.Shared.Items) do
 					if string.find(v.name:upper(), 'WEAPON_') then
 						v.name = v.name:upper()
+						items[v.name:upper()] = v
 					end
 					items[v.name] = v
 				end
@@ -1780,7 +1781,9 @@ self.Handlers = function()
 			spheres[value.identifier]:remove()
 			spheres[value.identifier] = nil
 			Wait(100)
-			spheres[value.identifier] = self.Add(offset,value.type,self.OpenShopMovable,false,{type = value.type, identifier = value.identifier, net = net})
+			if value.selling then
+				spheres[value.identifier] = self.Add(offset,value.type,self.OpenShopMovable,false,{type = value.type, identifier = value.identifier, net = net})
+			end
 		end
 	end)
 
@@ -1970,7 +1973,8 @@ self.Handlers = function()
 						end
 						cb(true)
 					end
-				end,{groups = self.Active?.shop?.groups, finance = financedata, items = data.items, data = itemdata, index = self.Active.index, type = data.type, shop = self.Active.shop.type or self.shopidentifier, moneytype = self.moneytype})
+				end,{owner = self.Owner, groups = self.Active?.shop?.groups, finance = financedata, items = data.items, data = itemdata, index = self.Active.index, type = data.type, shop = self.Active.shop.type or self.shopidentifier, moneytype = self.moneytype})
+				self.Owner = nil
 			end
 		elseif data.msg == 'close' then
 			self.Closeui()
@@ -2323,11 +2327,12 @@ self.MovableShopStart = function(data)
 					end
 					local type = movabletype -- supports multiple shop in same loops for the same identifier
 					while data.type == 'vehicle' and #(GetEntityCoords(self.playerPed) - offset) > 2 and not IsPedInAnyVehicle(self.playerPed)
-					or data.type == 'object' and #(GetEntityCoords(self.playerPed) - offset) > 2 do Wait(100) end
+					or data.type == 'object' and not data.truck and #(GetEntityCoords(self.playerPed) - offset) > 2
+					or data.type == 'object' and data.truck and IsPedInAnyVehicle(self.playerPed) do Wait(100) end
 					self.movabletype = type
 				end
 			end
-			if sleep == 5 then 
+			if sleep == 5 and offset then 
 				DisableControlAction(0,75,true)
 				DisableControlAction(27, 75, true)
 				DrawMarker(21, offset, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
@@ -2475,7 +2480,7 @@ self.OpenMovableShop = function(data)
 					-- AttachEntityToEntity(self.movableentity[self.movabletype], self.playerPed, bone, data.pos.x,data.pos.y,data.pos.z, data.rot.x,data.rot.y,data.rot.z, 1, 0, 0, 0, 1, 1)
 					-- lib.requestAnimDict('move_characters@jimmy@slow@')
 					-- SetPedMovementClipset(self.playerPed, 'move_characters@jimmy@slow@', 0.2)
-					local model = `cruiser`
+					local model = data.vehicle
 					lib.requestModel(model)
 					local bikecoord = self.bikecoords[self.movabletype]
 					or GetEntityCoords(self.playerPed)+vec3(0.7,0.5,0.0)
@@ -2493,7 +2498,7 @@ self.OpenMovableShop = function(data)
 					SetPedIntoVehicle(self.playerPed,self.bike[self.movabletype],-1)
 					self.SetEntityControlable(self.movableentity[self.movabletype])
 					FreezeEntityPosition(self.bike[self.movabletype],false)
-					AttachEntityToEntity(self.movableentity[self.movabletype], self.bike[self.movabletype], GetEntityBoneIndexByName(self.bike[self.movabletype], 'engine'), -0.7,0.1,-0.6, -1.5,2.3,-87.199999999999, 1, 0, 0, 0, 1, 1)
+					AttachEntityToEntity(self.movableentity[self.movabletype], self.bike[self.movabletype], GetEntityBoneIndexByName(self.bike[self.movabletype], 'engine'), data.pos.x,data.pos.y,data.pos.z, data.rot.x,data.rot.y,data.rot.z, 1, 0, 0, 0, 1, 1)
 				end
 			else
 				local identifier = self.movabletype..':'..self.PlayerData.identifier
@@ -3034,20 +3039,31 @@ self.OpenShopBooth = function(data)
 	self.Active.index = data.type
 	self.moneytype = 'money'
 	self.Active.shop.StoreName = 'Booth'
+	local booths = GlobalState.Booths
 	local inventory = {}
 	local boothdata = GlobalState.BoothItems[data.identifier]
 	local stash = lib.callback.await('renzu_shops:GetInventoryData', false, data.identifier)
 	for category,v in pairs(stash) do
 		local name = v.metadata and v.metadata.name or v.name
-		table.insert(inventory, {stock = v.count,name = v.name, category = boothdata and boothdata[name] and boothdata[name].category or 'Default', price = boothdata and boothdata[name] and boothdata[name].price or 1, metadata = v.metadata, disable = false, label = self.Items[name] or v.metadata and v.metadata.label or v.name})
+		local label = self.Items[name]
+		if booths[data.identifier].whitelists and booths[data.identifier]?.whitelists[name:lower()]
+		or booths[data.identifier]?.blacklists and not booths[data.identifier]?.whitelists and not booths[data.identifier]?.blacklists[name:lower()]
+		or not booths[data.identifier]?.whitelists and not booths[data.identifier]?.blacklists then
+			if string.find(name:lower(),'weapon') then
+				label = self.Items[name:upper()]
+				name = name:upper()
+			end
+			table.insert(inventory, {stock = v.count,name = v.name, category = boothdata and boothdata[name] and boothdata[name].category or 'Default', price = boothdata and boothdata[name] and boothdata[name].price or 99999999, metadata = v.metadata, disable = false, label = label or v.metadata and v.metadata.label or v.name})
+		end
 	end
 	data.shop.inventory = inventory
 	self.Active.shop.inventory = inventory
 	local money = self.GetItemCount('money')
 	local black_money = self.GetItemCount('black_money')
+	self.Owner = GlobalState.Booths[data.identifier].owner
 	SendNUIMessage({
 		type = 'shop',
-		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name or data.identifier, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
 	})
 	SetNuiFocus(not self.shopopen,not self.shopopen)
 	SetNuiFocusKeepInput(false)
