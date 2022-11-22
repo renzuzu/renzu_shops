@@ -1,9 +1,9 @@
 fx_version 'cerulean'
 lua54 'yes'
 game 'gta5'
- 
+
 author       'renzuzu'
-version      '1.1.1'
+version      '1.1.2'
 license      'LGPL-3.0-or-later'
 repository   'https://github.com/renzuzu/renzu_shops'
 description  'Advanced Shops available for free.'
