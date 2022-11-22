@@ -3,6 +3,16 @@
 -- or modify the items in config/*.lua, data/item_customise.lua
 --- LIST of items you need to install to ox_inventory/data/items.lua
 return {
+	['playerbooth'] = {
+		label = 'Market Booth Stall',
+		weight = 0,
+		client = {
+			anim = { dict = 'mini@repair', clip = 'fixing_a_ped' },
+			usetime = 2500,
+			notification = 'Setup your Stall',
+			export = 'renzu_shops.playerbooth'
+		},
+	},
 	['burger'] = {
 		label = 'Burger',
 		weight = 350,

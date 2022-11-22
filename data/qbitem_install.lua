@@ -1,4 +1,14 @@
 return {
+	['playerbooth'] = {
+		label = 'Market Booth Stall',
+		weight = 0,
+		name = "playerbooth",
+		weight = 50,
+		image = "playerbooth.png",
+		shouldClose = true,
+		useable = true,
+		type = "item",
+	},
 	burger = {
 		name = "burger",
 		weight = 50,
