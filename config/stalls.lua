@@ -23,6 +23,10 @@ PlayerBooth = {
 	-- 			}
 	-- 		}
 	-- 	},
+	blacklistarea = {
+		[1] = vec3(280.03,-584.29,43.29), -- pillbox hospital
+		[2] = vec3(416.77,-975.46,29.43), -- mrpd
+	},
 	objects = { -- you can add more objects here
 		-- types (fn) : 
 		-- stash (private stash for owner) : 
@@ -253,11 +257,21 @@ if IsDuplicityVersion() then
 		GlobalState.BoothItems = boothitems
 		SetResourceKvp('BoothItems', json.encode(boothitems))
 	end)
-	if shared.framework == 'QBCORE' then
+	if shared.framework == 'QBCORE' and shared.inventory == 'qb-inventory' then
 		exports['qb-inventory']:CreateUsableItem('playerbooth',function(source,item)
 			item.metadata = item.info
 			item.count = item.amount
-			TriggerClientEvent('playerbooth', source, item)
+			local canuse = true
+			for k,v in pairs(PlayerBooth.blacklistarea) do
+				if #(GetEntityCoords(GetPlayerPed(source)) - v) < 50 then
+					canuse = false
+				end
+			end
+			if canuse then
+				TriggerClientEvent('playerbooth', source, item)
+			else
+				TriggerClientEvent('ox_lib:notify', source, { type = 'error', description = 'You cant install booth in this place' })
+			end
 		end)
 	end
 else
@@ -277,18 +291,31 @@ else
 	end)
 
 	exports('playerbooth', function(data, slot)
-		exports.ox_inventory:useItem(data, function(data)
-			-- The server has verified the item can be used.
-			if data then
-				local app = PlaceApplications({model = data.metadata.model, id = data.boothid}, true)
-				local booth = lib.callback.await('renzu_shops:createbooth', false, {
-					boothid = data.metadata?.boothid,
-					metadata = data.metadata,
-					coords = app.coord,
-					heading = app.heading
-				})
+		local canuse = true
+		for k,v in pairs(PlayerBooth.blacklistarea) do
+			if #(GetEntityCoords(cache.ped) - v) < 50 then
+				canuse = false
 			end
-		end)
+		end
+		if canuse then
+			exports.ox_inventory:useItem(data, function(data)
+				if data then
+					local app = PlaceApplications({model = data.metadata.model, id = data.boothid}, true)
+					local booth = lib.callback.await('renzu_shops:createbooth', false, {
+						boothid = data.metadata?.boothid,
+						metadata = data.metadata,
+						coords = app.coord,
+						heading = app.heading
+					})
+				end
+			end)
+		else
+			local Shops = exports.renzu_shops:Shops()
+			Shops.SetNotify({
+				description = 'You cant install booth in this place',
+				type = 'error'
+			})
+		end
 	end)
 
 	AddStateBagChangeHandler('playerbooth' --[[key filter]], nil --[[bag filter]], function(bagName, key, value, _unused, replicated)
