@@ -56,16 +56,16 @@ function GetPlayerFromId(src)
 			return xPlayer.PlayerData.money['cash']
 		end
 		xPlayer.addMoney = function(value)
-				QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney('cash',tonumber(value))
+				QBCore.Functions.GetPlayer(self.src).Functions.AddMoney('cash',tonumber(value))
 			return true
 		end
 		xPlayer.addAccountMoney = function(type, value)
 			type = type:gsub('money', 'cash')
-			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.AddMoney(type,tonumber(value))
+			QBCore.Functions.GetPlayer(self.src).Functions.AddMoney(type,tonumber(value))
 			return true
 		end
 		xPlayer.removeMoney = function(value)
-			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney('cash',tonumber(value))
+			QBCore.Functions.GetPlayer(self.src).Functions.RemoveMoney('cash',tonumber(value))
 			return true
 		end
 		xPlayer.getAccount = function(type)
@@ -78,7 +78,7 @@ function GetPlayerFromId(src)
 			if type == 'money' then
 				type = 'cash'
 			end
-			QBCore.Functions.GetPlayer(tonumber(self.src)).Functions.RemoveMoney(type,tonumber(val))
+			QBCore.Functions.GetPlayer(self.src).Functions.RemoveMoney(type,tonumber(val))
 			return true
 		end
 		xPlayer.showNotification = function(msg)
@@ -113,7 +113,6 @@ Inventory.AddItem = function(source,item,count,metadata,slot)
 	else
 		if item == 'money' then
 			local xPlayer = GetPlayerFromId(source)
-
 			if not xPlayer then 
 				if not tonumber(source) then
 					source = source:gsub('Hotdog:','')
@@ -123,7 +122,7 @@ Inventory.AddItem = function(source,item,count,metadata,slot)
 				end
 				return
 			end
-			xPlayer.addMoney(count)
+			xPlayer.addAccountMoney('money',count)
 		else
 			local added = exports['qb-inventory']:AddItem(source, item, count, slot, metadata)
 			if not added then
@@ -159,7 +158,7 @@ Inventory.RemoveItem = function(source,item,count,metadata,slot)
 			end
 			xPlayer.removeMoney(count)
 		else
-			local removed = exports['qb-inventory']:RemoveItem(source, item, count, slot, metadata) 
+			local removed = exports['qb-inventory']:RemoveItem(source, item, count, slot, metadata)
 			if not removed then
 				if not slot then
 					local stash = exports['qb-inventory']:GetStashItems(source)

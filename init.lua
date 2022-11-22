@@ -2,7 +2,7 @@ ESX,QBCORE = nil, nil
 shared = {}
 shared.lang = 'en' -- look config/locales/%s.lua eg. 'en' for en.lua | to create new language, create a new file ex. es.lua
 shared.framework = 'ESX' -- ESX || QBCORE
-shared.inventory = 'ox_inventory' -- 'ox_inventory' or 'qb-inventory'
+shared.inventory = 'ox_inventory' -- 'ox_inventory' or 'qb-inventory' https://github.com/renzuzu/qb-inventory
 -- use ox_inventory Shops UI (experimental feature) only with my forked ox_inventory REPO https://github.com/renzuzu/ox_inventory
 shared.oxShops = false -- if true this resource will use ox_inventory Shops UI instead of built in UI
 shared.allowplayercreateitem = false -- if false only admin can create new items via /stores
@@ -47,11 +47,15 @@ shared.VehicleKeys = function(plate,source) -- vehicle keys
 
 		end
 	elseif not IsDuplicityVersion() then -- client exports edit this if your using exports in client
-		func = function()
-			sendvehiclekeys = exports.renzu_garage.GiveVehicleKey -- replace this
-		end
-		if pcall(func, result or false) then
-			return sendvehiclekeys(nil,plate,source)
+		if shared.VehicleKeysType['export'] then
+			func = function()
+				sendvehiclekeys = exports.renzu_garage.GiveVehicleKey -- replace this
+			end
+			if pcall(func, result or false) then
+				return sendvehiclekeys(nil,plate)
+			end
+		else -- if triggered using client
+			TriggerEvent('vehiclekeys:client:SetOwner', plate) -- this is non existing and example only
 		end
 	end
 end
@@ -103,6 +107,7 @@ shared.Shops = request('config/defaultshops')
 shared.OwnedShops = request('config/ownedshops/init')
 shared.MovableShops = request('config/movableshop')
 shared.locales = request('config/locales/'..shared.lang)
+shared.playerbooth = request('config/stalls')
 request('config/shipping')
 -- insert additional datas
 if shared.inventory == 'ox_inventory' then
@@ -239,17 +244,20 @@ if not IsDuplicityVersion() then
 					end)
 				end
 			end
-			self.Playerloaded()
-			self.SetJob()
-			self.Handlers()
-			self.StartUp()
-			exports('Shops', function ()
-				return self
-			end)
-			RegisterCommand('bubble', function(source,args)
-				local Functions = exports.renzu_shops:Shops()
-				Functions.CreateBubbleSpeechSync({id = GetPlayerServerId(PlayerId()), title = GetPlayerName(PlayerId()), message = args[1], bagname = 'player:', ms = 5000})
-			end)
+			if not self.once then
+				self.Playerloaded()
+				self.SetJob()
+				self.Handlers()
+				self.StartUp()
+				exports('Shops', function ()
+					return self
+				end)
+				RegisterCommand('bubble', function(source,args)
+					local Functions = exports.renzu_shops:Shops()
+					Functions.CreateBubbleSpeechSync({id = GetPlayerServerId(PlayerId()), title = GetPlayerName(PlayerId()), message = args[1], bagname = 'player:', ms = 5000})
+				end)
+				self.once = true
+			end
 		end
 	})
 	return Shops()

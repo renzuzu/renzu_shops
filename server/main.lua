@@ -1,4 +1,4 @@
-Inventory = {}
+Inventory = setmetatable({},{})
 local Items = {}
 local purchaseorders = {}
 vehicletable = 'owned_vehicles'
@@ -171,7 +171,8 @@ exports('isMovableShop', isMovableShop)
 
 CheckItemData = function(data)
 	for k,v in pairs(shared.Storeitems[data.shop]) do
-		if data.item == v.name then
+		local name = v.metadata and v.metadata.name or v.name
+		if data.item == name then
 			return v.price
 		end
 	end
@@ -242,6 +243,7 @@ RemoveStockFromStore = function(data)
 				if data.index == k and stores[v.label] then
 					itemtype = data.metadata and data.metadata.name and 'custom' or 'normal'
 					itemname = data.metadata and data.metadata.name or data.item
+					data.item = itemname
 					if stores[v.label].items[itemtype][itemname] == nil then stores[v.label].items[itemtype][itemname] = {} end
 					if stores[v.label].items[itemtype][itemname].stock and tonumber(stores[v.label].items[itemtype][itemname].stock) >= data.amount then
 						stores[v.label].items[itemtype][itemname].stock = tonumber(stores[v.label].items[itemtype][itemname].stock) - data.amount
@@ -280,19 +282,32 @@ end
 exports('RemoveStockFromStore', RemoveStockFromStore)
 
 RemoveStockFromStash = function(data)
-	local shopdata = shared.MovableShops[data.type].menu
-	local items = {}
-	for category,v in pairs(shopdata) do
-		for k,v in pairs(v) do
-			table.insert(items, {name = v.name, price = v.price, metadata = v.metadata})
+	local stash = {}
+	if not data.booth then
+		local shopdata = shared.MovableShops[data.type].menu
+		local items = {}
+		for category,v in pairs(shopdata) do
+			for k,v in pairs(v) do
+				table.insert(items, {name = v.name, price = v.price, metadata = v.metadata})
+			end
+		end
+		data.items = items
+		stash = GetStashData(data)
+	else
+		local items = GetInventoryData(data.identifier)
+		for k,v in pairs(items) do
+			if not stash[v.metadata and v.metadata.name or v.name] then stash[v.metadata and v.metadata.name or v.name] = 0 end
+			stash[v.metadata and v.metadata.name or v.name] += v.count
 		end
 	end
-	data.items = items
-	local stash = GetStashData(data)
 	if stash[data.metadata and data.metadata.name or data.item] >= data.amount then
-		Inventory.RemoveItem(data.identifier, data.item, data.amount, data.metadata) -- remove item from stash inventory
+		if not data.booth then
+			Inventory.RemoveItem(data.identifier, data.item, data.amount, data.metadata) -- remove item from stash inventory
+		else
+			RemoveBoothItem(data.identifier, data.item, data.amount, data.metadata)
+		end
 		if data.addmoney then
-			Inventory.AddItem(data.identifier, data.money, data.price * data.amount) -- add money directly to stash inventory
+			Inventory.AddItem(data.owner or data.identifier, data.money, data.price * data.amount) -- add money directly to stash inventory or player inventory
 		end
 		return true
 	end
@@ -503,6 +518,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 	local xPlayer = GetPlayerFromId(source)
 	local storeowned, shopdata, shoptype = isStoreOwned(data.shop,data.index) -- check if this store has been owned by player
 	local movableshop = isMovableShop(data.index) -- check if this store is a movable type
+	local boothshop = string.find(data.shop, 'market')
 	local hasitem = false
 	local total = 0
 	local customparts = {}
@@ -603,9 +619,9 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 					local name = v.data.metadata and v.data.metadata.name or v.data.name
 					if item.name == name then
 						if storeowned then -- storeowned Ownableshops data handler
-							RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, index = data.index, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, money = moneytype:lower()})
+							RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, index = data.index, item = v.data.name, amount = tonumber(v.count), money = moneytype:lower()})
 						elseif movableshop then -- movable shops logic data handler
-							RemoveStockFromStash({addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, type = data.index, money = moneytype:lower()})
+							RemoveStockFromStash({addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), type = data.index, money = moneytype:lower()})
 						end
 						if v.count > item.count then
 							data.items[k2].count -= item.count
@@ -619,9 +635,9 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 		end
 		for k,v in pairs(data.items) do
 			if storeowned then -- storeowned Ownableshops data handler
-				RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, require = v.data.require, index = data.index, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, money = moneytype:lower()})
-			elseif movableshop then -- movable shops logic data handler
-				RemoveStockFromStash({addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, type = data.index, money = moneytype:lower()})
+				RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, index = data.index, item = v.data.name, amount = tonumber(v.count), money = moneytype:lower()})
+			elseif movableshop or boothshop then -- movable shops and boothshop logic data handler
+				RemoveStockFromStash({owner = data.owner, booth = boothshop, addmoney = true, identifier = data.shop, metadata = v.data.metadata, item = v.data.name, amount = tonumber(v.count), price = data.data[v.data.name].price, type = data.index, money = moneytype:lower()})
 			end
 			if data.shop ~= 'VehicleShop' then -- add new item if its not a vehicle type
 				Inventory.AddItem(source,v.data.name,v.count,v.data.metadata, false)
@@ -963,16 +979,62 @@ GetInventoryData = function(source)
 		if k == source then
 			for k,v in pairs(v.placedapplications) do
 				if v.type == 'storage' then
-					local inventory = exports.ox_inventory:GetInventoryItems(v.appid)
-					for k,v in pairs(inventory) do
-						print(k,v.name)
-						table.insert(items,v)
+					local inventory
+					if shared.inventory == 'qb-inventory' then
+						inventory = exports['qb-inventory']:GetStashItems(v.appid)
+						for k,v in pairs(inventory) do
+							v.metadata = v.info
+							v.count = v.amount
+							table.insert(items,v)
+						end
+					elseif shared.inventory == 'ox_inventory' then
+						inventory = exports.ox_inventory:GetInventoryItems(v.appid)
+						for k,v in pairs(inventory) do
+							table.insert(items,v)
+						end
 					end
 				end
 			end
 		end
 	end
 	return items
+end
+
+RemoveBoothItem = function(source,item,amount,metadata)
+	local booths = GlobalState.Booths
+	local items = {}
+	local toremove = amount
+	for k,v in pairs(booths) do
+		if k == source then
+			for k,v in pairs(v.placedapplications) do
+				if v.type == 'storage' then
+					local inventory
+					if shared.inventory == 'qb-inventory' then
+						inventory = exports['qb-inventory']:GetStashItems(v.appid)
+						local stashid = v.appid
+						for k,v in pairs(inventory) do
+							v.metadata = v.info
+							v.count = v.amount
+							if item == v.metadata and v.metadata.name or item == v.name then
+								Inventory.RemoveItem(stashid,item,toremove,v.metadata)
+								break
+							end
+						end
+					elseif shared.inventory == 'ox_inventory' then
+						inventory = exports.ox_inventory:GetInventoryItems(v.appid)
+						local stashid = v.appid
+						for k,v in pairs(inventory) do
+							if item == v.metadata and v.metadata.name or item == v.name then
+								Inventory.RemoveItem(stashid,item,toremove,v.metadata)
+								break
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	return true
 end
 
 GetStashData = function(data)

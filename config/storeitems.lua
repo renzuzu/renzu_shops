@@ -27,6 +27,30 @@ return {
 		{ lvl = 1, name = 'beef', price = 5 , category = 'wet foods'},
 		{ lvl = 1, name = 'chicken', price = 5 , category = 'wet foods'},
 		{ lvl = 1, name = 'martini', price = 5 , category = 'liquor'},
+		{ lvl = 1, name = 'playerbooth', price = 50000 , category = 'misc', 
+			metadata = { -- ox_inventory supported only
+				name = 'marketbooth',
+				label = 'Market Booth', -- custom label name to set from metadatas
+				model = `ch_prop_ch_gazebo_01`,
+				description = 'can be used for market booth',
+				type = 'legal',
+				blacklists = { -- blacklist the list of items here from appearing to shop
+					['weapon_pistol'] = true, -- lowercase only
+				},
+			}
+		},
+		{ lvl = 1, name = 'playerbooth', price = 50000 , category = 'misc', 
+			metadata = { -- ox_inventory supported only
+				name = 'blackmarketbooth',
+				label = 'Black Market Booth', -- custom label name to set from metadatas
+				model = `ch_prop_ch_gazebo_01`,
+				description = 'can be used for black market booth',
+				type = 'illegal',
+				whitelists = { -- if whitelist. only this items will appear on the shops
+					['weapon_pistol'] = true, -- lowercase only
+				}
+			}
+		},
 
 
 		-- metadatas type item
