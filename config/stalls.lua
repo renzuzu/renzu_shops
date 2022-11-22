@@ -518,6 +518,7 @@ else
 		PlaceObjectOnGroundProperly(appliance)
 		FreezeEntityPosition(appliance, true)
 		SetEntityAlpha(appliance, 200, true)
+		local gazebocoord = GetEntityCoords(gazebo[data.id])
 		while appliance ~= nil do
 			Citizen.Wait(1)
 			DisableControlAction(0, 51)
@@ -543,7 +544,7 @@ else
 			for i = 123, 128 do
 				DisableControlAction(0, i)
 			end
-			if IsDisabledControlJustPressed(0, 51) then
+			if not booth and IsDisabledControlJustPressed(0, 51) and #(GetEntityCoords(appliance) - gazebocoord) < 4 or booth and IsDisabledControlJustPressed(0, 51) then
 				lib.hideTextUI()
 				local heading = GetEntityHeading(appliance)
 				if booth then
@@ -561,6 +562,12 @@ else
 				SetEntityCollision(entity,true,true)
 				FreezeEntityPosition(entity,true)
 				break
+			end
+			if not booth and IsDisabledControlJustPressed(0, 51) and #(GetEntityCoords(appliance) - gazebocoord) > 4 then
+				Shops.SetNotify({
+					description = 'Placement is out of bounds',
+					type = 'error'
+				})
 			end
 			if IsDisabledControlPressed(0, 96) then -- wheel scroll
 				SetEntityCoords(appliance, GetOffsetFromEntityInWorldCoords(appliance, 0.0, 0.0, moveSpeed))
