@@ -184,7 +184,7 @@ self.LoadShops = function()
 	for name,shops in pairs(shared.OwnedShops) do
 		for k,shop in pairs(shops) do
 			local storedata = self.StoreData(shop.label)
-			if self.temporalspheres[shop.label] and self.temporalspheres[shop.label].remove then
+			if type(self.temporalspheres[shop.label]) == 'table' and self.temporalspheres[shop.label].remove then
 				self.temporalspheres[shop.label]:remove()
 			end
 			if not storedata then
