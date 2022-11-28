@@ -1620,7 +1620,10 @@ self.Handlers = function()
 	end)
 	RegisterNetEvent('renzu_shop:OpenShops', function(data)
 		Wait(500)
+		local ownedshopdata = self.GetShopData(data.type,data.id)
+		local group = ownedshopdata?.groups
 		if self.shopopen then return end
+		if group and group ~= self.PlayerData?.job?.name then return end
 		local shop = shared.Shops[data.type]
 		local coord = shared.Shops[data.type].locations[data.id]
 		local closest = nil
