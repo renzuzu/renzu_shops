@@ -3063,6 +3063,7 @@ end
 
 self.OpenShopBooth = function(data)
 	if GlobalState.BoothShops[data.identifier] ~= nil and GlobalState.BoothShops[data.identifier] then return end
+	if not self.Active then self.Closeui() return end
 	self.Active.shop = {}
 	self.shopidentifier = data.identifier
 	data.shop = {}
