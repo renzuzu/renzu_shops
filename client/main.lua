@@ -1474,17 +1474,21 @@ end
 self.OpenShop = function(data)
 	if self.shopopen then return end
 	local data = lib.table.deepclone(data)
+	local grade = self.PlayerData?.job?.grade
 	-- shop data of defaults shops
 	if not self.Active or  not self.Active.shop then return end
-	data.shop.inventory = data.shop.inventory or shared.Storeitems[data.type]
-	self.Active.shop.inventory = data.shop.inventory
+	data.shop.inventory = data.shop.inventory or shared.Storeitems[data.type] or {}
+	self.Active.shop.inventory = data.shop.inventory or {}
 	self.Active.shop.type = data.type
 	self.Active.shop.StoreName = data.shop.StoreName
-	for k,v in pairs(data.shop.inventory) do
+	for k,v in pairs(data.shop.inventory or {}) do
 		data.shop.inventory[k].disable = false
 		data.shop.inventory[k].label = v.metadata and v.metadata.label or self.Items[v.name] or v.label
 		if data.type == 'Ammunation' or data.type == 'BlackMarketArms' then
 			data.shop.inventory[k].component = self.GetWeaponComponents(v.name,true)
+		end
+		if v.grade and v.grade > grade then
+			data.shop.inventory[k].disable = true
 		end
 	end
 	self.moneytype = data.shop.moneytype
@@ -1505,6 +1509,9 @@ self.OpenShop = function(data)
 					data.shop.inventory[k].label = v.metadata and v.metadata.label or self.Items[v.name] or v.label
 					if data.type == 'Ammunation' or data.type == 'BlackMarketArms' then
 						data.shop.inventory[k].component = self.GetWeaponComponents(v.name,true)
+					end
+					if v.grade and v.grade > grade then
+						data.shop.inventory[k].disable = true
 					end
 				end
 				if storedata then
@@ -1550,6 +1557,9 @@ self.OpenShop = function(data)
 						end
 						if data.type == 'Ammunation' or data.type == 'BlackMarketArms' then
 							data.shop.inventory[k].component = self.GetWeaponComponents(item.name,true)
+						end
+						if item.grade and item.grade > grade then
+							data.shop.inventory[k].disable = true
 						end
 					end
 					self.Active.shop.type = data.type
