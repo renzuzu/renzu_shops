@@ -44,7 +44,7 @@ self.StartUp = function()
 					if not shared.oxShops or k == 'VehicleShop' then
 						shop.shoptype = k
 						local ownedshopdata = self.GetShopData(k,shopindex)
-						shop.groups = ownedshopdata and ownedshopdata.groups
+						shop.groups = ownedshopdata and ownedshopdata.groups or shop.groups
 						shop.StoreName = ownedshopdata and ownedshopdata.label
 						if not shared.target then
 							self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
@@ -1639,7 +1639,7 @@ self.Handlers = function()
 	RegisterNetEvent('renzu_shop:OpenShops', function(data)
 		Wait(500)
 		local ownedshopdata = self.GetShopData(data.type,data.id)
-		local group = ownedshopdata?.groups
+		local group = ownedshopdata?.groups or shared.Shops[data.type].groups
 		if self.shopopen then return end
 		if group and group ~= self.PlayerData?.job?.name then return end
 		local shop = shared.Shops[data.type]
