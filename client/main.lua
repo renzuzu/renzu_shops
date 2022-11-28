@@ -701,7 +701,14 @@ self.EditItem = function(data, store, cat)
 				local input = lib.inputDialog('How Many :'..item..'   \n Min: 5 Max 100', {'Whole Sale Price: '..data.pricing.original * shared.discount..'$'})
 				if not input then return end
 				local wholesaleorder = tonumber(input[1]) or 1
-				if wholesaleorder < 5 then return end
+				if wholesaleorder < 5 then 
+					self.SetNotify({
+						title = 'Store Business',
+						description = 'Order Failed - Minimum is 5',
+						type = 'error'
+					})
+					return 
+				end
 				if wholesaleorder > 100 then return end
 				local fee = data.pricing.original * wholesaleorder * shared.discount
 				local confirm = lib.alertDialog({
@@ -862,14 +869,25 @@ end
 
 self.CheckItemPrice = function(item)
 	local price = 0
+	local found = false
 	local items = shared.Storeitems[self.ShopType]
 	for k,v in pairs(items) do
 		if item == v.name then
 			price = v.price
+			found = true
 			return price
 		end
 	end
-	return false
+	if not found then -- try vehicles
+		for k,v in pairs(AllVehicles) do
+			if item == v.name then
+				price = v.price
+				found = true
+				return price
+			end
+		end
+	end
+	return found
 end
 
 self.temporarycats = {}

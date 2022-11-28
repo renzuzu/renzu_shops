@@ -170,10 +170,21 @@ end
 exports('isMovableShop', isMovableShop)
 
 CheckItemData = function(data)
+	local found = false
 	for k,v in pairs(shared.Storeitems[data.shop]) do
 		local name = v.metadata and v.metadata.name or v.name
 		if data.item == name then
+			found = true
 			return v.price
+		end
+	end
+	if not found then -- try vehicles
+		for k,v in pairs(AllVehicles) do
+			if data.item == v.name then
+				price = v.price
+				found = true
+				return price
+			end
 		end
 	end
 	return false
@@ -1232,13 +1243,16 @@ lib.callback.register("renzu_shops:createshoporder", function(source,data)
 	local xPlayer = GetPlayerFromId(source)
 	local stores = GlobalState.Stores
 	local amount = data.item.price * data.amount * shared.discount
+	print(amount)
 	if tonumber(stores[data.store].money[data.moneytype]) >= amount then
+		print('aw')
 		stores[data.store].money[data.moneytype] = tonumber(stores[data.store].money[data.moneytype]) - amount
 		local type = data.type or 'item'
 		local randompoints = shared.deliverypoints[type][math.random(1,#shared.deliverypoints[type])]
 		data.item.amount = data.amount
 		local t = {type = type, id = math.random(9999,999999), point = randompoints, item = data.item, amount = amount, moneytype = data.moneytype}
 		if data.moneytype == 'money' then
+			print('awww')
 			local shippping = GlobalState.Shipping
 			if not shippping[data.store] then
 				shippping[data.store] = {}
