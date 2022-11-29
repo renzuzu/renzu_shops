@@ -53,6 +53,7 @@ CreateThread(function()
 			end
 		end
 	elseif shared.inventory == 'ox_inventory' then -- if above condition is not possible , we will override ox_inventory shops
+		if GetResourceState('ox_inventory') ~= 'started' then print('^1ox_inventory is not started or this resource started before ox_inventory^0') StopResource('renzu_shops') end
 		for k,v in pairs(shared.Shops) do -- overide default ox inventory shops. temporary logic
 			exports.ox_inventory:RegisterShop(k, {
 				name = k, 
@@ -196,7 +197,6 @@ if not shared.oxShops and shared.inventory == 'ox_inventory' then
 		SetTimeout(1,function()
 			TriggerClientEvent('ox_inventory:closeInventory', source) -- temporary logic. this will avoid having error notification thrown by ox_inventory due to distance checks
 		end)
-		return {items = {}}
 	end)
 end
 
@@ -1817,6 +1817,13 @@ SetOxInvShopStock = function(data)
 		parameter = 'count' -- count, price, currency. or any shop parameter. count will add if item count is existed
 	})
 end
+
+AddEventHandler('onResourceStop', function(re)
+	if re == 'ox_inventory' and shared.inventory == 'ox_inventory' then
+		print("^1ox_inventory is stopped, ox_inventory is a dependency, make sure this resource is always started before ox_inventory^0")
+		StopResource('renzu_shops')
+	end
+end)
 
 exports('Inventory', Inventory)
 lib.versionCheck('renzuzu/renzu_shops')
