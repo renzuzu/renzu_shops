@@ -852,9 +852,9 @@ lib.callback.register("renzu_shops:sellstore", function(source,store)
 	end
 end)
 
-CreateCustomItem = function(store)
+CreateCustomItem = function(data)
 	local stores = GlobalState.Stores
-	if not stores[store].customitems then stores[store].customitems = {} end
+	if not stores[data.store].customitems then stores[data.store].customitems = {} end
 	local url = string.find(data.image or '', "http") or false
 	local metadata = { -- ox_inventory supported only
 		label = data.label, -- custom label name to set from metadatas
@@ -870,8 +870,8 @@ CreateCustomItem = function(store)
 		metadata.image = data.image
 	end
 	local itemdata = {name = CustomItems.Default, price = data.price , category = data.category, metadata = metadata}
-	stores[store].customitems[data.itemname] = itemdata
-	sql.update('renzu_stores','customitems','shop',store,json.encode(stores[store].customitems))
+	stores[data.store].customitems[data.itemname] = itemdata
+	sql.update('renzu_stores','customitems','shop',store,json.encode(stores[data.store].customitems))
 	--SetResourceKvp('renzu_stores', json.encode(stores))
 	GlobalState.Stores = stores
 	return true
