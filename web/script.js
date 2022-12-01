@@ -419,7 +419,7 @@ async function ShowCats(i) {
         }
         var ui = `
         <div id="${i}_main" class="category">
-            <a href="#" onclick="ShopCats('${i}')"><img id="${i}_cat" src="${imgpath}${catimg[i]}.png" onerror="this.src=VehicleImage('${catimg[i]}');this.onerror=defaultimg(this)">
+            <a href="#" onclick="ShopCats('${i}')"><img id="${i}_cat" src="${imgpath}${catimg[i]}.png" onerror="this.src='${catimg[i]}';this.onerror=defaultimg(this)">
                 <h2>
                     ${i} 
                 </h2>
@@ -470,7 +470,6 @@ async function defaultimg(e,imgname) {
 }
 
 let lastcat = null
-
 async function LoadCategory(shop, cat) {
     await delay(100)
     for (const i in shop.inventory) {
@@ -481,6 +480,9 @@ async function LoadCategory(shop, cat) {
         }
         if (data.category && !catimg[data.category]) {
             catimg[data.category] = imgname
+            if (data.hash) {
+                catimg[data.category] = vImageCreator[data.hash] || `https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+data.name+`.jpg`
+            }
             ShowCats(data.category)
         }
     }
