@@ -1490,6 +1490,7 @@ self.OpenShop = function(data)
 		if v.grade and v.grade > grade then
 			data.shop.inventory[k].disable = true
 		end
+		data.shop.inventory[k].hash = joaat(data.shop.inventory[k].name or 'null')
 	end
 	self.moneytype = data.shop.moneytype
 	-- shop data for owned shops
@@ -1564,6 +1565,7 @@ self.OpenShop = function(data)
 					end
 					self.Active.shop.type = data.type
 					self.Active.shop.inventory = data.shop.inventory
+					data.shop.inventory[k].hash = joaat(data.shop.inventory[k].name or 'null')
 				end
 			end
 		end
@@ -1572,7 +1574,7 @@ self.OpenShop = function(data)
 	local black_money = self.GetItemCount('black_money')
 	SendNUIMessage({
 		type = 'shop',
-		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+		data = {vImageCreator = GlobalState?.VehicleImages or {}, imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
 	})
 	SetNuiFocus(true,true)
 	SetNuiFocusKeepInput(false)

@@ -30,6 +30,7 @@ let colorid = 1
 let moneytype = 'money'
 var content = {}
 let lastshop = ''
+let vImageCreator = undefined
 window.addEventListener('message', function (table) {
     let event = table.data;
     if (event.data.type == 'bubble' && content[event.data.id] == undefined) {
@@ -53,6 +54,7 @@ window.addEventListener('message', function (table) {
         delete content[event.data.id]
     }
     if (event.data.open) {
+        vImageCreator = event.data.vImageCreator
         getEl('shop').style.display = 'block'
         uiopen = true
         imgpath = event.data.imgpath
@@ -287,6 +289,15 @@ function FindCartIDFromDefaultItem(data) {
     return false
 }
 
+function VehicleImage(name,hash) {
+    let image = `https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+name+`.jpg`
+    if (vImageCreator && hash) {
+        return vImageCreator[hash] || image
+    } else {
+        return image
+    }
+}
+
 async function AddtoCart(item,qty) {
     var amount = 0
     let myForm = getEl(item)
@@ -338,7 +349,7 @@ async function AddtoCart(item,qty) {
                 </td>
                 <td>
                     <div class="product-img">
-                        <img id="${cartid}_cartimg" src="${imgpath}${items[item].name}.png" alt="" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+items[item].name+`.jpg';this.onerror=defaultimg(this)">
+                        <img id="${cartid}_cartimg" src="${imgpath}${items[item].name}.png" alt="" onerror="this.src=VehicleImage('${items[item].name}','${items[item].hash || ''}');this.onerror=defaultimg(this)">
                     </div>
                 </td>
                 <td>
@@ -408,7 +419,7 @@ async function ShowCats(i) {
         }
         var ui = `
         <div id="${i}_main" class="category">
-            <a href="#" onclick="ShopCats('${i}')"><img id="${i}_cat" src="${imgpath}${catimg[i]}.png" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+catimg[i]+`.jpg';this.onerror=defaultimg(this)">
+            <a href="#" onclick="ShopCats('${i}')"><img id="${i}_cat" src="${imgpath}${catimg[i]}.png" onerror="this.src=VehicleImage('${catimg[i]}');this.onerror=defaultimg(this)">
                 <h2>
                     ${i} 
                 </h2>
@@ -525,7 +536,7 @@ async function ShopItems(shop, cat) {
                 <span>
                 ${addons}
                 ${component}
-                <img class="aso" onclick="ItemCallback('${data.name}','${i}')" id="${iddiv}_img" src="${image}" onerror="this.src='https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+imgname+`.jpg';this.onerror = defaultimg(this,'${imgname}');">
+                <img class="aso" onclick="ItemCallback('${data.name}','${i}')" id="${iddiv}_img" src="${image}" onerror="this.src=VehicleImage('${imgname}','${items[i].hash || ''}');this.onerror = defaultimg(this,'${imgname}');">
                     <h2>
                     ${label}
                     </h2>
