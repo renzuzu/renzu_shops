@@ -1490,7 +1490,9 @@ self.OpenShop = function(data)
 		if v.grade and v.grade > grade then
 			data.shop.inventory[k].disable = true
 		end
-		data.shop.inventory[k].hash = joaat(data.shop.inventory[k].name or 'null')
+		if data.type == 'VehicleShop' then
+			data.shop.inventory[k].hash = joaat(data.shop.inventory[k].name or 'null')
+		end
 	end
 	self.moneytype = data.shop.moneytype
 	-- shop data for owned shops
@@ -1565,7 +1567,9 @@ self.OpenShop = function(data)
 					end
 					self.Active.shop.type = data.type
 					self.Active.shop.inventory = data.shop.inventory
-					data.shop.inventory[k].hash = joaat(data.shop.inventory[k].name or 'null')
+					if data.type == 'VehicleShop' then
+						data.shop.inventory[k].hash = joaat(data.shop.inventory[k].name or 'null')
+					end
 				end
 			end
 		end
