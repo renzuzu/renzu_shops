@@ -91,6 +91,8 @@ if not success then
 	)]])
 end
 
+local success, result = pcall(MySQL.scalar.await, 'ALTER TABLE `movableshops` MODIFY COLUMN `identifier` VARCHAR(100)')
+
 local convert = function()
 	if GetResourceKvpString('renzu_stores') then
 		for k,v in pairs(json.decode(GetResourceKvpString('renzu_stores'))) do
