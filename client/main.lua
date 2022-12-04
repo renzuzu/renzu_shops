@@ -48,7 +48,7 @@ self.StartUp = function()
 						shop.StoreName = ownedshopdata and ownedshopdata.label
 						if not shared.target then
 							self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
-						elseif not shop.groups or shop.groups == self.PlayerData.job.name then
+						elseif not shop.groups or shop.groups == self.PlayerData?.job?.name then
 							self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 						end
 					end
@@ -75,19 +75,22 @@ end
 
 self.lastdata = nil
 self.addTarget = function(coord,msg,callback,server,var,delete,auto)
-	return exports.qtarget:AddBoxZone(msg, coord+vec3(0.0,0.0,0.12), 1.09,1.6, {
+	return exports.qtarget:AddBoxZone(msg, coord+vec3(0.0,0.0,-0.29), 1.4,1.41, {
 		name = msg,
 		drawSprite = true,
 		debugPoly = false,
-		heading = 45,
-		minZ = coord.z-0.5,
-		maxZ = coord.z+1.0,
+		distance = 5,
+		minZ = coord.z-0.99,
+		maxZ = coord.z+0.29,
+		useZ = true,
 	}, {
 		options = {
 			{
+				distance = 5.5,
 				icon = 'fas fa-shopping-basket',
 				label = msg,
 				job = var.shop?.groups,
+				useZ = true,
 				action = function()
 					self.Active = lib.table.deepclone(var)
 					self.lastdata = var.index
@@ -96,7 +99,6 @@ self.addTarget = function(coord,msg,callback,server,var,delete,auto)
 				end
 			},
 		},
-		distance = 1.5
 	})
 end
 
