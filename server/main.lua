@@ -259,7 +259,7 @@ RemoveStockFromStore = function(data)
 					if stores[v.label].items[itemtype][itemname].stock and tonumber(stores[v.label].items[itemtype][itemname].stock) >= data.amount then
 						stores[v.label].items[itemtype][itemname].stock = tonumber(stores[v.label].items[itemtype][itemname].stock) - data.amount
 						sql.update('renzu_stores','items','shop',v.label,json.encode(stores[v.label].items))
-						local price = stores[v.label].items[itemtype][itemname].price and tonumber(stores[v.label].items[itemtype][itemname].price) or CheckItemData(data)
+						local price = not data.originalprice and stores[v.label].items[itemtype][itemname].price and tonumber(stores[v.label].items[itemtype][itemname].price) or CheckItemData(data)
 						if price then
 							if shared.SendtoBank and data.money == 'bank' then
 								-- todo
@@ -490,7 +490,7 @@ end)
 RemoveStock = function(data)
 	local storeowned, shopdata = isStoreOwned(data.type,data.index) -- check if this store has been owned by player
 	if storeowned then
-		local removed = RemoveStockFromStore({shop = data.type, metadata = data.metadata, index = data.index, item = data.name, amount = tonumber(data.count), price = data.price, money = data.money:lower()})
+		local removed = RemoveStockFromStore({originalprice = true, shop = data.type, metadata = data.metadata, index = data.index, item = data.name, amount = tonumber(data.count), price = data.price, money = data.money:lower()})
 		if removed and data.citizen then
 			Inventory.AddItem(data.citizen, data.name, data.count, data.metadata) -- add money directly to stash inventory
 			return true
