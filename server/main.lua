@@ -1243,16 +1243,13 @@ lib.callback.register("renzu_shops:createshoporder", function(source,data)
 	local xPlayer = GetPlayerFromId(source)
 	local stores = GlobalState.Stores
 	local amount = data.item.price * data.amount * shared.discount
-	print(amount)
 	if tonumber(stores[data.store].money[data.moneytype]) >= amount then
-		print('aw')
 		stores[data.store].money[data.moneytype] = tonumber(stores[data.store].money[data.moneytype]) - amount
 		local type = data.type or 'item'
 		local randompoints = shared.deliverypoints[type][math.random(1,#shared.deliverypoints[type])]
 		data.item.amount = data.amount
 		local t = {type = type, id = math.random(9999,999999), point = randompoints, item = data.item, amount = amount, moneytype = data.moneytype}
 		if data.moneytype == 'money' then
-			print('awww')
 			local shippping = GlobalState.Shipping
 			if not shippping[data.store] then
 				shippping[data.store] = {}
@@ -1594,6 +1591,57 @@ lib.callback.register('renzu_shops:editstore', function(source,data)
 		return EnableDisableStoreItems(data)
 	end
 	return false
+end)
+
+GlobalState.ItemShowCase = json.decode(GetResourceKvpString('itemshowcase') or '[]') or {}
+
+getShopName = function(data)
+	local ownedshops = lib.table.deepclone(shared.OwnedShops)
+	local storename = nil
+	for type,v in pairs(ownedshops) do
+		for k,v2 in pairs(v) do
+			if k == data.index and type == data.type then
+				return v2.label
+			end
+		end
+	end
+end
+
+--DeleteResourceKvp('itemshowcase')
+lib.callback.register('renzu_shops:editshowcase', function(source, method, name, data)
+	local showcases = GlobalState.ItemShowCase
+	local shop = getShopName(data.shop)
+	if shop then
+		if method == 'add' then
+			if not showcases[shop] then showcases[shop] = {} end
+			if not showcases[shop][data.index] then showcases[shop][data.index] = {} end
+			table.insert(showcases[shop][data.index], data.item)
+		end
+		if method == 'modify' then
+			for k,v in pairs(showcases) do
+				if name == 'remove' then
+					for k2,v2 in pairs(showcases[k]) do
+						for k3,v3 in pairs(v2) do
+							if v3.name == data.name then
+								showcases[k][k2][k3] = nil
+							end
+						end
+					end
+				else
+					for k2,v2 in pairs(showcases[k]) do
+						for k3,v3 in pairs(v2) do
+							if v3.name == data.name then
+								showcases[k][k2][k3][name] = data.value
+							end
+						end
+					end
+				end
+			end
+		end
+		SetResourceKvp('itemshowcase', json.encode(showcases))
+		GlobalState.ItemShowCase = showcases
+		return true
+	end
 end)
 
 lib.callback.register('renzu_shops:ondemandpay', function(source,data)

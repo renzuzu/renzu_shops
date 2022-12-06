@@ -14,7 +14,24 @@ return {
 		},
 		price = 3000000,
 		supplieritem = shared.Storeitems.VehicleShop,
-		camerasetting = {offset = vec3(0.0,-1.2,0.0), fov = 25}
+		camerasetting = {offset = vec3(0.0,-1.2,0.0), fov = 25},
+		showcase = {
+			[1] = {
+				coord = vec3(-36.91731262207,-1103.2255859375,26.42), 
+				label = 'Spot 1',
+				position = vec4(-39.272773742676,-1102.9514160156,25.754877090454,291.85345458984),
+			},
+			[2] = {
+				coord = vec3(-43.74,-1097.87,26.42), 
+				label = 'Spot 2',
+				position = vec4(-41.56,-1096.429,25.75,131.42),
+			},
+			[3] = {
+				coord = vec3(-47.055,-1096.91,26.42), 
+				label = 'Spot 3',
+				position = vec4(-49.671222686768,-1098.3825683594,25.754959106445,309.06005859375),
+			},
+		}
 	},
 	[2] = {
 		--groups = 'police',
@@ -38,7 +55,26 @@ return {
 			Vehicles.Annis,
 			Vehicles.Shitzu
 		),
-		camerasetting = {offset = vec3(0.0,1.0,0.0), fov = -10}
+		camerasetting = {offset = vec3(0.0,1.0,0.0), fov = -10},
+
+		showcase = {
+			[1] = {
+				coord = vec3(-1262.4072265625,-356.31912231445,37.01580), 
+				label = 'Spot 1',
+				position = vec4(-1263.5510253906,-353.92984008789,36.510929107666,208.12538146973),
+			},
+			[2] = {
+				coord = vec3(-1267.3598632813,-357.88278198242,37.1833), 
+				label = 'Spot 2',
+				position = vec4(-1267.8084716797,-356.44583129883,36.697582244873,219.08364868164),
+
+			},
+			[3] = {
+				coord = vec3(-1267.1409912109,-361.76306152344,36.941), 
+				label = 'Spot 3',
+				position = vec4(-1269.6141357422,-362.91970825195,37.11107635498,297.50491333008),
+			},
+		}
 	},
 	[3] = { -- boat shop
 		--groups = 'police',

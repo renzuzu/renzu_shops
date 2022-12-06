@@ -20,8 +20,8 @@ shared.defaultStock = {
 } -- default to all items in store when newly purchased
 shared.SendtoBank = false -- if true owner will receive money to owned bank account
 shared.VehicleKeysType = {
-	['export'] = false, -- if false it will use trigger events
-	['client'] = true, -- if false it will use server event or server exports
+	['export'] = true, -- if false it will use trigger events
+	['client'] = false, -- if false it will use server event or server exports
 }
 shared.VehicleKeys = function(plate,source) -- vehicle keys
 	-- first parameter expected is plate

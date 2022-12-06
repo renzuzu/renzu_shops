@@ -200,13 +200,23 @@ self.LoadShops = function()
 					self.temporalspheres[shop.label] = {target = id, spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
 				end
 			elseif storedata and storedata?.owner == self.PlayerData.identifier 
-			or storedata and storedata.employee[self.PlayerData.identifier] then
+				or storedata and storedata.employee[self.PlayerData.identifier] then
 				if not shared.target then
 					self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				else
 					self.temporalspheres[shop.label] = self.addTarget(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				end
 				self.ShopBlip({coord = shop.coord, text = 'My Store '..shop.label, blip = {colour = 38, id = 374, scale = 0.6}})
+			end
+			if name == 'VehicleShop' then
+				for index,showcase in pairs(shop.showcase or {}) do
+					if not shared.target then
+						self.Add(showcase.coord,'Display '..showcase.label,self.SpotShowcase,false,{label = shop.label, owner = storedata and storedata?.owner , index = index, shop = {type = name, index = k}, showcase = showcase})
+					else
+						self.addTarget(showcase.coord,'Display '..showcase.label,self.SpotShowcase,false,{label = shop.label, owner = storedata and storedata?.owner , index = index, shop = {type = name, index = k}, showcase = showcase})
+					end
+					self.SpotZone({label = shop.label, owner = storedata and storedata?.owner == self.PlayerData.identifier , index = index, shop = {type = name, index = k}, showcase = showcase})
+				end
 			end
 			if shop.cashier then
 				local shopdata = lib.table.deepclone(shop)
@@ -1109,6 +1119,7 @@ end
 self.BoxObject = function(dict,anim,prop,flag,hand)
 	local ped = self.playerPed
 	lib.requestModel(GetHashKey(prop))
+	SetModelAsNoLongerNeeded(GetHashKey(prop))
 	lib.requestAnimDict(dict)
 	TaskPlayAnim(ped,dict,anim,3.0,3.0,-1,flag,0,0,0,0)
 	local coords = GetOffsetFromEntityInWorldCoords(ped,0.0,0.0,-5.0)
@@ -1157,6 +1168,7 @@ self.StartDelivery = function(var)
 			model = var.selfdeliver.model
 		end
 		lib.requestModel(model)
+		SetModelAsNoLongerNeeded(model)
 		self.Vehicle = CreateVehicle(model, spawn.x,spawn.y,spawn.z, spawn.w, true, true) -- Spawns a networked self.Vehicle on your current coords
 		while not DoesEntityExist(self.Vehicle) do Wait(1) end
 		if type == 'vehicle' then
@@ -1981,6 +1993,7 @@ self.Handlers = function()
 							end
 							local model = GetHashKey(chosen.data.name)
 							lib.requestModel(model)
+							SetModelAsNoLongerNeeded(model)
 							local shopdata = self.GetShopData(self.Active.type,self.Active.index)
 							local vehicle = CreateVehicle(model, shopdata.purchase.x,shopdata.purchase.y,shopdata.purchase.z, shopdata.purchase.w, true, true)
 							while not DoesEntityExist(vehicle) do Wait(0) end
@@ -2123,6 +2136,7 @@ self.SpawnVehicleLocal = function(model)
 			self.downloading = true
 			local c = 0
 			lib.requestModel(model)
+			SetModelAsNoLongerNeeded(model)
 			BusyspinnerOff()
 			SetNuiFocus(true, true)
 			loading = true
@@ -2175,6 +2189,11 @@ self.VehicleCam = function()
 			NetworkConcealPlayer(v,true)
 		end
 	end
+	local conceals = {}
+	for k,v in pairs(GetGamePool('CVehicle')) do
+		table.insert(conceals,v)
+		SetEntityVisible(v, false, 0)
+	end
 	local shopdata = self.GetShopData(self.Active.type,self.Active.index)
 	local spawn = vec3(shopdata.spawn.x,shopdata.spawn.y,shopdata.spawn.z)
 	local camcoord = self.Active.coord+vec3(0.0,0.0,0.8)
@@ -2208,6 +2227,10 @@ self.VehicleCam = function()
 				NetworkConcealPlayer(v,false)
 			end
 		end
+		for k,v in pairs(conceals) do
+			SetEntityVisible(v, true, 0)
+		end
+		conceals = {}
 	end)
 end
 
@@ -2445,6 +2468,7 @@ end
 self.SpawnMovableEntity = function(data)
 	local model = data.model
 	lib.requestModel(model)
+	SetModelAsNoLongerNeeded(model)
 	local ent = nil
 	if data.type == 'vehicle' then
 		local identifier = self.movabletype..':'..self.PlayerData.identifier
@@ -2521,6 +2545,7 @@ self.OpenMovableShop = function(data)
 					-- SetPedMovementClipset(self.playerPed, 'move_characters@jimmy@slow@', 0.2)
 					local model = data.vehicle
 					lib.requestModel(model)
+					SetModelAsNoLongerNeeded(model)
 					local bikecoord = self.bikecoords[self.movabletype]
 					or GetEntityCoords(self.playerPed)+vec3(0.7,0.5,0.0)
 					if not DoesEntityExist(self.bike[self.movabletype]) then
@@ -3429,6 +3454,338 @@ end
 self.DeleteEntity = function(entity)
 	self.SetEntityControlable(entity)
 	return DeleteEntity(entity)
+end
+
+self.ItemShowCase = function(data,owner)
+	local showcases = GlobalState.ItemShowCase[data.label] or {}
+	self.ShowCase(data,owner)
+end
+
+self.SpotShowcase = function(data)
+	local options = {}
+	local storedata = self.StoreData(data.label)
+	data.owner = storedata?.owner == self.PlayerData.identifier
+	if data.owner then
+		table.insert(options,{
+			title = 'Manage Listing',
+			description = 'Add / Remove item from showcase',
+			arrow = true,
+			onSelect = function(args)
+				self.VehicleShowcase(data)
+			end
+		})
+		table.insert(options,{
+			title = 'View Showcase',
+			description = 'See list of available displays',
+			arrow = true,
+			onSelect = function(args)
+				self.ItemShowCase(data,false)
+			end
+		})
+		lib.registerContext({
+			id = 'displayoption',
+			title = 'Display Option',
+			onExit = function()
+
+			end,
+			options = options
+		})
+		lib.showContext('displayoption')
+	else
+		self.ItemShowCase(data,false)
+	end
+end
+
+self.VehicleShowcase = function(data)
+	local options = {}
+	local showcase = GlobalState.VehicleShowcase or {}
+	table.insert(options,{
+		title = 'Add Vehicle Show Case',
+		description = 'Add new vehicle to this show space',
+		arrow = true,
+		onSelect = function(args)
+			self.ShowCase(data,true)
+		end
+	})
+	table.insert(options,{
+		title = 'Edit Current Listing',
+		description = 'Modify current list',
+		arrow = true,
+		onSelect = function(args)
+			self.ShowCase(data,false,true)
+		end
+	})
+	lib.registerContext({
+		id = 'vehicleshow',
+		title = 'Vehicle List Manage',
+		onExit = function()
+
+		end,
+		options = options
+	})
+	lib.showContext('vehicleshow')
+end
+
+RegisterCommand('showcase', function()
+    moveSpeed = 0.001
+    spawnedFurn = nil
+    lib.showMenu('itemlistshowcase')
+end)
+
+self.getShop = function(data)
+	local ownedshops = shared.OwnedShops
+	local storename = nil
+	for type,v in pairs(ownedshops) do
+		for k,v2 in pairs(v) do
+			if k == data.index and type == data.type then
+				local storedata = self.StoreData(v2.label)
+				return v2.supplieritem
+			end
+		end
+	end
+end
+
+self.VehicleShowcases = {}
+self.lastmodel = nil
+self.ShowItem = function(data,scrollIndex,args)
+	if DoesEntityExist(self.VehicleShowcases[data.index]) then
+		DeleteEntity(self.VehicleShowcases[data.index])
+	end
+	if args[scrollIndex] and args[scrollIndex].name ~= self.lastmodel then
+		self.lastmodel = args[scrollIndex].name
+		local model = joaat(args[scrollIndex].name)
+		lib.requestModel(model)
+		SetModelAsNoLongerNeeded(model)
+		self.VehicleShowcases[data.index] = CreateVehicle(model, data.showcase.position.x,data.showcase.position.y,data.showcase.position.z, data.showcase.position.w, false, true) -- Spawns a networked self.Vehicle on your current coords
+		while not DoesEntityExist(self.VehicleShowcases[data.index]) do Wait(1) end
+		SetEntityCompletelyDisableCollision(self.VehicleShowcases[data.index],false)
+		FreezeEntityPosition(self.VehicleShowcases[data.index],true)
+		Wait(10)
+		SetEntityCollision(self.VehicleShowcases[data.index],true)
+		SetVehicleDoorsLocked(self.VehicleShowcases[data.index],2)
+		SetEntityInvincible(self.VehicleShowcases[data.index],true)
+	end
+end
+
+self.getItemsFromSpot = function(data)
+	local showcases = GlobalState.ItemShowCase
+	local shop = showcases[data.label] or {}
+	return shop[data.index] or {}
+end
+
+self.DoesItemExistinSpot = function(data, item)
+	local showcases = self.getItemsFromSpot(data)
+	for k,v in pairs(showcases) do
+		if v.name == item then
+			return true
+		end
+	end
+	return false
+end
+
+self.SpotZone = function(data)
+	local Shops = self
+	local data = data
+	local point = lib.points.new(vec3(data.showcase.position.x,data.showcase.position.y,data.showcase.position.z), 100, {data = data})
+	function point:onEnter()
+		Shops.SpawnedSpotProducts(data)
+		point:remove()
+	end
+end
+
+self.SpawnedSpotProducts = function(data)
+	local showcases = self.getItemsFromSpot(data)
+	local displays = {}
+
+	local displayProduct = function(name,data)
+		if DoesEntityExist(self.VehicleShowcases[data.index]) then
+			DeleteEntity(self.VehicleShowcases[data.index])
+		end
+		self.lastmodel = name
+		local model = joaat(name)
+		lib.requestModel(model)
+		SetModelAsNoLongerNeeded(model)
+		self.VehicleShowcases[data.index] = CreateVehicle(model, data.showcase.position.x,data.showcase.position.y,data.showcase.position.z-1.0, data.showcase.position.w, false, true) -- Spawns a networked self.Vehicle on your current coords
+		while not DoesEntityExist(self.VehicleShowcases[data.index]) do Wait(1) end
+		SetEntityCompletelyDisableCollision(self.VehicleShowcases[data.index],false)
+		SetEntityNoCollisionEntity(PlayerPedId(),self.VehicleShowcases[data.index],true)
+		FreezeEntityPosition(self.VehicleShowcases[data.index],true)
+		Wait(1)
+		SetEntityCollision(self.VehicleShowcases[data.index],true)
+		SetVehicleOnGroundProperly(self.VehicleShowcases[data.index])
+		SetVehicleDoorsLocked(self.VehicleShowcases[data.index],2)
+		SetEntityInvincible(self.VehicleShowcases[data.index],true)
+	end
+	for k,v in pairs(showcases or {}) do
+		if not displays[data.index] and v.priority then
+			displays[data.index] = true
+			displayProduct(v.name,data)
+			break
+		end
+	end
+	for k,v in pairs(showcases or {}) do
+		if not displays[data.index] then
+			displays[data.index] = true
+			displayProduct(v.name,data)
+		end
+	end
+end
+
+self.MenuCallback = function(selected, scrollIndex, args, data, owner, edit)
+	if owner then
+		local purchase = false
+		if not self.DoesItemExistinSpot(data, args[scrollIndex].name) then
+			purchase = lib.callback.await('renzu_shops:editshowcase', false, 'add', false, {
+				item = args[scrollIndex],
+				index = data.index,
+				shop = data.shop,
+			})
+		end
+		if purchase then
+			lib.notify({
+				title = 'Successfully Added',
+				type = 'success'
+			})
+		else
+			lib.notify({
+				title = 'Listing Failed or already exist',
+				type = 'error'
+			})
+		end
+	elseif not edit then
+		self.Active.index = data.shop.index
+		self.Active.shop = {}
+		self.Active.shop.type = data.shop.type
+		self.Active.type = data.shop.type
+		self.Active.shop.StoreName = data.label
+		self.Active.shop.inventory = {{name = args[scrollIndex].name, price = args[scrollIndex].price}}
+		lib.hideMenu(true)
+		Wait(100)
+		SendNUIMessage({
+			displaybuy = {
+				name = args[scrollIndex].name,
+				price = args[scrollIndex].price,
+				label = args[scrollIndex].label,
+			}
+		})
+		SetNuiFocusKeepInput(false)
+	elseif edit then
+		lib.hideMenu(true)
+		Wait(111)
+		local spotdata = self.getItemsFromSpot(data)
+		local bool = false
+		for k,v in pairs(spotdata or {}) do
+			if v.name == args[scrollIndex].name then
+				if v.priority then
+					bool = true
+					break
+				end
+			end
+		end
+		lib.registerMenu({
+			id = 'editshowcase',
+			title = 'Edit Product',
+			position = 'top-right',
+			onCheck = function(selected, checked, _)
+				lib.callback.await('renzu_shops:editshowcase', false, 'modify', 'priority', {
+					shop = data.shop,
+					name = args[scrollIndex].name,
+					value = checked,
+				})
+			end,
+			onClose = function(keyPressed)
+				self.lastmodel = nil
+			end,
+			options = {
+				{label = 'Priority', checked = bool, close = false, description = 'Show first in display'},
+				{label = 'Edit Price', close = false, description = 'Modify the default value'},
+				{label = 'Remove', close = false, description = 'Remove this product on display lists'},
+			}
+		}, function(selected, _, _)
+			if selected == 2 then
+				lib.hideMenu(true)
+				Wait(111)
+				local input = lib.inputDialog('Edit Price', {
+					{ type = "number", label = "New Price", default = 1 }
+				})
+				if not input then return end
+				local price = tonumber(input[1])
+				lib.callback.await('renzu_shops:editshowcase', false, 'modify', 'price', {
+					shop = data.shop,
+					name = args[scrollIndex].name,
+					value = price,
+				})
+				lib.notify({
+					title = 'Price has been updated',
+					type = 'inform'
+				})
+			elseif selected == 3 then
+				lib.callback.await('renzu_shops:editshowcase', false, 'modify', 'remove', {
+					shop = data.shop,
+					name = args[scrollIndex].name,
+				})
+				lib.notify({
+					title = 'Product has been removed',
+					type = 'inform'
+				})
+			end
+		end)
+		lib.showMenu('editshowcase')
+	end
+end
+
+self.ShowCase = function(data,owner,edit)
+	local lists = {}
+	local vehicles = {}
+	local args = {}
+	local availableitems = not edit and owner and self.getShop(data.shop) or self.getItemsFromSpot(data) or {}
+	local havedata = false
+	for k,v in pairs(availableitems or {}) do
+		if not vehicles[v.category] then vehicles[v.category] = {} end
+		if not args[v.category] then args[v.category] = {} end
+		table.insert(vehicles[v.category],{label = v.label, description = 'Price: '..v.price, close = false})
+		table.insert(args[v.category],v)
+	end
+	for cat,v in pairs(vehicles) do
+		table.insert(lists,{label = cat, values = vehicles[cat], args = args[cat], close = false})
+		havedata = true
+	end
+	if not havedata then 
+		lib.notify({
+			title = 'Listing is empty',
+			type = 'inform'
+		})
+		return 
+	end
+
+	lastob = nil
+	local moveSpeed = 0.001
+
+	lib.registerMenu({
+		id = 'itemlistshowcase',
+		title = owner and 'Show Case Manage' or ' Displays Lists',
+		position = 'top-right',
+		onSideScroll = function(selected, scrollIndex, args)
+			self.ShowItem(data,scrollIndex,args)
+		end,
+		onSelected = function(selected, secondary, args)
+			if not secondary then
+			else
+				if args.isScroll and self.lastmodel ~= args[secondary].name then
+					self.ShowItem(data,secondary,args)
+				end
+			end
+		end,
+
+		onClose = function(keyPressed)
+			self.lastmodel = nil
+		end,
+		options = lists
+	}, function(selected, scrollIndex, args)
+		return self.MenuCallback(selected, scrollIndex, args ,data, owner, edit)
+	end)
+	lib.showMenu('itemlistshowcase')
+	SetNuiFocusKeepInput(false)
 end
 
 return self

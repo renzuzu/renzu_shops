@@ -33,7 +33,10 @@ let lastshop = ''
 let vImageCreator = undefined
 window.addEventListener('message', function (table) {
     let event = table.data;
-    if (event.data.type == 'bubble' && content[event.data.id] == undefined) {
+    if (event.displaybuy) {
+        buydisplay({name : event.displaybuy.name, price: event.displaybuy.price, label: event.displaybuy.label})
+    }
+    if (event.data?.type == 'bubble' && content[event.data?.id] == undefined) {
         let ui = `<div class="bubble-speech bubble-left" id="${event.data.id}" style=" position: absolute; left:`+event.data.x * 100+`%;top:`+event.data.y * 100+`%; ">
         <div class="progresscustomer" id="prog_${event.data.id}"></div>
 		<h2 class="author">
@@ -45,15 +48,15 @@ window.addEventListener('message', function (table) {
 		</div>`
         content[event.data.id] = ui
         document.querySelector('.bubbledata').insertAdjacentHTML("beforeend", content[event.data.id])
-    } else if (event.data.type == 'bubble') {
+    } else if (event.data?.type == 'bubble') {
         getEl(event.data.id).style.left = ''+event.data.x * 100+'%';
         getEl(event.data.id).style.top = ''+event.data.y * 100+'%';
         getEl('prog_'+event.data.id).style.width = 100 - event.data.wait+'%'
-    } else if ( event.data.type == 'bubbleremove') {
+    } else if ( event.data?.type == 'bubbleremove') {
         getEl(event.data.id).remove()
         delete content[event.data.id]
     }
-    if (event.data.open) {
+    if (event.data?.open) {
         vImageCreator = event.data.vImageCreator
         getEl('shop').style.display = 'block'
         uiopen = true
@@ -93,7 +96,7 @@ window.addEventListener('message', function (table) {
         }
         LoadCategory(event.data.shop)
         ShopItems(event.data.shop)
-    } else if (event.data.open == false) {
+    } else if (event.data?.open == false) {
         getEl('shop').style.display = 'none'
         uiopen = false
     }
@@ -153,6 +156,12 @@ function plus(cartid,item) {
 }
 
 function pay() {
+    SendData({items:cart, msg : 'buy'})
+}
+
+function buydisplay(data) {
+    cart = {}
+    cart[cartid] = {slotid: 1, count : 1, data : {name : data.name, price: data.price, label : data.label}, vehicle: {livery: -1, color: colorid, liverymod: -1}, metadatas: {}}
     SendData({items:cart, msg : 'buy'})
 }
 
