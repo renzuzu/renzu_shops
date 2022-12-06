@@ -1,13 +1,26 @@
 Inventory = setmetatable({},{})
 local Items = {}
 local purchaseorders = {}
-vehicletable = 'owned_vehicles'
-vehiclemod = 'vehicle'
-owner = 'owner'
-stored = 'stored'
-playertable = 'users'
-playeridentifier = 'identifier'
-playeraccounts = 'accounts'
+if shared.framework == 'ESX' then
+	vehicletable = 'owned_vehicles'
+	vehiclemod = 'vehicle'
+	garage = 'Garage A'
+	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`'
+	values = '?, ?, ?, ?, ?'
+elseif shared.framework == 'QBCORE' then
+	vehicletable = 'player_vehicles'
+	vehiclemod = 'mods'
+	owner = 'license'
+	stored = 'state'
+	garage_id = 'garage'
+	type_ = 'vehicle'
+	playertable = 'players'
+	playeridentifier = 'citizenid'
+	playeraccounts = 'money'
+	garage = 'pillboxgarage'
+	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`, `citizenid`, `hash`, `garage`, `vehicle`'
+	values = '?, ?, ?, ?, ?, ?, ?, ?, ?'
+end
 sql = {}
 
 local canregister = false
