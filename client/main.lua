@@ -1588,11 +1588,12 @@ self.OpenShop = function(data)
 			end
 		end
 	end
-	local money = self.GetItemCount('money')
-	local black_money = self.GetItemCount('black_money')
+	local money = self.GetAccounts('money')
+	local black_money = self.GetAccounts('black_money')
+	local bank = self.GetAccounts('bank')
 	SendNUIMessage({
 		type = 'shop',
-		data = {vImageCreator = GlobalState?.VehicleImages or {}, imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+		data = {vImageCreator = GlobalState?.VehicleImages or {}, imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money), bank = self.format_int(bank)}}
 	})
 	SetNuiFocus(true,true)
 	SetNuiFocusKeepInput(false)
@@ -1633,20 +1634,17 @@ self.Closeui = function()
 	end
 end
 
-self.GetItemCount = function(item)
-	if shared.inventory == 'ox_inventory' then
-		return exports.ox_inventory:Search('count', item)
-	else
-		local items = {}
-		for k,v in pairs(QBCore.Functions.GetPlayerData().items) do
-			if item == v.name then
-				v.count = v.amount
-				v.metadata = v.info
-				v.slot = k
-				items[k] = v
+self.GetAccounts = function(item)
+	local xPlayer = self.GetPlayerData()
+	if shared.framework == 'ESX' then
+		local xPlayer = self.GetPlayerData()
+		for k,v in ipairs(xPlayer.accounts) do
+			if v.name == item then
+				return v.money or 0
 			end
 		end
-		return items
+	else
+		return xPlayer.money[item] or 0
 	end
 end
 
@@ -3076,11 +3074,12 @@ self.OpenShopMovable = function(data)
 	end
 	data.shop.inventory = inventory
 	self.Active.shop.inventory = inventory
-	local money = self.GetItemCount('money')
-	local black_money = self.GetItemCount('black_money')
+	local money = self.GetAccounts('money')
+	local black_money = self.GetAccounts('black_money')
+	local bank = self.GetAccounts('bank')
 	SendNUIMessage({
 		type = 'shop',
-		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money), bank = self.format_int(bank)}}
 	})
 	SetNuiFocus(true,true)
 	SetNuiFocusKeepInput(false)
@@ -3116,12 +3115,13 @@ self.OpenShopBooth = function(data)
 	end
 	data.shop.inventory = inventory
 	self.Active.shop.inventory = inventory
-	local money = self.GetItemCount('money')
-	local black_money = self.GetItemCount('black_money')
+	local money = self.GetAccounts('money')
+	local black_money = self.GetAccounts('black_money')
+	local bank = self.GetAccounts('bank')
 	self.Owner = GlobalState.Booths[data.identifier].owner
 	SendNUIMessage({
 		type = 'shop',
-		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name or data.identifier, wallet = {money = self.format_int(money), black_money = self.format_int(black_money)}}
+		data = {imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = not self.shopopen, shop = data.shop, label = data.shop.label or data.shop.name or data.identifier, wallet = {money = self.format_int(money), black_money = self.format_int(black_money), bank = self.format_int(bank)}}
 	})
 	SetNuiFocus(not self.shopopen,not self.shopopen)
 	SetNuiFocusKeepInput(false)
