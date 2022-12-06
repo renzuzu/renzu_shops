@@ -177,7 +177,7 @@ if not IsDuplicityVersion() then
 						end
 					end
 				end
-				local jobshop = GlobalState.JobShop
+				local jobshop = GlobalState.JobShop or {}
 				for k,shops in pairs(shared.OwnedShops) do
 					for k,shop in pairs(shops) do
 						if self.PlayerData and self.PlayerData.job and jobshop[shop.label] == self.PlayerData.job?.name then
