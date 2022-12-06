@@ -138,6 +138,7 @@ function removeall(item) {
 }
 
 function minus(cartid,item) {
+    if (cart[cartid].count <= 0) { return }
     cart[cartid].count -= 1
     getEl(cartid+'_amount').value = cart[cartid].count
     getEl(cartid+'_total').innerHTML = cart[cartid].count * items[item].price
