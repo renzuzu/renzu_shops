@@ -67,6 +67,8 @@ window.addEventListener('message', function (table) {
         moneytype = event.data.moneytype || 'money'
         getEl('metadatas').style.display = 'none'
         getEl('money').innerHTML = event.data.wallet[moneytype]
+        getEl('bank').innerHTML = event.data.wallet['bank']
+
         shoptype = event.data.type
         position = 1
         if (event.data.type == 'VehicleShop') {
