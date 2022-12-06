@@ -123,7 +123,7 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 		end
 		if data.var.type and shared.MovableShops[data.var.type] and callback == self.OpenShopMovable then
 			if not NetworkDoesNetworkIdExist(data.var.net) 
-				or not DoesEntityExist(NetworkGetEntityFromNetworkId(data.var.net)) then
+				or NetworkDoesNetworkIdExist(data.var.net) and not DoesEntityExist(NetworkGetEntityFromNetworkId(data.var.net)) then
 					if data.remove then
 						data:remove()
 					end
