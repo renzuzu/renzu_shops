@@ -1599,15 +1599,8 @@ self.OpenShop = function(data)
 	self.shopopen = true
 end
 
-self.format_int = function(number)
-	local i, j, minus, int, fraction = tostring(number):find('([-]?)(%d+)([.]?%d*)')
-	
-	-- reverse the int-string and append a comma to all blocks of 3 digits
-	int = int:reverse():gsub("(%d%d%d)", "%1,")
-	
-	-- reverse the int-string back remove an optional comma and put the 
-	-- optional minus and fractional part back
-	return minus .. int:reverse():gsub("^,", "") .. fraction
+self.format_int = function(n)
+	return tostring(math.floor(n)):reverse():gsub("(%d%d%d)","%1,"):gsub(",(%-?)$","%1"):reverse()
 end
 
 self.OxlibTextUi = function(msg)
