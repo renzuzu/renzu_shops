@@ -302,8 +302,9 @@ body::-webkit-scrollbar-thumb {
 }
 .hero .nav {
   position: absolute;
-  bottom: 20px;
+  bottom: 0;
   right: 20px;
+  width:200px;
 }
 .hero ul li {
   display: inline-block;
@@ -312,7 +313,6 @@ body::-webkit-scrollbar-thumb {
   font-size: 10pt;
   border: 1px solid transparent;
   list-style-type: none;
-  text-align: center;
 }
 .hero ul li a {
   font-weight: 600;
