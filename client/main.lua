@@ -3598,7 +3598,7 @@ self.SpawnedSpotProducts = function(data)
 		local model = joaat(name)
 		lib.requestModel(model)
 		SetModelAsNoLongerNeeded(model)
-		self.VehicleShowcases[data.index] = CreateVehicle(model, data.showcase.position.x,data.showcase.position.y,data.showcase.position.z-1.0, data.showcase.position.w, false, true) -- Spawns a networked self.Vehicle on your current coords
+		self.VehicleShowcases[data.index] = CreateVehicle(model, data.showcase.position.x,data.showcase.position.y,data.showcase.position.z, data.showcase.position.w, false, true) -- Spawns a networked self.Vehicle on your current coords
 		while not DoesEntityExist(self.VehicleShowcases[data.index]) do Wait(1) end
 		SetEntityCompletelyDisableCollision(self.VehicleShowcases[data.index],false)
 		SetEntityNoCollisionEntity(PlayerPedId(),self.VehicleShowcases[data.index],true)
