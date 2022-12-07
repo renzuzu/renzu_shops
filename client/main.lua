@@ -46,6 +46,7 @@ self.StartUp = function()
 						local ownedshopdata = self.GetShopData(k,shopindex)
 						shop.groups = ownedshopdata and ownedshopdata.groups or shop.groups
 						shop.StoreName = ownedshopdata and ownedshopdata.label
+						shop.AttachmentsCustomiseOnly = ownedshopdata and ownedshopdata.AttachmentsCustomiseOnly
 						if not shared.target then
 							self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 						elseif not shop.groups or shop.groups == self.PlayerData?.job?.name then
@@ -1507,6 +1508,9 @@ self.OpenShop = function(data)
 		if data.type == 'VehicleShop' then
 			data.shop.inventory[k].hash = joaat(data.shop.inventory[k].name or 'null')
 		end
+		if data.shop?.AttachmentsCustomiseOnly and data.shop?.inventory[k].category == 'attachments' then
+			data.shop.inventory[k].disable = true
+		end
 	end
 	self.moneytype = data.shop.moneytype
 	-- shop data for owned shops
@@ -1528,6 +1532,9 @@ self.OpenShop = function(data)
 						data.shop.inventory[k].component = self.GetWeaponComponents(v.name,true)
 					end
 					if v.grade and v.grade > grade then
+						data.shop.inventory[k].disable = true
+					end
+					if v2.AttachmentsCustomiseOnly and data.shop.inventory[k].category == 'attachments' then
 						data.shop.inventory[k].disable = true
 					end
 				end
@@ -1583,6 +1590,9 @@ self.OpenShop = function(data)
 					self.Active.shop.inventory = data.shop.inventory
 					if data.type == 'VehicleShop' then
 						data.shop.inventory[k].hash = joaat(data.shop.inventory[k].name or 'null')
+					end
+					if v2.AttachmentsCustomiseOnly and data.shop.inventory[k].category == 'attachments' then
+						data.shop.inventory[k].disable = true
 					end
 				end
 			end

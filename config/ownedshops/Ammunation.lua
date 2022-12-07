@@ -1,5 +1,6 @@
 return {
 	[1] = {
+		AttachmentsCustomiseOnly = true, -- this will set the weapon components available in Customise Only
 		moneytype = 'money',
 		label = 'Ammunation #1', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(14.60,-1106.49,29.79),
@@ -8,6 +9,7 @@ return {
 		supplieritem = shared.Storeitems.Ammunation,
 	},
 	[2] = {
+		AttachmentsCustomiseOnly = true, -- this will set the weapon components available in Customise Only
 		moneytype = 'money',
 		label = 'Ammunation #2', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(-666.68981933594,-933.82214355469,21.82),
@@ -16,6 +18,7 @@ return {
 		supplieritem = shared.Storeitems.Ammunation,
 	},
 	[3] = {
+		AttachmentsCustomiseOnly = true, -- this will set the weapon components available in Customise Only
 		moneytype = 'money',
 		label = 'Ammunation #3', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(817.93695068359,-2155.3342285156,29.619),
@@ -24,6 +27,7 @@ return {
 		supplieritem = shared.Storeitems.Ammunation,
 	},
 	[4] = {
+		AttachmentsCustomiseOnly = true, -- this will set the weapon components available in Customise Only
 		moneytype = 'money',
 		label = 'Ammunation #4', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(1689.4692382813,3757.6884765625,34.70531),
@@ -32,6 +36,7 @@ return {
 		supplieritem = shared.Storeitems.Ammunation,
 	},
 	[5] = {
+		AttachmentsCustomiseOnly = true, -- this will set the weapon components available in Customise Only
 		moneytype = 'money',
 		label = 'Ammunation #5', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(-334.61535644531,6081.859375,31.454),
@@ -40,6 +45,7 @@ return {
 		supplieritem = shared.Storeitems.Ammunation,
 	},
 	[6] = {
+		AttachmentsCustomiseOnly = true, -- this will set the weapon components available in Customise Only
 		moneytype = 'money',
 		label = 'Ammunation #6', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(255.1056060791,-46.409656524658,69.9410),
@@ -48,6 +54,7 @@ return {
 		supplieritem = shared.Storeitems.Ammunation,
 	},
 	[7] = {
+		AttachmentsCustomiseOnly = true, -- this will set the weapon components available in Customise Only
 		moneytype = 'money',
 		label = 'Ammunation #7', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(2572.2485351563,293.04409790039,108.73),
@@ -56,6 +63,7 @@ return {
 		supplieritem = shared.Storeitems.Ammunation,
 	},
 	[8] = {
+		AttachmentsCustomiseOnly = true, -- this will set the weapon components available in Customise Only
 		moneytype = 'money',
 		label = 'Ammunation #8', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(-1122.0476074219,2696.7319335938,18.55),
@@ -64,6 +72,7 @@ return {
 		supplieritem = shared.Storeitems.Ammunation,
 	},
 	[9] = {
+		AttachmentsCustomiseOnly = true, -- this will set the weapon components available in Customise Only
 		moneytype = 'money',
 		label = 'Ammunation #9', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(846.80895996094,-1035.1741943359,28.34),

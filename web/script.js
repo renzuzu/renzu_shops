@@ -490,7 +490,7 @@ async function LoadCategory(shop, cat) {
         if (data.metadata) {
             imgname = data.metadata.image || data.name
         }
-        if (data.category && !catimg[data.category]) {
+        if (data.category && !catimg[data.category] && !data.disable) {
             catimg[data.category] = imgname
             if (data.hash) {
                 catimg[data.category] = vImageCreator[data.hash] || `https://raw.githubusercontent.com/renzuzu/carmap/main/carmap/vehicle/`+data.name+`.jpg`
