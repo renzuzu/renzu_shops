@@ -109,7 +109,6 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 	function onExit(data)
 		textui = false
 		lib.hideTextUI()
-		self.Active = nil
 		self.lastdata = nil
 	end
 
@@ -3567,6 +3566,15 @@ self.ShowItem = function(data,scrollIndex,args)
 		SetEntityCollision(self.VehicleShowcases[data.index],true)
 		SetVehicleDoorsLocked(self.VehicleShowcases[data.index],2)
 		SetEntityInvincible(self.VehicleShowcases[data.index],true)
+		local vehstats = self.GetVehicleStats(self.VehicleShowcases[data.index])
+		local stats = {
+			topspeed = vehstats.topspeed / 300 * 100,
+			acceleration = vehstats.acceleration * 150,
+			brakes = vehstats.brakes * 80,
+			traction = vehstats.handling * 10,
+			label = args[scrollIndex].label
+		}
+		SendNUIMessage({ stats = stats})
 	end
 end
 
@@ -3589,7 +3597,7 @@ end
 self.SpotZone = function(data)
 	local Shops = self
 	local data = data
-	local point = lib.points.new(vec3(data.showcase.position.x,data.showcase.position.y,data.showcase.position.z), 100, {data = data})
+	local point = lib.points.new(vec3(data.showcase.position.x,data.showcase.position.y,data.showcase.position.z), 50, {data = data})
 	function point:onEnter()
 		Shops.SpawnedSpotProducts(data)
 		point:remove()
@@ -3612,7 +3620,6 @@ self.SpawnedSpotProducts = function(data)
 		while not DoesEntityExist(self.VehicleShowcases[data.index]) do Wait(1) end
 		SetEntityCompletelyDisableCollision(self.VehicleShowcases[data.index],false)
 		SetEntityNoCollisionEntity(PlayerPedId(),self.VehicleShowcases[data.index],true)
-		FreezeEntityPosition(self.VehicleShowcases[data.index],true)
 		Wait(1)
 		SetEntityCollision(self.VehicleShowcases[data.index],true)
 		SetVehicleOnGroundProperly(self.VehicleShowcases[data.index])
@@ -3698,6 +3705,7 @@ self.MenuCallback = function(selected, scrollIndex, args, data, owner, edit)
 			end,
 			onClose = function(keyPressed)
 				self.lastmodel = nil
+				SendNUIMessage({ stats = false})
 			end,
 			options = {
 				{label = 'Priority', checked = bool, close = false, description = 'Show first in display'},
@@ -3782,6 +3790,7 @@ self.ShowCase = function(data,owner,edit)
 
 		onClose = function(keyPressed)
 			self.lastmodel = nil
+			SendNUIMessage({ stats = false})
 		end,
 		options = lists
 	}, function(selected, scrollIndex, args)
@@ -3789,6 +3798,19 @@ self.ShowCase = function(data,owner,edit)
 	end)
 	lib.showMenu('itemlistshowcase')
 	SetNuiFocusKeepInput(false)
+end
+
+self.GetVehicleStats = function(vehicle)
+    local data = {}
+    data.acceleration = GetVehicleModelAcceleration(GetEntityModel(vehicle))
+    data.brakes = GetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fBrakeForce')
+    local fInitialDriveMaxFlatVel = GetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fInitialDriveMaxFlatVel')
+    data.topspeed = math.ceil(fInitialDriveMaxFlatVel * 1.3)
+    local fTractionBiasFront = GetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fTractionBiasFront')
+    local fTractionCurveMax = GetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fTractionCurveMax')
+    local fTractionCurveMin = GetVehicleHandlingFloat(vehicle, 'CHandlingData', 'fTractionCurveMin')
+    data.handling = (fTractionBiasFront + fTractionCurveMax * fTractionCurveMin)
+    return data
 end
 
 return self

@@ -36,6 +36,19 @@ window.addEventListener('message', function (table) {
     if (event.displaybuy) {
         buydisplay({name : event.displaybuy.name, price: event.displaybuy.price, label: event.displaybuy.label})
     }
+    if (event.stats) {
+        getEl('perf').style.display = 'block';
+        for(var [k,v] of Object.entries(event.stats)){
+            if (k == 'label') {
+                getEl(k).innerHTML = v;
+            } else {
+                if (v >= 100) { v = 100 }
+                getEl(k).style.width = ''+v+'%';
+            }
+        }
+    } else if (event.stats == false) {
+        getEl('perf').style.display = 'none';
+    }
     if (event.data?.type == 'bubble' && content[event.data?.id] == undefined) {
         let ui = `<div class="bubble-speech bubble-left" id="${event.data.id}" style=" position: absolute; left:`+event.data.x * 100+`%;top:`+event.data.y * 100+`%; ">
         <div class="progresscustomer" id="prog_${event.data.id}"></div>

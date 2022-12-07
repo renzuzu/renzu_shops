@@ -1080,3 +1080,67 @@ h2 {
   color: palegreen;
   font-weight: lighter !important;
 }
+
+::selection{
+  color: #fff;
+  background: #6665ee;
+}
+.performance{
+  display: none;
+  padding: 15px 30px;
+  width: 25%;
+  background: #171a1c;
+  box-shadow: 5px 5px 20px rgba(0,0,0,0.2);
+  border-radius: 10px;
+  position: absolute;
+  left: 2%;
+  top: 2%;
+}
+.performance .bar{
+  margin: 20px 0;
+}
+.performance .bar:first-child{
+  margin-top: 0px;
+}
+.performance .bar .info{
+  margin-bottom: 5px;
+}
+.performance .bar .info span{
+  font-weight: 500;
+  font-size: 17px;
+  opacity: 0;
+  animation: showText 0.5s 1s linear forwards;
+  color: aliceblue;
+}
+@keyframes showText {
+  100%{
+    opacity: 1;
+  }
+}
+.performance .bar .progress-line{
+  height: 5px;
+  width: 100%;
+  background: #46484a;
+  position: relative;
+  transform: scaleX(0);
+  transform-origin: left;
+  border-radius: 10px;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.05),
+              0 1px rgba(255,255,255,0.8);
+  animation: animate 1s cubic-bezier(1,0,0.5,1) forwards;
+}
+@keyframes animate {
+  100%{
+    transform: scaleX(1);
+  }
+}
+.bar .progress-line span{
+  height: 100%;
+  position: absolute;
+  border-radius: 10px;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: #4487c1;
+  animation: animate 1s 1s cubic-bezier(1,0,0.5,1) forwards;
+  transition: width 1s;
+}
