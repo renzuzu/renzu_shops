@@ -96,8 +96,10 @@ window.addEventListener('message', function (table) {
             getEl('vehicle').style.display = 'block'
             getEl('unggoy').style.display = 'block'
             show = false
+            getEl('testdrive').style.display = 'block'
             SendData({type:1, items:1, msg : 'vehicle'})
         } else {
+            getEl('testdrive').style.display = 'none'
             getEl('shopbox').style.display = 'grid'
             getEl('shopbox').style.height = '80vh'
             getEl('shopbox').style.transform = 'translateX(0px)'
@@ -181,6 +183,10 @@ function buydisplay(data) {
     SendData({items:cart, msg : 'buy'})
 }
 
+function testdrive() {
+    SendData({vehicle:{ model : currentselection, liveries: liveryid || -1, colorid: colorid }, msg : 'testdrive'})
+}
+
 function CloseModal() {
     getEl('metadatas').style.display = 'none'
     metadatas = undefined
@@ -189,9 +195,11 @@ function CloseModal() {
 let liveries = {}
 let liverymod = false
 let itemcustomise = undefined
+let currentselection = undefined
 function ItemCallback(model,index) {
     liveryid = -1
     if (shoptype == 'VehicleShop') {
+        currentselection = model
         SendData({model:model, msg : 'vehicleview'}, function(cb){
             let data = JSON.parse(cb)
             liveries = data.livery

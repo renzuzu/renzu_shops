@@ -1613,10 +1613,10 @@ self.format_int = function(n)
 	return tostring(math.floor(n)):reverse():gsub("(%d%d%d)","%1,"):gsub(",(%-?)$","%1"):reverse()
 end
 
-self.OxlibTextUi = function(msg)
+self.OxlibTextUi = function(msg,fa)
 	lib.showTextUI(msg, {
 		position = "left-center",
-		icon = 'fas fa-shopping-basket',
+		icon = fa or 'fas fa-shopping-basket',
 		style = {
 			borderRadius = 5,
 			backgroundColor = '#212121',
@@ -2069,6 +2069,40 @@ self.Handlers = function()
 		elseif data.msg == 'getAvailableAttachments' then
 			local componentitems = self.GetWeaponComponents(data.item)
 			cb(componentitems)
+		elseif data.msg == 'testdrive' then
+			for k,v in pairs(data.vehicle) do
+				print(k,v)
+			end
+			local model = GetHashKey(data.vehicle.model)
+			lib.requestModel(model)
+			SetModelAsNoLongerNeeded(model)
+			local shopdata = self.GetShopData(self.Active.type,self.Active.index)
+			local vehicle = CreateVehicle(model, shopdata.purchase.x,shopdata.purchase.y,shopdata.purchase.z, shopdata.purchase.w, true, true)
+			while not DoesEntityExist(vehicle) do Wait(0) end
+			-- for server setter vehicle incase you dont owned the entity.
+			SetEntityAsMissionEntity(vehicle,true,true)
+			self.Closeui()
+			TaskWarpPedIntoVehicle(self.playerPed, vehicle, -1)
+			local second = 60
+			self.SetNotify({
+				title = 'Test Drive Start',
+				type = 'inform'
+			})
+			while second > 0 do
+				self.OxlibTextUi("Test Drive: "..second, '<i class="fas fa-car"></i>')
+				Wait(1000)
+				second -= 1
+				if GetVehiclePedIsIn(self.playerPed) == 0 then break end
+			end
+			self.DeleteEntity(vehicle)
+			RequestCollisionAtCoord(self.playerPed,shopdata.purchase.x,shopdata.purchase.y,shopdata.purchase.z)
+			SetEntityCoords(self.playerPed,shopdata.purchase.x,shopdata.purchase.y,shopdata.purchase.z)
+			self.SetNotify({
+				title = 'Test Drive Complete',
+				type = 'inform'
+			})
+			lib.hideTextUI()
+			cb(true)
 		end
 	end)
 end
