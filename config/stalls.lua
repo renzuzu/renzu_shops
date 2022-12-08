@@ -186,7 +186,7 @@ if IsDuplicityVersion() then
 		end
 		FreezeEntityPosition(application,true)
 		SetEntityHeading(application,data.heading)
-		state:set('boothapplication',{new = data.new, id = data.id, owner = booths[data.id].owner, appid = appid, coord = vec3(data.coord.x,data.coord.y,data.coord.z), model = data.model, data = {}, type = fn},true)
+		state:set('boothapplication',{gazebonet = NetworkGetNetworkIdFromEntity(gazebo[data.id]), new = data.new, id = data.id, owner = booths[data.id].owner, appid = appid, coord = vec3(data.coord.x,data.coord.y,data.coord.z), model = data.model, data = {}, type = fn},true)
 		return application, appid
 	end
 
@@ -324,12 +324,12 @@ else
 		local player = Shops.GetPlayerData()
 		if not value then return end
 		local net = tonumber(bagName:gsub('entity:', ''), 10)
+		gazebo[value.boothid] = entity
 		if player.identifier == value.owner then
 			local entity = NetworkGetEntityFromNetworkId(net)
 			Shops.SetEntityControlable(entity)
 			PlaceObjectOnGroundProperly(entity)
 			FreezeEntityPosition(entity,true)
-			gazebo[value.boothid] = entity
 			local offset = GetOffsetFromEntityInWorldCoords(entity,2.01,2.264,0.01)+vec3(0.0,0.0,0.5)
 			if not boothzones[value.boothid] then boothzones[value.boothid] = {} end
 			boothzones[value.boothid]['stall'] = Shops.Add(offset,'Booth Menu',MyBooth,false,{booth = value.owner, boothid = value.boothid})
@@ -354,7 +354,10 @@ else
 		local player = Shops.GetPlayerData()
 		if not value then return end
 		local net = tonumber(bagName:gsub('entity:', ''), 10)
+		print(net)
+		while not DoesEntityExist(NetworkGetEntityFromNetworkId(net)) do Wait(1) end
 		local booths = GlobalState.Booths
+		gazebo[value.id] = NetworkGetEntityFromNetworkId(value.gazebonet)
 		local offset = GetOffsetFromEntityInWorldCoords(gazebo[value.id],value.coord.x,value.coord.y,value.coord.z)
 		local offset = GetEntityCoords(gazebo[value.id]) + vec3(value.coord.x,value.coord.y,value.coord.z)
 		if not boothzones[value.id] then boothzones[value.id] = {} end
@@ -369,9 +372,12 @@ else
 			offset = offset + vec3(0.0,-0.5,0.15)
 			boothzones[value.id][value.appid..'_'..value.type] = Shops.Add(offset,'Stash',BoothStash,false,{booth = value.owner, boothid = value.id, coord = offset, appid = value.appid})
 		end
+		print(value.type)
 		if value.type == 'cashier' then
 			offset = offset + vec3(0.0,0.5,0.0)
+			print("add zone")
 			boothzones[value.id][value.appid..'_Shop'] = Shops.Add(offset,'Booth Shop',Shops.OpenShopBooth,false,{identifier = value.id, shop = { label = 'Booth Shop', inventory = {}, }})
+			print(boothzones[value.id][value.appid..'_Shop'],offset)
 		end
 		if not apps[value.id] then apps[value.id] = {} end
 
