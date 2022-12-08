@@ -5,6 +5,11 @@ if shared.framework == 'ESX' then
 	vehicletable = 'owned_vehicles'
 	vehiclemod = 'vehicle'
 	garage = 'Garage A'
+	owner = 'owner'
+	stored = 'stored'
+	playertable = 'users'
+	playeridentifier = 'identifier'
+	playeraccounts = 'accounts'
 	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`'
 	values = '?, ?, ?, ?, ?'
 elseif shared.framework == 'QBCORE' then
