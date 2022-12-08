@@ -38,25 +38,7 @@ self.StartUp = function()
 		for k,v in pairs(itemLists) do
 			self.Items[v.name] = v.label
 		end
-		for k,shop in pairs(shared.Shops) do
-			if shop.locations then
-				for shopindex,v in ipairs(shop.locations) do
-					if not shared.oxShops or k == 'VehicleShop' then
-						shop.shoptype = k
-						local ownedshopdata = self.GetShopData(k,shopindex)
-						shop.groups = ownedshopdata and ownedshopdata.groups or shop.groups
-						shop.StoreName = ownedshopdata and ownedshopdata.label
-						shop.AttachmentsCustomiseOnly = ownedshopdata and ownedshopdata.AttachmentsCustomiseOnly
-						if not shared.target then
-							self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
-						elseif not shop.groups or shop.groups == self.PlayerData?.job?.name then
-							self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
-						end
-					end
-					self.ShopBlip({coord = v, text = shop.name, blip = shop.blip or false})
-				end
-			end
-		end
+		self.LoadDefaultShops()
 		for k,shop in pairs(shared.MovableShops) do
 			if not shared.target then
 				self.Add(shop.coord,shop.label,self.MovableShop,false,{shop = shop, type = k, price = shop.price, label = shop.label})
@@ -68,6 +50,37 @@ self.StartUp = function()
 		self.LoadShops()
 		self.LoadJobShops()
 	end)
+end
+
+self.LoadDefaultShops = function()
+	for k,shop in pairs(shared.Shops) do
+		if shop.locations then
+			for shopindex,v in ipairs(shop.locations) do
+				if not shared.oxShops or k == 'VehicleShop' then
+					shop.shoptype = k
+					local ownedshopdata = self.GetShopData(k,shopindex)
+					shop.groups = ownedshopdata and ownedshopdata.groups or shop.groups
+					shop.StoreName = ownedshopdata and ownedshopdata.label
+					shop.AttachmentsCustomiseOnly = ownedshopdata and ownedshopdata.AttachmentsCustomiseOnly
+					shop.labelname = k..'_'..shopindex
+					print(shop.labelname,'idname')
+					if shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.labelname]) == 'table' and self.temporalspheres[shop.labelname].remove then
+						self.temporalspheres[shop.labelname]:remove()
+					elseif shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.StoreName]) == 'number' and shared.target then
+						print(self.temporalspheres[shop.labelname],'removezone',type(self.temporalspheres[shop.labelname]))
+						--exports.ox_target:removeZone(self.temporalspheres[shop.labelname])
+					end
+					print(self.temporalspheres[shop.labelname],'id')
+					if not shared.target then
+						self.temporalspheres[shop.labelname] = self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
+					elseif not shop.groups or shop.groups == self.PlayerData?.job?.name then
+						self.temporalspheres[shop.labelname] = self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
+					end
+				end
+				self.ShopBlip({coord = v, text = shop.name, blip = shop.blip or false})
+			end
+		end
+	end
 end
 
 self.SetNotify = function(data)

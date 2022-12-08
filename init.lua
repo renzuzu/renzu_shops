@@ -196,6 +196,7 @@ if not IsDuplicityVersion() then
 				if shared.framework == 'ESX' then
 					RegisterNetEvent('esx:playerLoaded', function(xPlayer)
 						self.PlayerData = xPlayer
+						self.LoadDefaultShops()
 						self.LoadShops()
 						self.LoadJobShops()
 					end)
@@ -209,6 +210,7 @@ if not IsDuplicityVersion() then
 						if self.PlayerData.identifier == nil then
 							self.PlayerData.identifier = self.PlayerData.license
 						end
+						self.LoadDefaultShops()
 						self.LoadShops()
 						self.LoadJobShops()
 					end)
