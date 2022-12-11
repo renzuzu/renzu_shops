@@ -11,6 +11,7 @@ self.itemLists = {}
 self.PlayerData = {}
 self.JobSpheres = {}
 self.Store = 'Stores_%s'
+self.Blips = {}
 self.StartUp = function()
 	self.PlayerData = self.GetPlayerData()
 	self.GetItems = function()
@@ -64,21 +65,18 @@ self.LoadDefaultShops = function()
 					shop.StoreName = ownedshopdata and ownedshopdata.label
 					shop.AttachmentsCustomiseOnly = ownedshopdata and ownedshopdata.AttachmentsCustomiseOnly
 					shop.labelname = k..'_'..shopindex
-					print(shop.labelname,'idname')
 					if shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.labelname]) == 'table' and self.temporalspheres[shop.labelname].remove then
 						self.temporalspheres[shop.labelname]:remove()
 					elseif shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.StoreName]) == 'number' and shared.target then
-						print(self.temporalspheres[shop.labelname],'removezone',type(self.temporalspheres[shop.labelname]))
 						--exports.ox_target:removeZone(self.temporalspheres[shop.labelname])
 					end
-					print(self.temporalspheres[shop.labelname],'id')
 					if not shared.target then
 						self.temporalspheres[shop.labelname] = self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 					elseif not shop.groups or shop.groups == self.PlayerData?.job?.name then
 						self.temporalspheres[shop.labelname] = self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 					end
 				end
-				self.ShopBlip({coord = v, text = shop.name, blip = shop.blip or false})
+				self.ShopBlip({id = k..'_'..shopindex, coord = v, text = shop.name, blip = shop.blip or false})
 			end
 		end
 	end
@@ -181,6 +179,9 @@ end
 
 self.ShopBlip = function(data)
 	if not data.blip then return end
+	if data.id and self.Blips[data.id] and DoesBlipExist(self.Blips[data.id]) then
+		RemoveBlip(self.Blips[data.id])
+	end
 	local blip = AddBlipForCoord(data.coord.x,data.coord.y,data.coord.z)
 	SetBlipSprite(blip,data.blip.id)
 	SetBlipColour(blip,data.blip.colour)
@@ -189,6 +190,8 @@ self.ShopBlip = function(data)
 	BeginTextCommandSetBlipName("STRING")
 	AddTextComponentSubstringPlayerName(data.text)
 	EndTextCommandSetBlipName(blip)
+	self.Blips[data.id or data.text] = blip
+	return blip
 end
 
 self.StoreData = function(id)
@@ -220,7 +223,7 @@ self.LoadShops = function()
 				else
 					self.temporalspheres[shop.label] = self.addTarget(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				end
-				self.ShopBlip({coord = shop.coord, text = 'My Store '..shop.label, blip = {colour = 38, id = 374, scale = 0.6}})
+				self.ShopBlip({id = name..'_'..k, coord = shop.coord, text = 'My Store '..shop.label, blip = {colour = 38, id = 374, scale = 0.6}})
 			end
 			if name == 'VehicleShop' then
 				for index,showcase in pairs(shop.showcase or {}) do
@@ -250,7 +253,7 @@ self.LoadShops = function()
 	else
 		self.addTarget(shared.shipping.coord,shared.shipping.label,self.Shipping,false,{})
 	end
-	self.ShopBlip({coord = shared.shipping.coord, text = shared.shipping.label, blip = shared.shipping.blip})
+	self.ShopBlip({id = 'Shipping', coord = shared.shipping.coord, text = shared.shipping.label, blip = shared.shipping.blip})
 end
 self.duty = {}
 self.Cashier = function(data)
@@ -2084,9 +2087,6 @@ self.Handlers = function()
 			local componentitems = self.GetWeaponComponents(data.item)
 			cb(componentitems)
 		elseif data.msg == 'testdrive' then
-			for k,v in pairs(data.vehicle) do
-				print(k,v)
-			end
 			local model = GetHashKey(data.vehicle.model)
 			lib.requestModel(model)
 			SetModelAsNoLongerNeeded(model)
