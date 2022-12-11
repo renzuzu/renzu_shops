@@ -57,6 +57,7 @@ self.LoadDefaultShops = function()
 		if shop.locations then
 			for shopindex,v in ipairs(shop.locations) do
 				if not shared.oxShops or k == 'VehicleShop' then
+					local shop = lib.table.deepclone(shop)
 					shop.shoptype = k
 					local ownedshopdata = self.GetShopData(k,shopindex)
 					shop.groups = ownedshopdata and ownedshopdata.groups or shop.groups
