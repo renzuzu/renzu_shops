@@ -726,7 +726,7 @@ RegisterFinance = function(data)
 		table.insert(finance[data.identifier].financed,financedata)
 		GlobalState.FinanceData = finance
 		sql.update('financedata','max','identifier',data.identifier,finance[data.identifier].max)
-		sql.update('financedata','financed','identifier',data.identifier,json.encode(finance))
+		sql.update('financedata','financed','identifier',data.identifier,json.encode(finance[data.identifier].financed))
 		--SetResourceKvp('financedata', json.encode(finance))
 	end
 end
