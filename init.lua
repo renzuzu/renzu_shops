@@ -6,8 +6,8 @@ shared.inventory = 'ox_inventory' -- 'ox_inventory' or 'qb-inventory' https://gi
 -- use ox_inventory Shops UI (experimental feature) only with my forked ox_inventory REPO https://github.com/renzuzu/ox_inventory
 shared.oxShops = false -- if true this resource will use ox_inventory Shops UI instead of built in UI
 shared.allowplayercreateitem = false -- if false only admin can create new items via /stores
-shared.target = false -- if true all lib zones for markers and oxlib textui will be disable.
-shared.FinanceMinimum = 10000 -- minimum amount for financing to be enable
+shared.target = true -- if true all lib zones for markers and oxlib textui will be disable.
+shared.FinanceMinimum = 500000 -- minimum amount for financing to be enable
 shared.FinanceDownPayment = 20 -- 20%. this is the amount of minimum initial payment
 shared.FinanceInterest = 10 -- 10%
 shared.FinanceMaxDays = 30
@@ -66,7 +66,7 @@ elseif shared.framework == 'QBCORE' then
 	QBCore = exports['qb-core']:GetCoreObject()
 end
 Shops = {}
-MultiCategory = function(blacklist,whitelist,...)
+MultiCategory = function(blacklist,whitelist,data,...)
 	local newtable = {}
 	local i = 1
 	local whitelisted = false
@@ -84,7 +84,7 @@ MultiCategory = function(blacklist,whitelist,...)
 			end
 		end
 	else
-		for k,v in pairs(AllVehicles) do
+		for k,v in pairs(data) do
 			if whitelist[v.type] then
 				newtable[i] = v
 				i += 1
@@ -145,7 +145,41 @@ elseif shared.inventory == 'qb-inventory' then
 	end)
 end
 
+Utils = {}
 if not IsDuplicityVersion() then
+	Utils.CreateMenu = function(data)
+		lib.registerContext({
+			id = data.id,
+			title = data.title,
+			onExit = function()
+				--data.OnExit()
+			end,
+			options = data.options
+		})
+		lib.showContext(data.id)
+	end
+	Utils.Proccesed = function(data)
+		lib.progressBar({
+			duration = data.duration,
+			label = data.label,
+			useWhileDead = false,
+			canCancel = false,
+			anim = {
+				dict = data.dict,
+				clip = data.clip
+			},
+			disable = {
+				car = true,
+			}
+		})
+		local callback = lib.callback.await('renzu_shops:proccessed',100, data)
+		if not callback then
+			lib.notify({
+				title = 'Not Enough Ingredients',
+				type = 'error'
+			})
+		end
+	end
 	Shops = setmetatable(Shops, {
 		__call = function(self)
 			self = request('client/main')
@@ -173,11 +207,14 @@ if not IsDuplicityVersion() then
 						if not shared.target and zones.remove then
 							zones:remove()
 						else
-							exports.ox_target:removeZone(zones)
+							rzone = function()
+								return exports.ox_target:removeZone(zones)
+							end
+							if pcall(rzone,ret or false) then end
 						end
 					end
 				end
-				local jobshop = GlobalState.JobShop or {}
+				local jobshop = GlobalState.JobShop
 				for k,shops in pairs(shared.OwnedShops) do
 					for k,shop in pairs(shops) do
 						if self.PlayerData and self.PlayerData.job and jobshop[shop.label] == self.PlayerData.job?.name then
@@ -196,9 +233,10 @@ if not IsDuplicityVersion() then
 				if shared.framework == 'ESX' then
 					RegisterNetEvent('esx:playerLoaded', function(xPlayer)
 						self.PlayerData = xPlayer
-						self.LoadDefaultShops()
 						self.LoadShops()
 						self.LoadJobShops()
+						self.LoadDefaultShops()
+
 					end)
 				elseif shared.framework == 'QBCORE' then
 					RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
@@ -210,9 +248,10 @@ if not IsDuplicityVersion() then
 						if self.PlayerData.identifier == nil then
 							self.PlayerData.identifier = self.PlayerData.license
 						end
-						self.LoadDefaultShops()
 						self.LoadShops()
 						self.LoadJobShops()
+						self.LoadDefaultShops()
+
 					end)
 				end
 			end
@@ -236,16 +275,21 @@ if not IsDuplicityVersion() then
 				if shared.framework == 'ESX' then
 					RegisterNetEvent('esx:setJob', function(job)
 						self.PlayerData.job = job
+						self.LoadDefaultShops()
 						self.LoadJobShops()
+						self.LoadShops()
 					end)
 				elseif shared.framework == 'QBCORE' then
 					RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
 						self.PlayerData.job = job
 						self.PlayerData.job.grade = self.PlayerData.job.grade.level
+						self.LoadDefaultShops()
 						self.LoadJobShops()
+						self.LoadShops()
 					end)
 				end
 			end
+			print('aaa')
 			if not self.once then
 				self.Playerloaded()
 				self.SetJob()

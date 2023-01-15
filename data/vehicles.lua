@@ -253,15 +253,15 @@ Vehicles = {
 		  name = "rhinehart ",
 		  price = 105000,
 		},
-	   [3] = {
-		  label = "Revolter",
-		  type = "sports",
-		  price = 95000,
-		  category = "Ubermacht",
-		  hash = -410205223,
-		  name = "revolter",
-		  shop = "luxury",
-		},
+	   --[3] = {
+		  --label = "Revolter",
+		  --type = "sports",
+		  --price = 95000,
+		  --category = "Ubermacht",
+		  --hash = -410205223,
+		  --name = "revolter",
+		  --shop = "luxury",
+		--},
 	   [4] = {
 		  label = "Cypher",
 		  type = "sports",
@@ -897,17 +897,17 @@ Vehicles = {
 		  shop = "luxury",
 		},
 	 },
-	Karin2 = {
-	   [1] = {
-		  label = "kuruma2",
-		  type = "sports",
-		  price = 72000,
-		  category = "Karin2",
-		  hash = 410882957,
-		  name = "kuruma2",
-		  shop = "luxury",
-		},
-	 },
+	--Karin2 = {
+	   --[1] = {
+		  --label = "kuruma2",
+		  --type = "sports",
+		  --price = 72000,
+		  --category = "Karin2",
+		  --hash = 410882957,
+		  --name = "kuruma2",
+		  --shop = "luxury",
+		--},
+	 --},
 	MilSpec = {
 	   [1] = {
 		  label = "Patriot",
@@ -1067,14 +1067,14 @@ Vehicles = {
 		  name = "blazer2",
 		  price = 7000,
 		},
-	   [11] = {
-		  label = "Blazer Aqua",
-		  type = "offroad",
-		  category = "Nagasaki",
-		  hash = -1590337689,
-		  name = "blazer5",
-		  price = 40000,
-		},
+	   --[11] = {
+		  --label = "Blazer Aqua",
+		  --type = "offroad",
+		  --category = "Nagasaki",
+		  --hash = -1590337689,
+		  --name = "blazer5",
+		  --price = 40000,
+		--},
 	 },
 	Obey = {
 	   [1] = {
@@ -1193,15 +1193,15 @@ Vehicles = {
 		  name = "comet3",
 		  shop = "luxury",
 		},
-	   [5] = {
-		  label = "Comet Safari",
-		  type = "sports",
-		  price = 110000,
-		  category = "Pfister",
-		  hash = 1561920505,
-		  name = "comet4",
-		  shop = "luxury",
-		},
+	   --[5] = {
+		  --label = "Comet Safari",
+		  --type = "sports",
+		  --price = 110000,
+		  --category = "Pfister",
+		  --hash = 1561920505,
+		  --name = "comet4",
+		  --shop = "luxury",
+		--},
 	   [6] = {
 		  label = "Comet SR",
 		  type = "sports",
@@ -1214,7 +1214,7 @@ Vehicles = {
 	   [7] = {
 		  label = "Neon",
 		  type = "sports",
-		  price = 220000,
+		  price = 5200000,
 		  category = "Pfister",
 		  hash = -1848994066,
 		  name = "neon",
@@ -1597,14 +1597,14 @@ Vehicles = {
 		},
 	 },
 	Ocelot = {
-	   [1] = {
-		  label = "Ardent",
-		  type = "sportsclassics",
-		  category = "Ocelot",
-		  hash = 159274291,
-		  name = "ardent",
-		  price = 30000,
-		},
+	   --[1] = {
+		  --label = "Ardent",
+		  --type = "sportsclassics",
+		  --category = "Ocelot",
+		  --hash = 159274291,
+		  --name = "ardent",
+		  --price = 30000,
+		--},
 	   [2] = {
 		  label = "XA-21",
 		  type = "super",
@@ -1623,14 +1623,14 @@ Vehicles = {
 		  name = "pariah",
 		  shop = "luxury",
 		},
-	   [4] = {
-		  label = "Stromberg",
-		  type = "sportsclassics",
-		  category = "Ocelot",
-		  hash = 886810209,
-		  name = "stromberg",
-		  price = 80000,
-		},
+	   --[4] = {
+		  --label = "Stromberg",
+		  --type = "sportsclassics",
+		  --category = "Ocelot",
+		  --hash = 886810209,
+		  --name = "stromberg",
+		  --price = 80000,
+		--},
 	   [5] = {
 		  label = "F620",
 		  type = "coupes",
@@ -1660,7 +1660,7 @@ Vehicles = {
 	   [8] = {
 		  label = "Jugular",
 		  type = "sports",
-		  price = 80000,
+		  price = 700000,
 		  category = "Ocelot",
 		  hash = -208911803,
 		  name = "jugular",
@@ -1873,14 +1873,14 @@ Vehicles = {
 		  name = "tigon",
 		  shop = "luxury",
 		},
-	   [9] = {
-		  label = "Viseris",
-		  type = "sportsclassics",
-		  category = "Lampadati",
-		  hash = -391595372,
-		  name = "viseris",
-		  price = 210000,
-		},
+	   --[9] = {
+		  --label = "Viseris",
+		  --type = "sportsclassics",
+		  --category = "Lampadati",
+		  --hash = -391595372,
+		  --name = "viseris",
+		  --price = 210000,
+		--},
 	   [10] = {
 		  label = "Furore GT",
 		  type = "sports",
@@ -1936,30 +1936,30 @@ Vehicles = {
 		},
 	 },
 	deathbike = {
-	   [1] = {
-		  label = "deathbike",
-		  type = "motorcycles",
-		  category = "deathbike",
-		  hash = -27326686,
-		  name = "deathbike",
-		  price = 30000,
-		},
-	   [2] = {
-		  label = "deathbike2",
-		  type = "motorcycles",
-		  category = "deathbike",
-		  hash = -1812949672,
-		  name = "deathbike2",
-		  price = 30000,
-		},
-	   [3] = {
-		  label = "deathbike3",
-		  type = "motorcycles",
-		  category = "deathbike",
-		  hash = -1374500452,
-		  name = "deathbike3",
-		  price = 30000,
-		},
+	   --[1] = {
+		  --label = "deathbike",
+		  --type = "motorcycles",
+		  --category = "deathbike",
+		  --hash = -27326686,
+		  --name = "deathbike",
+		  --price = 30000,
+		--},
+	   --[2] = {
+		  --label = "deathbike2",
+		  --type = "motorcycles",
+		  --category = "deathbike",
+		  --hash = -1812949672,
+		  --name = "deathbike2",
+		  --price = 30000,
+		--},
+	   --[3] = {
+		  --label = "deathbike3",
+		  --type = "motorcycles",
+		  --category = "deathbike",
+		  --hash = -1374500452,
+		  --name = "deathbike3",
+		  --price = 30000,
+		--},
 	 },
 	IWagen = {
 	   [1] = {
@@ -2074,14 +2074,14 @@ Vehicles = {
 		},
 	 },
 	Imponte = {
-	   [1] = {
-		  label = "Deluxo",
-		  type = "sportsclassics",
-		  category = "Imponte",
-		  hash = 1483171323,
-		  name = "deluxo",
-		  price = 55000,
-		},
+	   --[1] = {
+		  --label = "Deluxo",
+		  --type = "sportsclassics",
+		  --category = "Imponte",
+		  --hash = 1483171323,
+		  --name = "deluxo",
+		  --price = 55000,
+		--},
 	   [2] = {
 		  label = "Dukes",
 		  type = "muscle",
@@ -2613,14 +2613,14 @@ Vehicles = {
 		  name = "bati",
 		  price = 24000,
 		},
-	   [8] = {
-		  label = "Toreador",
-		  type = "sportsclassics",
-		  category = "Pegassi",
-		  hash = 1455990255,
-		  name = "toreador",
-		  price = 50000,
-		},
+	   --[8] = {
+		  --label = "Toreador",
+		  --type = "sportsclassics",
+		  --category = "Pegassi",
+		  --hash = 1455990255,
+		  --name = "toreador",
+		  --price = 50000,
+		--},
 	   [9] = {
 		  label = "Tezeract",
 		  type = "super",
@@ -2763,15 +2763,15 @@ Vehicles = {
 		  name = "infernus2",
 		  price = 245000,
 		},
-	   [26] = {
-		  label = "Oppressor",
-		  type = "super",
-		  price = 9999999,
-		  category = "Pegassi",
-		  hash = 884483972,
-		  name = "oppressor",
-		  shop = "luxury",
-		},
+	   --[26] = {
+		  --label = "Oppressor",
+		  --type = "super",
+		  --price = 9999999,
+		  --category = "Pegassi",
+		  --hash = 884483972,
+		  --name = "oppressor",
+		  --shop = "luxury",
+		--},
 	   [27] = {
 		  label = "Vortex",
 		  type = "motorcycles",
@@ -2999,14 +2999,14 @@ Vehicles = {
 		  name = "brawler",
 		  price = 40000,
 		},
-	   [16] = {
-		  label = "Savestra",
-		  type = "sportsclassics",
-		  category = "Annis",
-		  hash = 903794909,
-		  name = "savestra",
-		  price = 67000,
-		},
+	   --[16] = {
+		  --label = "Savestra",
+		  --type = "sportsclassics",
+		  --category = "Annis",
+		  --hash = 903794909,
+		  --name = "savestra",
+		  --price = 67000,
+		--},
 	   [17] = {
 		  label = "Remus",
 		  type = "sports",
@@ -3579,7 +3579,7 @@ Vehicles = {
 	   [8] = {
 		  label = "Kuruma",
 		  type = "sports",
-		  price = 72000,
+		  price = 780000,
 		  category = "Karin",
 		  hash = -1372848492,
 		  name = "kuruma",
@@ -3734,14 +3734,14 @@ Vehicles = {
 		},
 	 },
 	Dewbauchee = {
-	   [1] = {
-		  label = "JB 700",
-		  type = "sportsclassics",
-		  category = "Dewbauchee",
-		  hash = 1051415893,
-		  name = "jb700",
-		  price = 240000,
-		},
+	   --[1] = {
+		  --label = "JB 700",
+		  --type = "sportsclassics",
+		  --category = "Dewbauchee",
+		  --hash = 1051415893,
+		  --name = "jb700",
+		  --price = 240000,
+		--},
 	   [2] = {
 		  label = "Champion",
 		  type = "coupes",
@@ -3922,14 +3922,14 @@ Vehicles = {
 		  name = "hustler",
 		  price = 95000,
 		},
-	   [9] = {
-		  label = "Speedo Custom",
-		  type = "vans",
-		  category = "Vapid",
-		  hash = 219613597,
-		  name = "speedo4",
-		  price = 15000,
-		},
+	   --[9] = {
+		  --label = "Speedo Custom",
+		  --type = "vans",
+		  --category = "Vapid",
+		  --hash = 219613597,
+		  --name = "speedo4",
+		  --price = 15000,
+		--},
 	   [10] = {
 		  label = "Speedo",
 		  type = "vans",
@@ -3962,14 +3962,14 @@ Vehicles = {
 		  name = "minivan2",
 		  price = 10000,
 		},
-	   [14] = {
-		  label = "impaler2",
-		  type = "muscle",
-		  category = "Vapid",
-		  hash = 1009171724,
-		  name = "impaler2",
-		  price = 95000,
-		},
+	   --[14] = {
+		  --label = "impaler2",
+		  --type = "muscle",
+		  --category = "Vapid",
+		  --hash = 1009171724,
+		  --name = "impaler2",
+		  --price = 95000,
+		--},
 	   [15] = {
 		  label = "Hotknife",
 		  type = "muscle",
@@ -4076,14 +4076,14 @@ Vehicles = {
 		  name = "winky",
 		  price = 10000,
 		},
-	   [28] = {
-		  label = "Dominator Arena",
-		  type = "muscle",
-		  category = "Vapid",
-		  hash = -688189648,
-		  name = "dominator4",
-		  price = 200000,
-		},
+	   --[28] = {
+		  --label = "Dominator Arena",
+		  --type = "muscle",
+		  --category = "Vapid",
+		  --hash = -688189648,
+		  --name = "dominator4",
+		  --price = 200000,
+		--},
 	   [29] = {
 		  label = "Peyote Gasser",
 		  type = "sportsclassics",
@@ -4100,14 +4100,14 @@ Vehicles = {
 		  name = "radi",
 		  price = 18000,
 		},
-	   [31] = {
-		  label = "impaler4",
-		  type = "muscle",
-		  category = "Vapid",
-		  hash = -1744505657,
-		  name = "impaler4",
-		  price = 95000,
-		},
+	   --[31] = {
+		  --label = "impaler4",
+		  --type = "muscle",
+		  --category = "Vapid",
+		  --hash = -1744505657,
+		  --name = "impaler4",
+		  --price = 95000,
+		--},
 	   [32] = {
 		  label = "Ellie",
 		  type = "muscle",
@@ -4182,14 +4182,14 @@ Vehicles = {
 		  name = "caracara2",
 		  price = 80000,
 		},
-	   [41] = {
-		  label = "Caracara",
-		  type = "offroad",
-		  category = "Vapid",
-		  hash = 1254014755,
-		  name = "caracara",
-		  price = 60000,
-		},
+	   --[41] = {
+		  --label = "Caracara",
+		  --type = "offroad",
+		  --category = "Vapid",
+		  --hash = 1254014755,
+		  --name = "caracara",
+		  --price = 60000,
+		--},
 	   [42] = {
 		  label = "imperator2",
 		  type = "muscle",
@@ -4374,17 +4374,326 @@ Vehicles = {
 	},
 
 	-- Adding new category
-	Gago = { -- example new category
+	Audi = { -- example new category
 		[1] = {
-		   label = "r820",
-		   type = "sports",
-		   price = 130000,
-		   category = "Gago",
+		   label = "Audi R820",
+		   type = "super",
+		   price = 5500000,
+		   category = "Audi",
 		   hash = `r820`,
 		   name = "r820",
 		 },
+
+		 [2] = {
+			label = "Audi RS7C8",
+			type = "sports",
+			price = 5500000,
+			category = "Audi",
+			hash = `rs7c8wb`,
+			name = "rs7c8wb",
+		  },
 	 },
+
+	 BMW = { -- example new category
+		[1] = {
+		   label = "BMW G20",
+		   type = "sedan",
+		   price = 4690000,
+		   category = "BMW",
+		   hash = `g20stock`,
+		   name = "g20stock",
+		 },
+
+		 [2] = {
+			label = "BMW M3 E46",
+			type = "coupe",
+			price = 4640000,
+			category = "BMW",
+			hash = `m3e46`,
+			name = "m3e46",
+		  },
+	 },
+
+	 Ferrari = { -- example new category
+		[1] = {
+		   label = "Ferrari 360",
+		   type = "super",
+		   price = 4600000,
+		   category = "Ferrari",
+		   hash = `fer360`,
+		   name = "fer360",
+		 },
+	},
+
+	Honda = { -- example new category
+		[1] = {
+		   label = "Honda Civic Type-R FK8",
+		   type = "sports",
+		   price = 5200000,
+		   category = "Honda",
+		   hash = `fk8hr`,
+		   name = "fk8hr",
+		 },
+
+		 [2] = {
+			label = "Honda Civic EJ1",
+			type = "sports",
+			price = 5000000,
+			category = "Honda",
+			hash = `fnfcivic`,
+			name = "fnfcivic",
+		  },
+		  [3] = {
+			label = "Honda S2000",
+			type = "sports",
+			price = 6000000,
+			category = "Honda",
+			hash = `s2pm`,
+			name = "s2pm",
+		  },
+		  [4] = {
+			label = "Honda eg6",
+			type = "sports",
+			price = 5000000,
+			category = "Honda",
+			hash = `eg6`,
+			name = "eg6",
+		  },
+		  [5] = {
+			label = "Honda Civic FD2",
+			type = "sports",
+			price = 5000000,
+			category = "Honda",
+			hash = `fd2`,
+			name = "fd2",
+		  },
+		  [6] = {
+			label = "Honda S2000 AP2",
+			type = "sports",
+			price = 5500000,
+			category = "Honda",
+			hash = `ap2`,
+			name = "ap2",
+		  },
+	},
+
+		Hyundai = { -- example new category
+			[1] = {
+			label = "Hyundai Veloster",
+			type = "coupe",
+			price = 4400000,
+			category = "Hyundai",
+			hash = `hyundaiveloster`,
+			name = "hyundaiveloster",
+			},
+		},
+
+
+			Toyota = { -- example new category
+			[1] = {
+			label = "Toyota Hiace",
+			type = "SUV",
+			price = 3000000,
+			category = "Toyota",
+			hash = `12hiace`,
+			name = "12hiace",
+			},
+			[2] = {
+				label = "Toyota Supra",
+				type = "sports",
+				price = 2000000,
+				category = "Toyota",
+				hash = `toysupmk4`,
+				name = "toysupmk4",
+			},
+		},
+
+	
+			Mazda = { -- example new category
+				[1] = {
+			label = "Mazda Rx8",
+			type = "sports",
+			price = 3500000,
+			category = "Mazda",
+			hash = `rx811`,
+			name = "rx811",
+			},
+			[2] = {
+			label = "Mazda RX7",
+			type = "sports",
+			price = 3000000,
+			category = "Mazda",
+			hash = `rx7tunable`,
+			name = "rx7tunable",
+			},
+		},
+
+
+	Jaguar = { -- example new category
+		[1] = {
+			label = "Jaguar Lumma",
+	  		type = "SUV",
+	   		price = 5600000,
+	   		category = "Jaguar",
+	  	 	hash = `jlumma`,
+	   		name = "jlumma",
+		},
+	 },
+
+	 Jeep = { -- example new category
+		[1] = {
+		   label = "Jeep Grand Cherokee",
+		   type = "SUV",
+		   price = 5500000,
+		   category = "Jeep",
+		   hash = `rmodjeep`,
+		   name = "rmodjeep",
+		 },
+	},
+
+	Isuzu = { -- example new category
+	[1] = {
+	   label = "Isuzu dmax2",
+	   type = "SUV",
+	   price = 5000000,
+	   category = "Jeep",
+	   hash = `dmax1`,
+	   name = "dmax1",
+	 },
+	 [2] = {
+		label = "isuzu Dmax1",
+		type = "SUV",
+		price = 4000000,
+		category = "Jeep",
+		hash = `allnewdmax`,
+		name = "allnewdmax",
+	  },
+},
+
+	Lamborghini = { -- example new category
+		[1] = {
+		   label = "Lamborghini Urus (Keyrus)",
+		   type = "SUV",
+		   price = 6800000,
+		   category = "Lamborghini",
+		   hash = `keyrus`,
+		   name = "keyrus",
+		 },
+		 [2] = {
+			label = "Lamborghini Galardo",
+			type = "sports",
+			price = 10000000,
+			category = "Lamborghini",
+			hash = `lgss`,
+			name = "lgss",
+		  },
+		 
+	},
+
+	MercedesBenz = { -- example new category
+		[1] = {
+		   label = "Mercedes-AMG C63",
+		   type = "sports",
+		   price = 4500000,
+		   category = "MercedesBenz",
+		   hash = `merc`,
+		   name = "merc",
+		 },
+
+		 [2] = {
+			label = "Mercedes-AMG G63",
+			type = "SUV",
+			price = 4500000,
+			category = "MercedesBenz",
+			hash = `w463`,
+			name = "w463",
+		  },
+	},
+
+	Mitsubishi = { -- example new category
+		[1] = {
+		   label = "Mitsubishi Evo X FQ-400",
+		   type = "sports",
+		   price = 6030000,
+		   category = "Mitsubishi",
+		   hash = `lanex400`,
+		   name = "lanex400",
+		 },
+	},
+
+	Nissan = { -- example new category
+		[1] = {
+		   label = "Nissan  Skyline 350gt",
+		   type = "sports",
+		   price = 4990000,
+		   category = "Nissan",
+		   hash = `350gt`,
+		   name = "350gt",
+		 },
+
+		 [2] = {
+			label = "Nissan camry",
+			type = "sports",
+			price = 5260000,
+			category = "Nissan",
+			hash = `cam8tun`,
+			name = "cam8tun",
+		  },
+		  [3] = {
+			label = "Nissan Skyline GTR",
+			type = "sports",
+			price = 7060000,
+			category = "Nissan",
+			hash = `skyline`,
+			name = "skyline",
+		  },
+	},
+
+	RangeRover = { -- example new category
+		[1] = {
+		   label = "Range Rover Velar",
+		   type = "SUV",
+		   price = 6550000,
+		   category = "RangeRover",
+		   hash = `velar`,
+		   name = "velar",
+		 },
+	},
+
+	Subaru = { -- example new category
+		[1] = {
+		   label = "Subaru Impreza 22b-STI",
+		   type = "sports",
+		   price = 4890000,
+		   category = "Subaru",
+		   hash = `22b`,
+		   name = "22b",
+		 },
+	},
+
+	Volkswagen = { -- example new category
+		[1] = {
+		   label = "Volkswagen Golf R",
+		   type = "sports",
+		   price = 4490000,
+		   category = "Volkswagen",
+		   hash = `golfr18`,
+		   name = "golfr18",
+		 },
+	},
+
+	Sunrise = { -- example new category
+		[1] = {
+		   label = "Sunrise",
+		   type = "sports",
+		   price = 5000000,
+		   category = "Sunrise",
+		   hash = `sunrise1`,
+		   name = "sunrise1",
+		 },
+	},
 }
+		
 if not IsDuplicityVersion() then
 	local temp = Vehicles
 	Vehicles = {}
