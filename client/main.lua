@@ -2264,7 +2264,9 @@ self.VehicleCam = function()
 		while self.view do
 			Citizen.Wait(0)
 			if self.chosenvehicle ~= nil then
+				if shopdata.spin then
 				SetEntityHeading(self.chosenvehicle, GetEntityHeading(self.chosenvehicle) - 0.1)
+				end
 			end
 			SetEntityLocallyInvisible(self.playerPed)
 			DrawLightWithRange(coord.x-4.0, coord.y-3.0, coord.z+ 0.3, 255,255,255, 40.0, 15.0)
