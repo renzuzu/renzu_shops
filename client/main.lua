@@ -1799,7 +1799,7 @@ self.GetAccounts = function(item)
 			end
 		end
 	else
-		return xPlayer.money[item] or 0
+		return xPlayer.money[item == 'money' and 'cash' or item] or 0
 	end
 end
 
