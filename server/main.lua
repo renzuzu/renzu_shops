@@ -389,9 +389,33 @@ exports('RemoveStockFromStash', RemoveStockFromStash)
 -- @args[2] = storeindex
 -- @args[3] = amount to add to all items
 -- /addstockall General 1 999
-lib.addCommand('group.admin', {'addstockall', 'addstock'}, function(source, args)
+lib.addCommand({'addstockall', 'addstock'}, {
+    help = 'Add Stock to Shops',
+    params = {
+        {
+            name = 'shop',
+            type = 'string',
+            help = 'Target Shop', },
+        {
+            name = 'index',
+            type = 'string',
+            help = 'Index # of Shop',
+        },
+        {
+            name = 'count',
+            type = 'number',
+            help = 'Amount of stock',
+        },
+        {
+            name = 'item',
+			type = 'string',
+            help = 'item name',
+        },
+    },
+    restricted = 'group.admin'
+}, function(source, args, raw)
     AddStockInternal(args.shop,args.index,args.count,args.item)
-end, {'shop:string', 'index:string', 'count:number', 'item:?string'})
+end)
 
 AddStockInternal = function(shop,index,count,item)
 	local stores = GlobalState.Stores
@@ -429,12 +453,15 @@ AddStockInternal = function(shop,index,count,item)
 end
 
 exports('AddStockInternal', AddStockInternal)
-
-lib.addCommand('group.admin', {'storeadmin', 'stores'}, function(source, args)
-	local stores = GlobalState.Stores
+lib.addCommand({'storeadmin', 'stores'}, {
+    help = 'Open Admin Store manage',
+    params = {},
+    restricted = 'group.admin'
+}, function(source, args, raw)
+    local stores = GlobalState.Stores
 	local ply = Player(source).state
 	ply:set('storemanage',{data = stores, ts = os.time()}, true)
-end, {})
+end)
 
 function tprint (tbl, indent,supplier)
 	if type(tbl) ~= 'table' then return end
