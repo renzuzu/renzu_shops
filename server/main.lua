@@ -773,9 +773,11 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 			if data.shop ~= 'VehicleShop' then -- add new item if its not a vehicle type
 				Inventory.AddItem(source,v.data.name,v.count,v.data.metadata, false)
 			else -- else if vehicle type add it to player vehicles table
+				callback = {}
 				for i = 1, tonumber(v.count) do
-					callback = GenPlate()
-					local sqldata = {callback,json.encode({model = GetHashKey(v.data.name), plate = callback, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),xPlayer.identifier,1,data.groups or 'civ'}
+					local plate = GenPlate()
+					callback[k] = plate
+					local sqldata = {plate,json.encode({model = GetHashKey(v.data.name), plate = plate, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),xPlayer.identifier,1,data.groups or 'civ'}
 					if shared.framework == 'QBCORE' then
 						table.insert(sqldata,xPlayer.citizenid)
 						table.insert(sqldata,joaat(v.data.name))
@@ -784,7 +786,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 					end
 					MySQL.insert.await(insertstr:format(vehicletable,columns,values),sqldata)
 					Wait(100)
-					shared.VehicleKeys(callback,source)
+					shared.VehicleKeys(plate,source)
 				end
 			end
 			Wait(500)

@@ -2163,8 +2163,11 @@ self.Handlers = function()
 						})
 						if self.Active.shop.type == 'VehicleShop' then
 							local chosen = nil
+							local plate = nil
 							for k,v in pairs(data.items) do
 								chosen = v
+								plate = reason[k]
+								break
 							end
 							local model = GetHashKey(chosen.data.name)
 							lib.requestModel(model)
@@ -2183,7 +2186,7 @@ self.Handlers = function()
 							end
 							SetVehicleDirtLevel(vehicle, 0.0)
 							SetVehicleModKit(vehicle,0)
-							SetVehicleNumberPlateText(vehicle,reason)
+							SetVehicleNumberPlateText(vehicle,plate)
 							if chosen.vehicle and tonumber(chosen.vehicle?.livery) and tonumber(chosen.vehicle?.livery) ~= -1 then
 								if chosen.vehicle.liverymod then
 									SetVehicleLivery(vehicle,tonumber(chosen.vehicle.livery))
