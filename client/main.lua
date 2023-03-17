@@ -56,8 +56,8 @@ end
 self.LoadDefaultShops = function()
 	for k,shop in pairs(shared.Shops) do
 		if shop.locations then
-			for shopindex,v in ipairs(shop.locations) do
-				print(k)
+			local coordinates = shared.target and shop.targets or shop.locations
+			for shopindex,v in ipairs(coordinates) do
 				if not shared.oxShops or k == 'VehicleShop' then
 					local shop = lib.table.deepclone(shop)
 					shop.shoptype = k
@@ -70,13 +70,11 @@ self.LoadDefaultShops = function()
 					if shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.labelname]) == 'table' and self.temporalspheres[shop.labelname].remove then
 						self.temporalspheres[shop.labelname]:remove()
 					elseif shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.StoreName]) == 'number' and shared.target then
-						--print(self.temporalspheres[shop.labelname],'removezone',type(self.temporalspheres[shop.labelname]))
 						--exports.ox_target:removeZone(self.temporalspheres[shop.labelname])
 					end
 					if not shared.target or ownedshopdata and ownedshopdata.marker then
 						self.temporalspheres[shop.labelname] = self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 					elseif not shop.groups or shop.groups == self.PlayerData?.job?.name then
-						print(shop.StoreName)
 						self.temporalspheres[shop.labelname] = self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 					end
 				end
@@ -181,7 +179,6 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 			end
 			if delete and data.remove then
 				data:remove()
-				print("REMOVE FUCK")
 			end
 		end
 	end
@@ -1288,7 +1285,6 @@ self.StartDelivery = function(var)
 			self.pickupzone = self.Add(data.point,'Pick Up '..label,self.DelivertoVehicleShop,false,var,false)
 		else
 			self.pickupzone = self.Add(data.point,'Pick Up '..label,self.DelivertoStore,false,var,false)
-			print("delivery gago")
 		end
 		shared.VehicleKeys(GetVehicleNumberPlateText(self.Vehicle))
 		truckblip = AddBlipForEntity(self.Vehicle)
@@ -1360,7 +1356,6 @@ self.DelivertoVehicleShop = function(var)
 end
 
 self.DelivertoStore = function(data)
-	print("GAGO")
 	self.pickupzone:remove()
 	if DoesBlipExist(deliveryblip) then
 		RemoveBlip(deliveryblip)
@@ -1423,7 +1418,6 @@ self.DelivertoStore = function(data)
 	local boxobject = nil
 	local deliver = false
 	local hasobject = false
-	print("LOOP")
 	Citizen.CreateThreadNow(function()
 		while not hasobject do
 			local sleep = 1000
@@ -1449,7 +1443,6 @@ self.DelivertoStore = function(data)
 				self.OxlibTextUi("Press [E] to Pick Up Box")
 				 while not hasobject do 
 					Wait(1) 
-					print('hashobject fuck')
 					DrawMarker(39,x,y,z-0.5,0,0,0,0.0,0,0,1.0,1.0,1.0,255,0,0,50,0,0,0,1)
 					if IsControlJustPressed(0,38) then
 						hasobject = true
@@ -1467,7 +1460,6 @@ self.DelivertoStore = function(data)
 			while hasobject do
 				dist = #(GetEntityCoords(self.playerPed) - vector3(storecoord.x,storecoord.y,storecoord.z-1.0))
 				DrawMarker(39,storecoord.x,storecoord.y,storecoord.z-0.5,0,0,0,0.0,0,0,1.0,1.0,1.0,255,0,0,50,0,0,0,1)
-				print('gagong marker')
 				if DoesEntityExist(boxobject) and not deliver and dist < 5 and IsControlJustPressed(0,38) then
 					deliver = true
 					SetVehicleDoorShut(self.Vehicle,2,0)
@@ -1477,9 +1469,7 @@ self.DelivertoStore = function(data)
 				end
 				Wait(1)
 			end
-			print('gago pa', hasobject)
 		end
-		print('gago')
 		self.DeleteEntity(boxobject)
 		Wait(2000)
 		self.Add(storecoord,'Deliver '..self.Items[data.data.item.name],self.DeliverDone,false,data,true,true)
@@ -1488,7 +1478,6 @@ self.DelivertoStore = function(data)
 end
 
 self.DeliverDone = function(data)
-	print('deliver done')
 	ClearPedTasks(cache.ped)
 	lib.hideTextUI()
 	if DoesBlipExist(deliveryblip) then
@@ -1547,7 +1536,6 @@ self.Shipping = function(data)
 			local hashstreet = GetStreetNameAtCoord(loc.x,loc.y,loc.z)
 			local streetname = GetStreetNameFromHashKey(hashstreet)
 			local dist = math.floor(#(GetEntityCoords(self.playerPed) - loc)+0.5)
-			print(ongoing)
 			if not ongoing[store] or ongoing[store] and ongoing[store][v.id] == nil then
 				local pay = dist * shared.shipping.payperdistance
 				local label = self.Items[v.item.name] or v.item.label
@@ -1567,7 +1555,6 @@ self.Shipping = function(data)
 						})
 						if confirm ~= 'cancel' then
 							self.StartDelivery({dist = dist, store = store, index = v.id, data = v, type = v.type})
-							print('start gago')
 							Wait(500)
 						end
 					end
@@ -1603,8 +1590,6 @@ self.BuyStore = function(data)
 				description = 'You Successfully Bought the store '..data.label,
 				type = 'success'
 			})
-			
-			print(self.temporalspheres[data.label])
 			if self.temporalspheres[data.label] then
 				local spheredata = self.temporalspheres[data.label]
 				if not shared.target then
@@ -1614,11 +1599,9 @@ self.BuyStore = function(data)
 					local sphere = self.Add(spheredata.coord,spheredata.label,self.StoreOwner,false,spheredata.shop)
 					self.temporalspheres[data.label].spheres = sphere
 				else
-					print(spheredata)
 					if spheredata then
 						exports.ox_target:removeZone(spheredata.target)
 					end
-					print(spheredata,spheredata.target)
 					local id = self.addTarget(spheredata.coord,spheredata.label,self.StoreOwner,false,spheredata.shop)
 					self.temporalspheres[data.label].target = id
 				end
@@ -1667,7 +1650,6 @@ self.OpenShop = function(data)
 				self.Active.shop.inventory = v2.supplieritem
 				self.Active.camerasetting = v2.camerasetting
 				for k,v in pairs(data.shop.inventory) do
-					print(data.shop.inventory[k].disable,'shop')
 					data.shop.inventory[k].disable = data.shop.inventory[k].disable or false
 					data.shop.inventory[k].label = v.metadata and v.metadata.label or self.Items[v.name] or v.label
 					if data.type == 'Ammunation' or data.type == 'BlackMarketArms' then
@@ -1713,7 +1695,6 @@ self.OpenShop = function(data)
 						data.shop.inventory[k].category = category or item.category
 						data.shop.inventory[k].stock = stock or 0
 						data.shop.inventory[k].label = label
-						print(item.name,item.disable)
 						if disable or item.disable then
 							data.shop.inventory[k].disable = true
 						else
@@ -1745,7 +1726,6 @@ self.OpenShop = function(data)
 	local black_money = self.GetAccounts('black_money')
 	local bank = self.GetAccounts('bank')
 	local shop_data = self.StoreData(data.shop.label)
-	print(shop_data?.duty,'duty',self.StoreData(data.shop.label))
 	SendNUIMessage({
 		type = 'shop',
 		data = {duty = shop_data?.duty,vImageCreator = GlobalState?.VehicleImages or {}, imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money), bank = self.format_int(bank)}}
@@ -1811,7 +1791,6 @@ self.Handlers = function()
 	end)
 	RegisterNetEvent('renzu_shops:removecart', function(id,nomoney)
 		SendNUIMessage({removecart = id})
-		print(id,_,nomone)
 		if nomoney then
 			lib.defaultNotify({
 				title = 'You dont have enough money',
@@ -2105,7 +2084,6 @@ self.Handlers = function()
 				type = 'inform'
 			})
 		elseif data.msg == 'playercarts' then
-			print(self.Active?.shop?.playertoplayer)
 			local playerid = GetPlayerServerId(PlayerId())
 				lib.callback.await('renzu_shops:updateshopcart',100, {playerid = playerid, cart = data.cart, bagname = 'player:', shop = self.Active?.shop?.StoreName})
 		elseif data.msg == 'buy' then
@@ -2502,12 +2480,10 @@ self.movablemode = false
 self.MovableShopStart = function(data)
 	local movabletype = self.movabletype
 	if not DoesEntityExist(self.movableentity[movabletype]) then
-		print(self.movableentity[movabletype],movabletype)
 		self.movableentity[movabletype] = self.SpawnMovableEntity(data)
 	end
 	self.movablemode = true
 	local nets = {}
-	print(self.movableentity[movabletype],DoesEntityExist(self.movableentity[movabletype]),NetworkGetNetworkIdFromEntity(self.movableentity[movabletype]))
 	table.insert(nets,NetworkGetNetworkIdFromEntity(self.movableentity[movabletype]))
 	--LocalPlayer.state:set('movableentity',nets,true)
 	self.SetClientStateBags({
@@ -2975,7 +2951,6 @@ self.PurchaseOrderList = function(data,storedata,player)
 		local playercarts = GlobalState.ShopCarts
 		local cart = {}
 		local shopname = self.GetShopData(storedata.type,storedata.index).label
-		print(shopname,'aaa')
 		local shopdata = playercarts[shopname]
 		for k,v in pairs(shopdata?.cart or {}) do
 			local data = v.data
@@ -2984,7 +2959,6 @@ self.PurchaseOrderList = function(data,storedata,player)
 			local label = data.metadata and data.metadata.label or data.label or self.Items[data.name] or data.name
 			data.label = label
 			local category = data.category or k
-			print(v.data,name,label)
 			table.insert(cart,{serialid = v.serialid, data = data, img = img, name = name, count = v.count, label = label, customer = shopdata.playerid, shop = shopname, type = type})
 		end
 
@@ -3276,7 +3250,6 @@ end
 self.Stash = function(data)
 	local identifier = data.label..'_storage'
 	if shared.inventory == 'ox_inventory' then
-		print('gago',data.label)
 		TriggerEvent('ox_inventory:openInventory', 'stash', {id = identifier, name = 'Storage', slots = 80, weight = 200000, coords = GetEntityCoords(cache.ped)})
 	elseif shared.inventory == 'qb-inventory' then
 		TriggerServerEvent('inventory:server:OpenInventory', 'stash', identifier, {})
@@ -3669,7 +3642,6 @@ self.PaymentMethod = function(data)
 	else
 		dropdownmenu[1] = { value = data.money, label = self.Items[data.money] or data.money }
 	end
-	print(self.StoreData(data.name),data.name,'aso')
 	if data.amount >= shared.FinanceMinimum and data.type ~= 'BlackMarketArms' and self.StoreData(data.name) then
 		table.insert(dropdownmenu, { value = 'finance', label = 'Finance' })
 	end

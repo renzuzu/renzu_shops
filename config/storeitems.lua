@@ -104,34 +104,6 @@ return {
 			},
 		},
 
-		{ lvl = 1, name = 'icecream1', price = 155 , category = 'icecream'},
-
-		{ lvl = 1, name = 'icecream2', price = 155 , category = 'icecream'},
-
-
-		{ lvl = 1, name = 'icecream3', price = 155 , category = 'icecream'},
-
-
-		{ lvl = 1, name = 'icecream4', price = 155 , category = 'icecream'},
-
-
-		{ lvl = 1, name = 'icecream5', price = 155 , category = 'icecream'},
-
-		{ lvl = 1, name = 'icecream6', price = 155 , category = 'icecream'},
-
-
-		{ lvl = 1, name = 'icecream7', price = 155 , category = 'icecream'},
-
-
-		{ lvl = 1, name = 'icecream8', price = 155 , category = 'icecream'},
-
-		{ lvl = 1, name = 'laysgreen', price = 255 , category = 'snacks'},
-		{ lvl = 1, name = 'pizzaslice1', price = 355 , category = 'pizza'},
-		{ lvl = 1, name = 'pizzaslice2', price = 355 , category = 'pizza'},
-		{ lvl = 1, name = 'pizzaslice3', price = 355 , category = 'pizza'},
-		{ lvl = 1, name = 'pizzaslice4', price = 355 , category = 'pizza'},
-		{ lvl = 1, name = 'pizzaslice5', price = 355 , category = 'pizza'},
-
 
 
 	},
@@ -145,9 +117,9 @@ return {
 		{ lvl = 1, name = 'WEAPON_KNIFE', category = 'handheld', price = 5000 },
 		{ lvl = 1, name = 'WEAPON_BAT', category = 'handheld', price = 3500 },
 		{ lvl = 1, name = 'WEAPON_PISTOL', category = 'Handgun', price = 25000, metadata = { registered = true }, license = 'weapon' },
- 		--{ lvl = 2, name = 'WEAPON_APPISTOL', category = 'Handgun', price = 10000, metadata = { registered = true }, license = 'weapon' },
+ 		{ lvl = 2, name = 'WEAPON_APPISTOL', category = 'Handgun', price = 10000, metadata = { registered = true }, license = 'weapon' },
 		{ lvl = 2, name = 'WEAPON_BZGAS', category = 'throwable', price = 5000, metadata = { registered = true }, license = 'weapon' },
-		--{ lvl = 2, name = 'WEAPON_COMBATPDW', category = 'machine guns', price = 18000, metadata = { registered = true }, license = 'weapon' },
+		{ lvl = 2, name = 'WEAPON_COMBATPDW', category = 'machine guns', price = 18000, metadata = { registered = true }, license = 'weapon' },
 	},
 
 	VehicleShop = MultiCategory(

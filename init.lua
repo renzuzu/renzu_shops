@@ -289,7 +289,6 @@ if not IsDuplicityVersion() then
 					end)
 				end
 			end
-			print('aaa')
 			if not self.once then
 				self.Playerloaded()
 				self.SetJob()

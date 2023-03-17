@@ -96,10 +96,8 @@ CreateThread(function()
 	end
 	GlobalState.JobShop = jobshop
 	for k,v in pairs(shared.OwnedShops) do
-		print(v,v.label)
 		for k,v in pairs(v) do
 			if v.stash then
-				print('registered')
 				if shared.inventory == 'ox_inventory' then
 					exports.ox_inventory:RegisterStash(v.label..'_storage', 'Storage', 80, 200000, false)
 				elseif shared.inventory == 'qb-inventory' then
@@ -179,7 +177,6 @@ GetShopItem = function(storeid,type,item)
 	local stores = GlobalState.Stores
 	local shop = false
 	for name,shops in pairs(stores) do
-		--print(name,shops.items)
 		if name == storeid then
 			for k,v in pairs(shops.items[type]) do
 				if k == item then
@@ -192,13 +189,6 @@ GetShopItem = function(storeid,type,item)
 end
 
 exports('GetShopItem', GetShopItem)
-
-RegisterCommand('GetShopItem', function(src,args)
-	local itemdata = GetShopItem('Pet Shop','normal','a_c_pug')
-	if itemdata then
-		print(itemdata.stock)
-	end
-end)
 
 isStoreOwned = function(store,index)
 	local stores = GlobalState.Stores
@@ -581,16 +571,13 @@ RemoveStock = function(data)
 				Inventory.RemoveItem(data.customer, data.money:lower(), (data.price * data.count)) -- remove money from buyer
 				Inventory.AddItem(data.customer, data.name, data.count, data.metadata) -- add money directly to stash inventory
 				local carts = GlobalState.ShopCarts
-				print(storeowned,carts[storeowned],carts[storeowned] and carts[storeowned].cart)
 				local shopcart = carts[storeowned]?.cart or {}
 				for k,v in pairs(shopcart) do
-					print(data.serialid.cartid,v.serialid.cartid)
 					if v.serialid.cartid == data.serialid.cartid then
 						carts[storeowned].cart[k] = nil
 					end
 				end
 				GlobalState.ShopCarts = carts
-				print('slotid',data.serialid)
 				TriggerClientEvent('renzu_shops:removecart',data.customer,data.serialid)
 				return true
 			elseif removed then
@@ -615,7 +602,6 @@ lib.callback.register('renzu_shops:shopduty', function(source,data)
 		store.duty = data.duty
 	end
 	GlobalState['Stores_'..data.id] = store
-	print(GlobalState['Stores_'..data.id].duty)
 end)
 
 lib.callback.register('renzu_shops:removestock', function(source,data)
@@ -736,7 +722,6 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 	if moneytype == 'bank' then
 		money  = xPlayer.getAccount('bank').money
 	end
-	print(moneytype,money)
 	if money >= total and total > 0 then
 		if moneytype == 'bank' then
 			xPlayer.removeAccountMoney('bank', total)
@@ -1024,12 +1009,10 @@ lib.callback.register("renzu_shops:proccessed", function(source,data)
 	local amount = 1
 	if type(data.required) == 'string' or data.required == false then
 		amount = data.required and GetItemCountSingle(data.required,source)
-		print("proccessing")
 		if amount and amount > 0 or not data.required then
 			if data.required then
 				Inventory.RemoveItem(source,data.required,amount)
 			end
-			print('add')
 			if data.reward then
 				Inventory.AddItem(source, data.reward, amount and amount * data.value or data.value)
 			end
@@ -1236,7 +1219,6 @@ GetStashData = function(data)
 			item = v.metadata.name
 			metadata = true
 		end
-		print(data.identifier,v,v and v.name)
 		local data = Inventory.SearchItems(data.identifier, 'slots', v.name)
 		result[item] = 0
 		if data then
@@ -1627,7 +1609,6 @@ DepositItemToStore = function(source,data)
 	else
 		count = Inventory.SearchItems(source, 'count', data.item)
 	end
-	print(data.item,count,data.value)
 	if tonumber(data.value) and count >= data.value and data.value > 0 then
 		Inventory.RemoveItem(source, data.item, data.value, data.metadata and data.metadata.name and data.metadata or nil, slot)
 		if stores[data.store].items[data.itemtype][data.itemname] == nil then stores[data.store].items[data.itemtype][data.itemname] = {} end
@@ -1788,7 +1769,6 @@ lib.callback.register('renzu_shops:updateshopcart', function(source, data)
 	local carts = GlobalState.ShopCarts
 	carts[data.shop] = data
 	GlobalState.ShopCarts = carts
-	print("shopcart update")
 end)
 
 --DeleteResourceKvp('itemshowcase')
@@ -1932,7 +1912,6 @@ end)
 RegisterNetEvent("playerDropped",function()
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
-	print(xPlayer.identifier)
 	for k,v in pairs(deliver) do
 		for k2,v in pairs(v) do
 			if v == xPlayer.identifier then
