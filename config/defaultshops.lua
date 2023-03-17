@@ -66,7 +66,7 @@ return {
 			id = 59, colour = 69, scale = 0.8
 		}, 
 		locations = {
-			vector3(-349.84628295898,-140.85102844238,39.214408874512),
+			vector3(-213.81652832031,-1334.6248779297,30.13641166687),
 		}
 	},
 
@@ -235,16 +235,8 @@ return {
 		moneytype = 'black_money',
 		name = 'Black Market (Arms)',
 		locations = {
-			vec3(143.75300598145,-368.29254150391,-9.4811086654663),
+			vec3(591.57434082031,-3279.8911132813,6.06),
 			--vec3(163.0451, -1238.1116, 15.0734)
-		}
-	},
-	BlackMarketArms2 = {
-		moneytype = 'black_money',
-		name = 'Black Market (Arms)',
-		locations = {
-			--vec3(143.75300598145,-368.29254150391,-9.4811086654663),
-			vec3(163.0451, -1238.1116, 15.0734)
 		}
 	},
 
@@ -256,33 +248,6 @@ return {
 		}, 
 		locations = {
 			vec3(-269.10192871094,-1973.7338867188,29.931829452515),
-		}
-	},
-
-	WeedSeedShop = {
-		moneytype = 'black_money',
-		name = 'Weed Seed Shop',
-
-		locations = {
-			vec3(1854.1801757813,4907.8071289063,44.889507293701),
-		}
-	},
-
-	BeanMachine = {
-		moneytype = 'money',
-		name = 'Bean Machine',
-
-		locations = {
-			vec3(1138.0393066406,-1556.5855712891,35.209938049316),
-		}
-	},
-	Petshop = {
-		moneytype = 'money',
-		name = 'Pika Pet Shop',
-
-		locations = {
-			vec3(405.66833496094,317.74169921875,103.12732696533),
-			vec3(161.14779663086,-1268.0939941406,14.308547973633)
 		}
 	},
 

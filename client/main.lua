@@ -217,6 +217,9 @@ self.LoadShops = function()
 			if type(self.temporalspheres[shop.label]) == 'table' and self.temporalspheres[shop.label].remove then
 				self.temporalspheres[shop.label]:remove()
 			end
+			if shop.ped then
+				shop.ped()
+			end
 			if not storedata then
 				shop.shopName = name
 				shop.shopIndex = k
