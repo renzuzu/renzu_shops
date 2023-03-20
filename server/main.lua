@@ -121,6 +121,9 @@ Inventory.SearchItems = function(source, method, item)
 	else
 		local Player = QBCore.Functions.GetPlayer(source)
 		local items = {}
+		if item == 'money' then
+			return Player.PlayerData.money['cash']
+		end
 		if not Player then
 			items = exports['qb-inventory']:GetStashItems(source)
 			if not items then return {} end
