@@ -4693,6 +4693,20 @@ Vehicles = {
 		 },
 	},
 }
+
+if GetResourceState('qb-core') == 'started' then
+	Vehicles = {}
+	QBCore = exports['qb-core']:GetCoreObject()
+	for k,v in pairs(QBCore.Shared.Vehicles) do
+		local cat = v.brand
+		v.type = v.category
+		v.category = v.brand or v.category
+		v.label = v.name
+		v.name = v.model
+		if not Vehicles[cat] then Vehicles[cat] = {} end
+		table.insert(Vehicles[cat],v)
+	end
+end
 		
 if not IsDuplicityVersion() then
 	local temp = Vehicles
