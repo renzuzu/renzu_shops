@@ -75,7 +75,7 @@ self.LoadDefaultShops = function()
 					if not shared.target or ownedshopdata and ownedshopdata.marker then
 						self.temporalspheres[shop.labelname] = self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 					elseif not shop.groups or shop.groups == self.PlayerData?.job?.name then
-						self.temporalspheres[shop.labelname] = self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
+						self.temporalspheres[shop.labelname] = self.addTarget(v,shop.name..' '..shopindex,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 					end
 				end
 				self.ShopBlip({id = k..'_'..shopindex, coord = v, text = shop.name, blip = shop.blip or false})
@@ -91,11 +91,12 @@ end
 self.lastdata = nil
 self.addTarget = function(coord,msg,callback,server,var,delete,auto)
 	local var = lib.table.deepclone(var)
-	return exports.qtarget:AddBoxZone(msg, coord+vec3(0.0,0.0,0.0), 0.3,0.3, {
+	local target = nil
+	local targetid = exports['qb-target']:AddBoxZone(msg, coord+vec3(0.0,0.0,0.0), 0.45,0.45, {
 		name = msg,
 		drawSprite = true,
-		debugPoly = false,
-		distance = 0.7,
+		debugPoly = true,
+		distance = 1.5,
 		minZ = coord.z,
 		maxZ = coord.z+0.39,
 		useZ = true
@@ -123,6 +124,7 @@ self.addTarget = function(coord,msg,callback,server,var,delete,auto)
 			},
 		},
 	})
+	return targetid
 end
 
 self.Add = function(coord,msg,callback,server,var,delete,auto)
