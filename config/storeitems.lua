@@ -11,21 +11,9 @@ return {
 		{ lvl = 2, name = 'marlboro', price = 1000 , category = 'TOBACCO'},
 
 		{ lvl = 2, name = 'phone', price = 1000 , category = 'gadget'},
-		{ lvl = 2, name = 'parachute', price = 3000 , category = 'gadget'},
 		{ lvl = 2, name = 'radio', price = 1000 , category = 'gadget'},
-		{ lvl = 2, name = 'notepad', price = 50 , category = 'gadget'},
-		{ lvl = 2, name = 'camera', price = 250 , category = 'gadget'},
-		{ lvl = 2, name = 'camerafilm', price = 50 , category = 'gadget'},
-		{ lvl = 2, name = 'boombox', price = 250 , category = 'gadget'},
-
-		{ lvl = 2, name = 'firework_1', price = 50 , category = 'fireworks'},
-		{ lvl = 2, name = 'firework_2', price = 50 , category = 'fireworks'},
-		{ lvl = 2, name = 'firework_3', price = 50 , category = 'fireworks'},
-		{ lvl = 2, name = 'firework_4', price = 50 , category = 'fireworks'},
-		{ lvl = 2, name = 'fontain_4', price = 50 , category = 'fireworks'},
-
-
 		{ lvl = 2, name = 'latte', price = 150 , category = 'beverages'},
+
 		{ lvl = 1, name = 'tomatosauce', price = 15 , category = 'ingredients'},
 		{ lvl = 1, name = 'burgerpatty', price = 15 , category = 'ingredients'},
 		{ lvl = 1, name = 'tacoshells', price = 15 , category = 'ingredients'},
@@ -149,70 +137,6 @@ return {
 		{ name = 'frog_grilled', price = 1251, category = 'food' },
 		{ name = 'lapulapu_grilled', price = 1251, category = 'food' },
 		{ name = 'galungong_grilled', price = 1251, category = 'food' },
-	},
-
-	Burgershot = { -- Burgershot
-		{ lvl = 1, name = 'burger', price = 50 , category = 'food', customise = {'cheese', 'lettuce', 'hotsauce', 'mayonaise', 'burgerpatty'},ingredients = {burgerpatty = 1, bread = 1, tomatosauce = 1}},
-		{ lvl = 1, name = 'water', price = 10 , category = 'beverages', customise = {'mineralwater', 'purifiedwater'}},
-		{ lvl = 1, name = 'cola', price = 30 , category = 'beverages'},
-		-- metadatas type item
-		{ lvl = 1, name = 'burger', price = 80 , category = 'food', metadata = { -- ox_inventory supported only
-				label = 'Cheese Burger', -- custom label name to set from metadatas
-				cheese = true,
-				name = 'cheeseburger', -- identifier important
-				hunger = 500000,
-				image = 'cheeseburger',
-				description = 'Burger with Cheese',
-				customrandomname = 'custom text'
-			},
-			ingredients = {burgerpatty = 1, bread = 1, tomatosauce = 1}
-		},
-		{ lvl = 1, name = 'burger', price = 20 , category = 'food', metadata = { -- ox_inventory supported only
-				label = 'Angels Burger', -- custom label name to set from metadatas
-				cheese = true,
-				name = 'angelsburger', -- identifier important
-				hunger = 100000,
-				image = 'burger',
-				description = 'Burger less patty',
-				customrandomname = 'custom text'
-			},
-			ingredients = {burgerpatty = 1, bread = 1, tomatosauce = 1}
-		},
-	},
-
-	EclipseSupply = { -- EclipseSupply
-		{ category = 'supply', name = 'medikit', price = 1000 ,grade = 0},
-		{ category = 'supply', name = 'bandage', price = 500 },
-		{ category = 'supply', name = 'ambroxol', price = 200 },
-		{ category = 'supply', name = 'diatabs', price = 200 },
-		{ category = 'supply', name = 'facemask', price = 200 }
-
-
-	},
-
-	Pharmacy = { -- EclipseSupply
-		{ category = 'medicine', name = 'aguaoxinada', price = 1500, grade = 0},
-		{ category = 'medicine', name = 'betadine', price = 1500, grade = 0},
-		{ category = 'pills', name = 'stresstab', price = 2500, grade = 0},
-		{ category = 'pills', name = 'alaxan', price = 1500, grade = 0},
-		{ category = 'pills', name = 'molnupiravir', price = 5500, grade = 0},
-		{ category = 'pills', name = 'metronidazole', price = 2500, grade = 0},
-		{ category = 'pills', name = 'baraclude', price = 2500, grade = 0},
-		{ category = 'pills', name = 'ambroxol', price = 700, grade = 0},
-		{ category = 'pills', name = 'antihistamine', price = 1000, grade = 0},
-		{ category = 'pills', name = 'diatabs', price = 500, grade = 0},
-		{ category = 'pills', name = 'multivitamins', price = 1000, grade = 0},
-		{ category = 'pills', name = 'offlotion', price = 500, grade = 0},
-		{ category = 'pills', name = 'acetaminophe', price = 500, grade = 0},
-
-	},
-
-	WeedSeedShop = { -- EclipseSupply
-		{ category = 'seed', name = 'weed_lemonhaze_seed', price = 1500, grade = 0},
-		{ category = 'etc', name = 'water', price = 500, grade = 0},
-		{ category = 'etc', name = 'fertilizer', price = 500, grade = 0},
-
-
 	},
 
 	PoliceArmoury = { -- PoliceArmoury
@@ -417,32 +341,6 @@ return {
 
 	},
 
-	BeanMachine = { -- BeanMachine 
-		{ category = 'Coffee',  name = 'starbcoffee', price = 1000, },
-		{ category = 'Donuts',  name = 'starbdonut', price = 1200, },
-		{ category = 'Donuts',  name = 'starbdonut', price = 1500,  metadata = { -- ox_inventory supported only
-			label = 'Chocolate Donut', -- custom label name to set from metadatas
-			name = 'chocolatedonut', -- identifier important
-			hunger = 250000,
-			image = 'chocolatedonut',
-			description = 'Donut with Chocolate Syrup',
-		}},
-		{ category = 'Donuts',  name = 'starbdonut', price = 1500,  metadata = { -- ox_inventory supported only
-			label = 'Strawberry Donut', -- custom label name to set from metadatas
-			name = 'strawberrydonut', -- identifier important
-			hunger = 250000,
-			image = 'strawberrydonut',
-			description = 'Donut with Strawberry Syrup',
-		}},
-		{ category = 'Donuts',  name = 'starbdonut', price = 1500, metadata = { -- ox_inventory supported only
-			label = 'Glazed Donut', -- custom label name to set from metadatas
-			name = 'glazeddonut', -- identifier important
-			hunger = 250000,
-			image = 'glazeddonut',
-			description = 'Donut with Honey Glazed',
-		}},
-	},
-
 	PondCafe = { -- PondCafe 
 		{ category = 'Cupcake',  name = 'strawberry_cupcake', price = 1500, },
 		{ category = 'Cupcake',  name = 'double_cupcake', price = 1500, },
@@ -457,7 +355,7 @@ return {
 
 	},
 
-	['8Balls'] = { -- 8Balls 
+	['Balls8'] = { -- 8Balls 
 		{ category = 'Meals',  name = 'sisig', price = 1500, },
 		{ category = 'Meals',  name = 'liempo', price = 1500, },
 		{ category = 'Meals',  name = 'barberq', price = 1500},
@@ -475,21 +373,4 @@ return {
 		}, -- whitelisted table
 		AllClothings -- all vehicles can be found /data/vehicles.lua
 	),
-
-	['Petshop'] = { -- Petshop 
-		{ category = 'Food',  name = 'dogfood', price = 15100, },
-		{ category = 'Food',  name = 'catfood', price = 15100, },
-		{ category = 'Food',  name = 'petwater', price = 15100, },
-		{ category = 'Pet',  name = 'a_c_cat_01', price = 10000, disable = true},
-		{ category = 'Pet',  name = 'a_c_chop', price = 10000, disable = true},
-		{ category = 'Pet',  name = 'a_c_husky', price = 10000, disable = true},
-		{ category = 'Pet',  name = 'a_c_poodle', price = 10000, disable = true},
-		{ category = 'Pet',  name = 'a_c_pug', price = 10000, disable = true},
-		{ category = 'Pet',  name = 'a_c_retriever', price = 10000, disable = true},
-		{ category = 'Pet',  name = 'a_c_rottweiler', price = 10000, disable = true},
-		{ category = 'Pet',  name = 'a_c_shepherd', price = 10000, disable = true},
-		{ category = 'Pet',  name = 'a_c_westy', price = 10000, disable = true},
-
-
-	},
 }

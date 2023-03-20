@@ -17,7 +17,7 @@ return {
 		},
 	},
 
-	['8Balls'] = {
+	['Balls8'] = {
 		moneytype = 'money',
 		name = '8Balls',
 		groups = '8balls',
@@ -38,23 +38,6 @@ return {
 		},
 		locations = {
 			vector3(1116.9136962891,-640.98645019531,56.825714111328),
-		}
-	},
-
-	Pharmacy = {
-		moneytype = 'money',
-		name = 'Eclipse Pharmacy',
-		blip = {
-			id = 59, colour = 69, scale = 0.8
-		}, 
-		inventory = {
-			{ name = 'aguaoxinada', price = 400 ,grade = 0},
-			{ name = 'betadine', price = 400 },
-			{ name = 'stresstab', price = 400 },
-			{ name = 'alaxan', price = 400 },
-		},
-		locations = {
-			vector3(1140.9697265625,-1530.2154541016,34.972122192383),
 		}
 	},
 	
@@ -189,23 +172,6 @@ return {
 		}
 	},
 
-	Medicine = {
-		moneytype = 'money',
-		name = 'Medicine Cabinet',
-		groups = 'ambulance',
-		blip = {
-			id = 403, colour = 69, scale = 0.8
-		}, inventory = {
-			{ name = 'medikit', price = 26 },
-			{ name = 'bandage', price = 5 },
-			{ category = 'supply', name = 'ambroxol', price = 200 },
-			{ category = 'supply', name = 'diatabs', price = 200 },
-			{ category = 'supply', name = 'facemask', price = 200 }
-		}, locations = {
-			vec3(1134.7069091797,-1545.0465087891,35.30615234375)
-		}
-	},
-
 	LiquorStore = {
 		name = 'Liquor Store',
 		blip = {
@@ -239,16 +205,4 @@ return {
 			--vec3(163.0451, -1238.1116, 15.0734)
 		}
 	},
-
-	Burgershot = {
-		moneytype = 'money',
-		name = 'Burger Shot',
-		blip = {
-			id = 59, colour = 69, scale = 0.8
-		}, 
-		locations = {
-			vec3(-269.10192871094,-1973.7338867188,29.931829452515),
-		}
-	},
-
 }
