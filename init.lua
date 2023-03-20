@@ -64,7 +64,7 @@ shared.inventory = 'qb-inventory' -- 'ox_inventory' or 'qb-inventory' https://gi
 if GetResourceState('es_extended') == 'started' then
 	shared.framework = 'ESX'
 	ESX = exports['es_extended']:getSharedObject()
-elseif GetResourceState('es_extended') == 'started' then
+elseif GetResourceState('qb-core') == 'started' then
 	shared.framework = 'QBCORE'
 	QBCore = exports['qb-core']:GetCoreObject()
 end
