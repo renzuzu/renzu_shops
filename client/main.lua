@@ -92,10 +92,11 @@ self.lastdata = nil
 self.addTarget = function(coord,msg,callback,server,var,delete,auto)
 	local var = lib.table.deepclone(var)
 	local target = nil
-	local targetid = exports['qb-target']:AddBoxZone(msg, coord+vec3(0.0,0.0,0.0), 0.45,0.45, {
+	local id = msg
+	local targetid = exports['qb-target']:AddBoxZone(id, coord+vec3(0.0,0.0,0.0), 0.45,0.45, {
 		name = msg,
 		drawSprite = true,
-		debugPoly = true,
+		debugPoly = false,
 		distance = 1.5,
 		minZ = coord.z,
 		maxZ = coord.z+0.39,
@@ -124,7 +125,7 @@ self.addTarget = function(coord,msg,callback,server,var,delete,auto)
 			},
 		},
 	})
-	return targetid
+	return shared.framework == 'QBCORE' and id or targetid
 end
 
 self.Add = function(coord,msg,callback,server,var,delete,auto)
