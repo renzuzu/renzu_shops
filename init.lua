@@ -1,8 +1,6 @@
 ESX,QBCORE = nil, nil
 shared = {}
 shared.lang = 'en' -- look config/locales/%s.lua eg. 'en' for en.lua | to create new language, create a new file ex. es.lua
-shared.framework = 'ESX' -- ESX || QBCORE
-shared.inventory = 'ox_inventory' -- 'ox_inventory' or 'qb-inventory' https://github.com/renzuzu/qb-inventory
 -- use ox_inventory Shops UI (experimental feature) only with my forked ox_inventory REPO https://github.com/renzuzu/ox_inventory
 shared.oxShops = false -- if true this resource will use ox_inventory Shops UI instead of built in UI
 shared.allowplayercreateitem = false -- if false only admin can create new items via /stores
@@ -20,8 +18,8 @@ shared.defaultStock = {
 } -- default to all items in store when newly purchased
 shared.SendtoBank = false -- if true owner will receive money to owned bank account
 shared.VehicleKeysType = {
-	['export'] = true, -- if false it will use trigger events
-	['client'] = false, -- if false it will use server event or server exports
+	['export'] = false, -- if false it will use trigger events
+	['client'] = true, -- if false it will use server event or server exports
 }
 shared.VehicleKeys = function(plate,source) -- vehicle keys
 	-- first parameter expected is plate
@@ -60,10 +58,21 @@ shared.VehicleKeys = function(plate,source) -- vehicle keys
 	end
 end
 
-if shared.framework == 'ESX' then
+shared.framework = 'QBCORE' -- ESX || QBCORE
+shared.inventory = 'qb-inventory' -- 'ox_inventory' or 'qb-inventory' https://github.com/renzuzu/qb-inventory
+
+if GetResourceState('es_extended') == 'started' then
+	shared.framework = 'ESX'
 	ESX = exports['es_extended']:getSharedObject()
-elseif shared.framework == 'QBCORE' then
+elseif GetResourceState('es_extended') == 'started' then
+	shared.framework = 'QBCORE'
 	QBCore = exports['qb-core']:GetCoreObject()
+end
+
+if GetResourceState('ox_inventory') == 'started' then
+	shared.inventory = 'ox_inventory'
+elseif GetResourceState('qb-inventory') == 'started' then
+	shared.inventory = 'qb-inventory'
 end
 Shops = {}
 MultiCategory = function(blacklist,whitelist,data,...)
