@@ -2162,7 +2162,7 @@ self.Handlers = function()
 							local plate = nil
 							for k,v in pairs(data.items) do
 								chosen = v
-								plate = reason[k]
+								plate = reason[v.data.name]
 								break
 							end
 							local model = GetHashKey(chosen.data.name)

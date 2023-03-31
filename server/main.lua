@@ -752,6 +752,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 				end
 			end
 		end
+		callback = {}
 		for k,v in pairs(data.items) do
 			if storeowned then -- storeowned Ownableshops data handler
 				RemoveStockFromStore({shop = data.shop, metadata = v.data.metadata, index = data.index, item = v.data.name, amount = tonumber(v.count), money = moneytype:lower()})
@@ -761,10 +762,9 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 			if data.shop ~= 'VehicleShop' then -- add new item if its not a vehicle type
 				Inventory.AddItem(source,v.data.name,v.count,v.data.metadata, false)
 			else -- else if vehicle type add it to player vehicles table
-				callback = {}
 				for i = 1, tonumber(v.count) do
 					local plate = GenPlate()
-					callback[k] = plate
+					callback[v.data.name] = plate
 					local group = data.groups and xPlayer?.job?.name and GetJobFromData(data.groups,xPlayer) == xPlayer.job.name and xPlayer.job.name
 					local sqldata = {plate,json.encode({model = GetHashKey(v.data.name), plate = plate, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),xPlayer.identifier,1,group or 'civ'}
 					if shared.framework == 'QBCORE' then
