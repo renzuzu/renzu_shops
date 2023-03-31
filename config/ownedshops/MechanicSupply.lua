@@ -1,6 +1,6 @@
 return {
 	[1] = {
-		groups = 'mechanic',
+		groups = {'mechanic','police'},
 		moneytype = 'money',
 		label = 'MechanicSupply 1', -- identifier for each stores. do not rename once player already buy this store
 		coord = vec3(-206.28778076172,-1341.0858154297,35.23713684082), -- owner manage coord

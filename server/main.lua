@@ -765,7 +765,8 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 				for i = 1, tonumber(v.count) do
 					local plate = GenPlate()
 					callback[k] = plate
-					local sqldata = {plate,json.encode({model = GetHashKey(v.data.name), plate = plate, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),xPlayer.identifier,1,data.groups or 'civ'}
+					local group = data.groups and xPlayer?.job?.name and GetJobFromData(data.groups,xPlayer) == xPlayer.job.name and xPlayer.job.name
+					local sqldata = {plate,json.encode({model = GetHashKey(v.data.name), plate = plate, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),xPlayer.identifier,1,group or 'civ'}
 					if shared.framework == 'QBCORE' then
 						table.insert(sqldata,xPlayer.citizenid)
 						table.insert(sqldata,joaat(v.data.name))
@@ -1001,7 +1002,7 @@ end)
 lib.callback.register("renzu_shops:work", function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
-	if data.groups == xPlayer.job.name then
+	if GetJobFromData(data.groups,xPlayer) == xPlayer.job.name then
 		Inventory.AddItem(source, data.reward, 1)
 	end
 end)
@@ -1312,12 +1313,23 @@ lib.callback.register("renzu_shops:getmovableshopdata", function(source,data)
 	return GlobalState.MovableShops[identifier]
 end)
 
+GetJobFromData = function(job,xPlayer)
+	if not job then return end
+	if type(job) == 'string' then return job end
+	for k,v in pairs(job) do
+		if v == xPlayer.job.name then
+			return v
+		end
+	end
+	return false
+end
+
 AddMovableShopToPlayer = function(data,source)
 	local plate = nil
 	local movable = GlobalState.MovableShops
 	if data.shop.type == 'vehicle' then
 		plate = GenPlate()
-		local sqldata = {plate,json.encode({model = data.shop.model, plate = plate, modLivery = -1}),data.owner,1,data.groups or 'civ'}
+		local sqldata = {plate,json.encode({model = data.shop.model, plate = plate, modLivery = -1}),data.owner,1,'civ'}
 		if shared.framework == 'QBCORE' then
 			table.insert(sqldata,data.citizenid)
 			table.insert(sqldata,data.shop.model)

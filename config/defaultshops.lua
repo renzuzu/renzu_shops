@@ -42,7 +42,7 @@ return {
 	},
 	
 	MechanicSupply = {
-		groups = 'mechanic',
+		groups = {'mechanic','police'},
 		moneytype = 'money',
 		name = 'Mechanic Supply',
 		blip = {

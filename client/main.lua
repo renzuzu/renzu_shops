@@ -74,7 +74,7 @@ self.LoadDefaultShops = function()
 					end
 					if not shared.target or ownedshopdata and ownedshopdata.marker then
 						self.temporalspheres[shop.labelname] = self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
-					elseif not shop.groups or shop.groups == self.PlayerData?.job?.name then
+					elseif not shop.groups or self.GetJobFromData(shop.groups) == self.PlayerData?.job?.name then
 						self.temporalspheres[shop.labelname] = self.addTarget(v,shop.name..' '..shopindex,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 					end
 				end
@@ -140,7 +140,7 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 	function inside(data)
 		local data = data
 		local group = data?.var?.shop?.groups
-		if group and group ~= self.PlayerData?.job?.name then return end
+		if group and self.GetJobFromData(group) ~= self.PlayerData?.job?.name then return end
 		local shopboss = self.delivery and callback == self.StoreOwner
 		local drawdist = 1.2
 		if self.shoptype == 'vehicle' then
@@ -234,7 +234,7 @@ self.LoadShops = function()
 					self.temporalspheres[shop.label] = {target = id, spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
 				end
 			elseif storedata and storedata?.owner == self.PlayerData.identifier 
-				or storedata and storedata.employee[self.PlayerData.identifier] or shop.groups and self.PlayerData?.job?.name == shop.groups then
+				or storedata and storedata.employee[self.PlayerData.identifier] or shop.groups and self.PlayerData?.job?.name == self.GetJobFromData(shop.groups) then
 				if not shared.target then
 					self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				else
@@ -1791,6 +1791,18 @@ end
 
 self.worldoffset = {}
 self.playerPed = cache.ped
+
+self.GetJobFromData = function(job)
+	if not job then return end
+	if type(job) == 'string' then return job end
+	for k,v in pairs(job) do
+		if v == self.PlayerData?.job.name then
+			return v
+		end
+	end
+	return false
+end
+
 self.Handlers = function()
 	lib.onCache('ped', function(ped)
 		self.playerPed = ped
@@ -1820,7 +1832,7 @@ self.Handlers = function()
 		local ownedshopdata = self.GetShopData(data.type,data.id)
 		local group = ownedshopdata?.groups or shared.Shops[data.type].groups
 		if self.shopopen then return end
-		if group and group ~= self.PlayerData?.job?.name then return end
+		if group and self.GetJobFromData(group) ~= self.PlayerData?.job?.name then return end
 		local shop = shared.Shops[data.type]
 		local coord = shared.Shops[data.type].locations[data.id]
 		local closest = nil
