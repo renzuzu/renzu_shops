@@ -304,7 +304,7 @@ if not IsDuplicityVersion() then
 					return exports.ox_inventory:Search('count', name)
 				elseif shared.inventory == 'qb-inventory' then
 					local count = 0
-					local PlayerData = QBCORE.Functions.GetPlayerData()
+					local PlayerData = QBCore.Functions.GetPlayerData()
 					for _, item in pairs(PlayerData.items) do
 						if name == item.name then
 							count += 1
@@ -313,7 +313,7 @@ if not IsDuplicityVersion() then
 					return count
 				end
 			end
-			
+
 			if not self.once then
 				self.Playerloaded()
 				self.SetJob()
