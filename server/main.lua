@@ -719,6 +719,7 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 		return 'invalidamount'
 	end
 	local moneytype = data.type
+
 	moneytype = moneytype:gsub('Wallet',moneytype) -- check payment type
 	moneytype = moneytype:gsub('finance','money')
 	local money = GetItemCountSingle(moneytype:lower(),source)

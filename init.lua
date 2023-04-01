@@ -298,6 +298,22 @@ if not IsDuplicityVersion() then
 					end)
 				end
 			end
+
+			self.getInventoryItems = function(name)
+				if shared.inventory == 'ox_inventory' then
+					return exports.ox_inventory:Search('count', name)
+				elseif shared.inventory == 'qb-inventory' then
+					local count = 0
+					local PlayerData = QBCORE.Functions.GetPlayerData()
+					for _, item in pairs(PlayerData.items) do
+						if name == item.name then
+							count += 1
+						end
+					end
+					return count
+				end
+			end
+			
 			if not self.once then
 				self.Playerloaded()
 				self.SetJob()

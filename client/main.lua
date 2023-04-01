@@ -67,6 +67,7 @@ self.LoadDefaultShops = function()
 					shop.AttachmentsCustomiseOnly = ownedshopdata and ownedshopdata.AttachmentsCustomiseOnly
 					shop.labelname = k..'_'..shopindex
 					shop.playertoplayer = ownedshopdata and ownedshopdata.playertoplayer
+					shop.moneytype = ownedshopdata and ownedshopdata.moneytype
 					if shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.labelname]) == 'table' and self.temporalspheres[shop.labelname].remove then
 						self.temporalspheres[shop.labelname]:remove()
 					elseif shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.StoreName]) == 'number' and shared.target then
@@ -1643,6 +1644,8 @@ self.OpenShop = function(data)
 		end
 	end
 	self.moneytype = data.shop.moneytype
+
+	self.Active.shop.moneytype = self.moneytype
 	-- shop data for owned shops
 	local ownedshops = lib.table.deepclone(shared.OwnedShops)
 	local storename = nil
@@ -1651,6 +1654,7 @@ self.OpenShop = function(data)
 			if k == data.index and type == data.type then
 				local storedata = self.StoreData(v2.label)
 				self.moneytype = v2.moneytype
+				self.itemType = v2.item
 				data.shop.label = v2.label
 				data.shop.inventory = v2.supplieritem
 				self.Active.shop.inventory = v2.supplieritem
@@ -1728,13 +1732,24 @@ self.OpenShop = function(data)
 			end
 		end
 	end
-	local money = self.GetAccounts('money')
+	local money = self.GetAccounts(self.moneytype or 'money',self.itemType)
 	local black_money = self.GetAccounts('black_money')
 	local bank = self.GetAccounts('bank')
 	local shop_data = self.StoreData(data.shop.label)
 	SendNUIMessage({
 		type = 'shop',
-		data = {duty = shop_data?.duty,vImageCreator = GlobalState?.VehicleImages or {}, imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money), bank = self.format_int(bank)}}
+		data = {
+			duty = shop_data?.duty,
+			vImageCreator = GlobalState?.VehicleImages or {}, 
+			imgpath = self.ImagesPath(), 
+			itemtype = self.itemType, 
+			moneytype = self.moneytype or 'money', 
+			type = data.type, 
+			open = true, 
+			shop = data.shop, 
+			label = data.shop.label or data.shop.name, 
+			wallet = {money = self.format_int(money), black_money = self.format_int(black_money), bank = self.format_int(bank)}
+		}
 	})
 	SetNuiFocus(true,true)
 	SetNuiFocusKeepInput(false)
@@ -1775,17 +1790,22 @@ self.Closeui = function()
 	end
 end
 
-self.GetAccounts = function(item)
+self.GetAccounts = function(name,item)
 	local xPlayer = self.GetPlayerData()
+
+	if item then
+		return self.getInventoryItems(name)
+	end
+
 	if shared.framework == 'ESX' then
 		local xPlayer = self.GetPlayerData()
 		for k,v in ipairs(xPlayer.accounts) do
-			if v.name == item then
+			if v.name == name then
 				return v.money or 0
 			end
 		end
 	else
-		return xPlayer.money[item == 'money' and 'cash' or item] or 0
+		return xPlayer.money[name == 'money' and 'cash' or name] or 0
 	end
 end
 
@@ -2111,10 +2131,12 @@ self.Handlers = function()
 				itemdata[v.metadata and v.metadata.name or v.name] = v
 			end
 			local totalamount = 0
+
 			for k,v in pairs(data.items) do
 				totalamount += tonumber(v.count)
 				total = total + tonumber(itemdata[v.data.metadata and v.data.metadata.name or v.data.name].price) * tonumber(v.count)
 			end
+
 			data.type = self.PaymentMethod({amount = total, total = totalamount, type = self.Active.shop.type, name = self.Active.shop.StoreName, money = self.Active?.shop?.moneytype}) or self.Active?.shop?.moneytype or 'money'
 			if data.type == 'cancel' then return end
 			local financedata
@@ -3347,7 +3369,7 @@ self.OpenShopMovable = function(data)
 	end
 	data.shop.inventory = inventory
 	self.Active.shop.inventory = inventory
-	local money = self.GetAccounts('money')
+	local money = self.GetAccounts(self.moneytype or 'money')
 	local black_money = self.GetAccounts('black_money')
 	local bank = self.GetAccounts('bank')
 	SendNUIMessage({
@@ -3388,7 +3410,7 @@ self.OpenShopBooth = function(data)
 	end
 	data.shop.inventory = inventory
 	self.Active.shop.inventory = inventory
-	local money = self.GetAccounts('money')
+	local money = self.GetAccounts(self.moneytype or 'money')
 	local black_money = self.GetAccounts('black_money')
 	local bank = self.GetAccounts('bank')
 	self.Owner = GlobalState.Booths[data.identifier].owner

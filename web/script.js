@@ -83,7 +83,9 @@ window.addEventListener('message', function (table) {
         lastshop = event.data.label
         moneytype = event.data.moneytype || 'money'
         getEl('metadatas').style.display = 'none'
-        getEl('money').innerHTML = event.data.wallet[moneytype]
+        getEl('moneytype').innerHTML = moneytype
+        getEl('moneyimage').innerHTML = `${event.data.itemtype ? `<img src="${imgpath}${moneytype}.png" style="height:30px;">` : '<i class="fas fa-wallet" aria-hidden="true"></i>'}`
+        getEl('money').innerHTML = event.data.wallet['money']
         getEl('bank').innerHTML = event.data.wallet['bank']
 
         shoptype = event.data.type
