@@ -1816,7 +1816,7 @@ self.GetJobFromData = function(job)
 	if not job then return end
 	if type(job) == 'string' then return job end
 	for k,v in pairs(job) do
-		if v == self.PlayerData?.job.name then
+		if v == self.PlayerData?.job?.name then
 			return v
 		end
 	end
