@@ -1666,6 +1666,7 @@ exports('WithdrawItemFromStore', WithdrawItemFromStore)
 
 AddMoneyToStore = function(data)
 	local stores = GlobalState.Stores
+	if not stores[data.store].money[data.item] then stores[data.store].money[data.item] = 0 end
 	stores[data.store].money[data.item] = tonumber(stores[data.store].money[data.item]) + data.value
 	--SetResourceKvp('renzu_stores', json.encode(stores))
 	sql.update('renzu_stores','money','shop',data.store,json.encode(stores[data.store].money))
@@ -1676,6 +1677,7 @@ exports('AddMoneyToStore', AddMoneyToStore)
 
 RemoveMoneyStore = function(data)
 	local stores = GlobalState.Stores
+	if not stores[data.store].money[data.item] then stores[data.store].money[data.item] = 0 end
 	stores[data.store].money[data.item] = tonumber(stores[data.store].money[data.item]) - data.value
 	--SetResourceKvp('renzu_stores', json.encode(stores))
 	sql.update('renzu_stores','money','shop',data.store,json.encode(stores[data.store].money))
@@ -1715,6 +1717,30 @@ end
 
 exports('EnableDisableStoreItems', EnableDisableStoreItems)
 
+GetAccounts = function(xPlayer, name, item)
+	if item then
+		return Inventory.SearchItems(xPlayer.source, 'count', name)
+	end
+
+	return xPlayer.getAccount(name).money
+end
+
+AddAccount = function(xPlayer, name, total, item)
+	if item then
+		return 	Inventory.AddItem(xPlayer.source, name, total)
+	end
+
+	return xPlayer.addAccountMoney(name,total)
+end
+
+RemoveAccount = function(xPlayer, name, total, item)
+	if item then
+		return Inventory.RemoveItem(xPlayer.source, name, total)
+	end
+
+	return xPlayer.removeAccountMoney(name,total)
+end
+
 lib.callback.register('renzu_shops:editstore', function(source,data)
 	local source = source
 	local xPlayer = GetPlayerFromId(source)
@@ -1740,24 +1766,24 @@ lib.callback.register('renzu_shops:editstore', function(source,data)
 		data.itemname = data.metadata and data.metadata.name or data.item
 		return WithdrawItemFromStore(source, data)
 	elseif owned and stores[data.store] and data.type == 'deposit_money' then
-		local count = xPlayer.getAccount(data.item).money
+		local count = GetAccounts(xPlayer,data.item,data.item ~= 'money')
 		if tonumber(data.value) and count and count >= data.value and data.value > 0 then
 			AddMoneyToStore(data)
-			xPlayer.removeAccountMoney(data.item,data.value)
+			RemoveAccount(xPlayer,data.item,data.value,data.item ~= 'money')
 			return 'success'
 		end
 	elseif owned and stores[data.store] and data.type == 'withdraw_money' then
 		local count = tonumber(stores[data.store]?.money[data.item])
 		if tonumber(data.value) and count and count >= data.value and data.value > 0 then
 			RemoveMoneyStore(data)
-			xPlayer.addAccountMoney(data.item,data.value)
+			AddAccount(xPlayer,data.item,data.value,data.item ~= 'money')
 			return 'success'
 		end
 	elseif owned and stores[data.store] and data.type == 'withdraw_cashier' then
 		local count = tonumber(stores[data.store]?.cashier[data.item])
 		if tonumber(data.value) and count and count >= data.value and data.value > 0 then
 			RemoveMoneyFromCashier(data)
-			xPlayer.addAccountMoney(data.item,data.value)
+			AddAccount(xPlayer,data.item,data.value,data.item ~= 'money')
 			return 'success'
 		end
 	elseif owned and stores[data.store] and data.type == 'listing_edit' then

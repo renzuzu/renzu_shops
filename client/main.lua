@@ -722,7 +722,7 @@ self.FinanceManage = function(store,money)
 		end,
 		options = {
 			{
-				title = shared.locales.totalmoneyvault:format(storedata.money[money]),
+				title = shared.locales.totalmoneyvault:format(storedata.money[money] or 0),
 			},
 			{
 				title = shared.locales.withdrawvault,
