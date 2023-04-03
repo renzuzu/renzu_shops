@@ -138,7 +138,7 @@ self.NearestPoint = function(data,msg,callback,server,var,delete,auto)
 	end
 
 	local nearest = data.distance < drawdist and data
-	
+
 	local count = 0
 
 	if not nearest then return end
@@ -278,7 +278,7 @@ self.LoadShops = function()
 					self.temporalspheres[shop.label] = {target = id, spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label, type = 'storeowner'}
 				end
 			elseif storedata and storedata?.owner == self.PlayerData.identifier 
-				or storedata and storedata.employee[self.PlayerData.identifier] or shop.groups and self.PlayerData?.job?.name == self.GetJobFromData(shop.groups) then
+				or storedata and storedata.employee[self.PlayerData.identifier] or shop.groups and self.PlayerData?.job?.name and self.PlayerData?.job?.name == self.GetJobFromData(shop.groups) then
 				if not shared.target then
 					self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				else
