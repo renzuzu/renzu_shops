@@ -1925,10 +1925,6 @@ DeletePlayerMovableEntity = function(src, all) -- Delete Entities owned by playe
 	end
 end
 
-AddEventHandler('txAdmin:events:serverShuttingDown', function()
-	sql.save(GlobalState.Stores)
-end)
-
 AddEventHandler('onResourceStop', function(re)
 	if re == GetCurrentResourceName() then
 		--SetResourceKvp('renzu_stores', json.encode(GlobalState.Stores))
