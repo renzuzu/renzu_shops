@@ -4,7 +4,7 @@ game 'gta5'
 --use_experimental_fxv2_oal 'yes'
 
 author       'renzuzu'
-version      '1.1.1'
+version      '1.2.3'
 license      'LGPL-3.0-or-later'
 repository   'https://github.com/renzuzu/renzu_shops'
 description  'Advanced Shops available for free.'
