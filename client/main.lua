@@ -129,6 +129,91 @@ self.addTarget = function(coord,msg,callback,server,var,delete,auto)
 	return shared.framework == 'QBCORE' and id or targetid
 end
 
+self.nearest = {}
+self.NearestPoint = function(data,msg,callback,server,var,delete,auto)
+	local drawdist = 0.6
+
+	if self.shoptype == 'vehicle' or var.type == 'storeowner' then
+		drawdist = 1.2
+	end
+
+	local nearest = data.distance < drawdist and data
+	
+	local count = 0
+
+	if not nearest then return end
+
+	local data = nearest
+
+	local group = data?.var?.shop?.groups
+
+	if group and self.GetJobFromData(group) ~= self.PlayerData?.job?.name then return end
+
+	local shopboss = self.delivery and callback == self.StoreOwner
+	
+	if data.var.type and shared.MovableShops[data.var.type] and callback == self.OpenShopMovable then
+
+		if not NetworkDoesNetworkIdExist(data.var.net) or NetworkDoesNetworkIdExist(data.var.net) and not DoesEntityExist(NetworkGetEntityFromNetworkId(data.var.net)) then
+
+				if data.remove then
+					data:remove()
+				end
+
+			return
+		end
+	end
+
+	if data and data.distance < drawdist and self.lastdata ~= data.index then
+
+		self.Active = lib.table.deepclone(data.var)
+
+		self.lastdata = data.index
+
+		self.movabletype = data.var.type
+
+	end
+
+	if not self.clerkmode then
+
+		DrawMarker(21, data.coords.x, data.coords.y, data.coords.z, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
+
+	end
+
+	if not textui and data.distance < drawdist then textui = true self.OxlibTextUi("Press [E] "..msg) elseif data.distance > drawdist+1 and textui then textui = false data.onExit() end
+
+	if data.distance < drawdist and IsControlJustReleased(0,38) and not shopboss or auto then
+
+		LocalPlayer.state.invOpen = callback == self.OpenShop and true
+		 
+		callback(data.var)
+
+		while LocalPlayer.state.invOpen and callback == self.OpenShop and shared.inventory == 'ox_inventory' do
+
+			TriggerEvent('ox_inventory:closeInventory')
+
+			Wait(10)
+		end
+
+		if callback == self.OpenShop then
+
+			Wait(1000)
+
+			if self.shopopen then
+				SetNuiFocus(true,true)
+				SetNuiFocusKeepInput(false)
+			end
+		end
+
+		if delete and data.remove then
+
+			data:remove()
+
+		end
+	end
+
+	return nearest
+end
+
 self.Add = function(coord,msg,callback,server,var,delete,auto)
 	local var = var
 	local textui = false
@@ -140,52 +225,9 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 
 	function inside(data)
 		local data = data
-		local group = data?.var?.shop?.groups
-		if group and self.GetJobFromData(group) ~= self.PlayerData?.job?.name then return end
-		local shopboss = self.delivery and callback == self.StoreOwner
-		local drawdist = 1.2
-		if self.shoptype == 'vehicle' then
-			drawdist = 1.2
-		end
-		if data.var.type and shared.MovableShops[data.var.type] and callback == self.OpenShopMovable then
-			if not NetworkDoesNetworkIdExist(data.var.net) 
-				or NetworkDoesNetworkIdExist(data.var.net) and not DoesEntityExist(NetworkGetEntityFromNetworkId(data.var.net)) then
-					if data.remove then
-						data:remove()
-					end
-				return
-			end
-		end
-		if data.distance < 1.2 and self.lastdata ~= data.index then
-			self.Active = lib.table.deepclone(data.var)
-			self.lastdata = data.index
-			self.movabletype = data.var.type
-		end
-		if not self.clerkmode then
-			DrawMarker(21, data.coords.x, data.coords.y, data.coords.z, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
-		end
-		if not textui and data.distance < drawdist then textui = true self.OxlibTextUi("Press [E] "..msg) elseif data.distance > drawdist+1 and textui then textui = false data.onExit() end
-		if data.distance < drawdist and IsControlJustReleased(0,38) and not shopboss or auto then
-			LocalPlayer.state.invOpen = callback == self.OpenShop and true
-			 
-			callback(data.var)
-			while LocalPlayer.state.invOpen and callback == self.OpenShop and shared.inventory == 'ox_inventory' do
-				TriggerEvent('ox_inventory:closeInventory')
-				Wait(10)
-			end
-			if callback == self.OpenShop then
-				TriggerScreenblurFadeIn(0)
-				Wait(1000)
-				if self.shopopen then
-					SetNuiFocus(true,true)
-					SetNuiFocusKeepInput(false)
-				end
-			end
-			if delete and data.remove then
-				data:remove()
-			end
-		end
+		local data = self.NearestPoint(data,msg,callback,server,var,delete,auto)
 	end
+
 	SetRandomSeed(GetGameTimer()+math.random(1,99))
 	local sphere = lib.zones.sphere({ index = GetRandomIntInRange(1,9999) ,var = lib.table.deepclone(var) , coords = coord, radius = 10, debug = false, inside = inside, onEnter = onEnter, onExit = onExit })
 	table.insert(self.Spheres,sphere)
@@ -217,6 +259,7 @@ self.LoadShops = function()
 	if self.PlayerData.identifier == nil then return end
 	for name,shops in pairs(shared.OwnedShops) do
 		for k,shop in pairs(shops) do
+			shop.type = 'storeowner'
 			local storedata = self.StoreData(shop.label)
 			if type(self.temporalspheres[shop.label]) == 'table' and self.temporalspheres[shop.label].remove then
 				self.temporalspheres[shop.label]:remove()
@@ -229,10 +272,10 @@ self.LoadShops = function()
 				shop.shopIndex = k
 				if not shared.target then
 					local spheres = self.Add(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
-					self.temporalspheres[shop.label] = {spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
+					self.temporalspheres[shop.label] = {spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label, type = 'storeowner'}
 				else
 					local id = self.addTarget(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
-					self.temporalspheres[shop.label] = {target = id, spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
+					self.temporalspheres[shop.label] = {target = id, spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label, type = 'storeowner'}
 				end
 			elseif storedata and storedata?.owner == self.PlayerData.identifier 
 				or storedata and storedata.employee[self.PlayerData.identifier] or shop.groups and self.PlayerData?.job?.name == self.GetJobFromData(shop.groups) then
