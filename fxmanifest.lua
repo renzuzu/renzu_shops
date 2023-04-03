@@ -14,18 +14,19 @@ shared_script '@renzu_shield/init.lua'
 shared_scripts {
 	'@ox_lib/init.lua',
 	'data/*.lua',
-	'init.lua',
 }
 ui_page {
     'web/index.html',
 }
 
 client_scripts {
-	'client/main.lua'
+	'client/main.lua',
+	'init.lua',
 }
 
 server_scripts {
 	'@oxmysql/lib/MySQL.lua',
+	'init.lua',
 	'server/*.lua'
 }
 
