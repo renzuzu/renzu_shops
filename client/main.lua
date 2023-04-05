@@ -67,7 +67,7 @@ self.LoadDefaultShops = function()
 					shop.AttachmentsCustomiseOnly = ownedshopdata and ownedshopdata.AttachmentsCustomiseOnly
 					shop.labelname = k..'_'..shopindex
 					shop.playertoplayer = ownedshopdata and ownedshopdata.playertoplayer
-					shop.moneytype = ownedshopdata and ownedshopdata.moneytype
+					shop.moneytype = ownedshopdata and ownedshopdata.moneytype or shop.moneytype
 					if shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.labelname]) == 'table' and self.temporalspheres[shop.labelname].remove then
 						self.temporalspheres[shop.labelname]:remove()
 					elseif shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.StoreName]) == 'number' and shared.target then
@@ -2180,7 +2180,7 @@ self.Handlers = function()
 				total = total + tonumber(itemdata[v.data.metadata and v.data.metadata.name or v.data.name].price) * tonumber(v.count)
 			end
 
-			data.type = self.PaymentMethod({amount = total, total = totalamount, type = self.Active.shop.type, name = self.Active.shop.StoreName, money = self.Active?.shop?.moneytype}) or self.Active?.shop?.moneytype or 'money'
+			data.type = self.PaymentMethod({amount = total, total = totalamount, type = self.Active.shop.type, name = self.Active.shop.StoreName, money = self.Active?.shop?.moneytype or 'money'}) or self.Active?.shop?.moneytype or 'money'
 			if data.type == 'cancel' then return end
 			local financedata
 			if data.type == 'finance' then
