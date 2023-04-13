@@ -1104,7 +1104,7 @@ end
 local robbers = {}
 lib.callback.register("renzu_shops:canrobstore", function(source,data)
 	local rob = GlobalState.RobableStore
-	if not rob[data.store] and Priority() or rob[data.store] <= os.time() and Priority() then
+	if not rob[data.store] and Priority() or rob[data.store] and rob[data.store] <= os.time() and Priority() then
 		robbers[source] = true
 		data.coord = GetEntityCoords(GetPlayerPed(source))
 		RobNotification(data)
