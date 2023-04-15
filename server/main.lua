@@ -1417,7 +1417,7 @@ lib.callback.register("renzu_shops:createshoporder", function(source,data)
 	local amount = data.item.price * data.amount * shared.discount
 	if tonumber(stores[data.store].money[data.moneytype]) >= amount then
 		stores[data.store].money[data.moneytype] = tonumber(stores[data.store].money[data.moneytype]) - amount
-		local type = data.type or 'item'
+		local type = data.ShopType or 'item'
 		local randompoints = shared.deliverypoints[type][math.random(1,#shared.deliverypoints[type])]
 		data.item.amount = data.amount
 		local t = {type = type, id = math.random(9999,999999), point = randompoints, item = data.item, amount = amount, moneytype = data.moneytype}

@@ -3,13 +3,13 @@
 		[1] = {
 			--groups = 'police',
 			moneytype = 'money',
-			type = 'vehicle',
+			ShopType = 'vehicle',
 			label = 'Premium Deluxe Motorsports',
 			coord = vec3(-30.46854019165,-1106.2268066406,26.247138977051),
 			purchase = vec4(-30.913764953613,-1089.8571777344,25.747234344482,334.17758178711),
 			spawn = vec4(-46.073593139648,-1094.2202148438,25.748180389404,133.15704345703),
 			restock = vec4(-47.952449798584,-1075.3367919922,26.63140296936,70.053443908691),
-		--	cashier = vec3(-55.57,-1097.97,26.42),
+			--	cashier = vec3(-55.57,-1097.97,26.42),
 			blip = {
 				id = 402, colour = 69, scale = 0.8
 			},
@@ -42,7 +42,7 @@
 	[2] = {
 		--groups = 'police',
 		moneytype = 'money',
-		type = 'vehicle',
+		ShopType = 'vehicle',
 		label = 'Premium Deluxe Motorsports Patoche',
 		coord = vec3(-1248.3510742188,-350.24868774414,37.33287),
 		purchase = vec4(-1231.9196777344,-349.27304077148,36.66028213501,30.436424255371),
@@ -87,7 +87,7 @@
 		marker = true,
 
 		moneytype = 'money',
-		type = 'vehicle',
+		ShopType = 'vehicle',
 		label = 'Premium Boat Shop',
 		coord = vec3(-753.24609375,-1512.6853027344,4.9496669769287),
 		purchase = vec4(-797.05767822266,-1503.3923339844,0.41423982381821,104.68099975586),
@@ -109,7 +109,7 @@
 		marker = true,
 		groups = 'police',
 		moneytype = 'money',
-		type = 'vehicle',
+		ShopType = 'vehicle',
 		label = 'Police Vehicle',
 		coord = vec3(0.0,0.0,0.0),
 		purchase = vec4(471.13262939453,-1011.2862548828,28.212493896484,95.421531677246),
@@ -140,7 +140,7 @@
 		marker = true,
 
 		moneytype = 'money',
-		type = 'vehicle',
+		ShopType = 'vehicle',
 		label = 'Ems Vehicle',
 		coord = vec3(0.0,0.0,0.0),
 		purchase = vec4(1136.1715087891,-1586.9890136719,34.046848297119,147.81546020508),
@@ -167,7 +167,7 @@
 		marker = true,
 
 		moneytype = 'money',
-		type = 'vehicle',
+		ShopType = 'vehicle',
 		label = 'Mechanic Vehicle',
 		coord = vec3(0.0,0.0,0.0),
 		purchase = vec4(-391.08364868164,-122.03777313232,38.015823364258,300.07522583008),
