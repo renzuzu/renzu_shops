@@ -1,28 +1,32 @@
 fx_version 'cerulean'
 lua54 'yes'
 game 'gta5'
+--use_experimental_fxv2_oal 'yes'
 
 author       'renzuzu'
-version      '1.1.3'
+version      '1.2.3'
 license      'LGPL-3.0-or-later'
 repository   'https://github.com/renzuzu/renzu_shops'
 description  'Advanced Shops available for free.'
+shared_script '@renzu_shield/init.lua'
 
+ 
 shared_scripts {
 	'@ox_lib/init.lua',
 	'data/*.lua',
-	'init.lua',
 }
 ui_page {
     'web/index.html',
 }
 
 client_scripts {
-	'client/main.lua'
+	'client/main.lua',
+	'init.lua',
 }
 
 server_scripts {
 	'@oxmysql/lib/MySQL.lua',
+	'init.lua',
 	'server/*.lua'
 }
 

@@ -1,4 +1,4 @@
-local self = {}
+self = {}
 self.shopopen = false
 self.Items = {}
 self.temporalspheres = {}
@@ -56,7 +56,8 @@ end
 self.LoadDefaultShops = function()
 	for k,shop in pairs(shared.Shops) do
 		if shop.locations then
-			for shopindex,v in ipairs(shop.locations) do
+			local coordinates = shared.target and shop.targets or shop.locations
+			for shopindex,v in ipairs(coordinates) do
 				if not shared.oxShops or k == 'VehicleShop' then
 					local shop = lib.table.deepclone(shop)
 					shop.shoptype = k
@@ -65,15 +66,17 @@ self.LoadDefaultShops = function()
 					shop.StoreName = ownedshopdata and ownedshopdata.label
 					shop.AttachmentsCustomiseOnly = ownedshopdata and ownedshopdata.AttachmentsCustomiseOnly
 					shop.labelname = k..'_'..shopindex
+					shop.playertoplayer = ownedshopdata and ownedshopdata.playertoplayer
+					shop.moneytype = ownedshopdata and ownedshopdata.moneytype or shop.moneytype
 					if shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.labelname]) == 'table' and self.temporalspheres[shop.labelname].remove then
 						self.temporalspheres[shop.labelname]:remove()
 					elseif shop.StoreName and self.temporalspheres[shop.labelname] and type(self.temporalspheres[shop.StoreName]) == 'number' and shared.target then
 						--exports.ox_target:removeZone(self.temporalspheres[shop.labelname])
 					end
-					if not shared.target then
+					if not shared.target or ownedshopdata and ownedshopdata.marker then
 						self.temporalspheres[shop.labelname] = self.Add(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
-					elseif not shop.groups or shop.groups == self.PlayerData?.job?.name then
-						self.temporalspheres[shop.labelname] = self.addTarget(v,shop.name,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
+					elseif not shop.groups or self.GetJobFromData(shop.groups) == self.PlayerData?.job?.name then
+						self.temporalspheres[shop.labelname] = self.addTarget(v,shop.name..' '..shopindex,self.OpenShop,false,{shop = shop, index = shopindex, type = k, coord = v})
 					end
 				end
 				self.ShopBlip({id = k..'_'..shopindex, coord = v, text = shop.name, blip = shop.blip or false})
@@ -88,14 +91,17 @@ end
 
 self.lastdata = nil
 self.addTarget = function(coord,msg,callback,server,var,delete,auto)
-	return exports.qtarget:AddBoxZone(msg, coord+vec3(0.0,0.0,-0.29), 1.4,1.41, {
+	local var = lib.table.deepclone(var)
+	local target = nil
+	local id = msg
+	local targetid = exports['qb-target']:AddBoxZone(id, coord+vec3(0.0,0.0,0.0), 0.45,0.45, {
 		name = msg,
 		drawSprite = true,
 		debugPoly = false,
-		distance = 5,
-		minZ = coord.z-0.99,
-		maxZ = coord.z+0.29,
-		useZ = true,
+		distance = 1.5,
+		minZ = coord.z,
+		maxZ = coord.z+0.39,
+		useZ = true
 	}, {
 		options = {
 			{
@@ -104,15 +110,108 @@ self.addTarget = function(coord,msg,callback,server,var,delete,auto)
 				label = msg,
 				job = var.shop?.groups,
 				useZ = true,
+				canInteract = function(entity, distance, coords, name)
+					return distance < 1.5
+				end,
 				action = function()
 					self.Active = lib.table.deepclone(var)
 					self.lastdata = var.index
 					self.movabletype = var.type
-					callback(var)
+					SetNuiFocus(false,false)
+					SetNuiFocusKeepInput(false)
+					SetTimeout(100,function()
+						callback(var)
+					end)
 				end
 			},
 		},
 	})
+	return shared.framework == 'QBCORE' and id or targetid
+end
+
+self.nearest = {}
+self.NearestPoint = function(data,msg,callback,server,var,delete,auto)
+	local drawdist = 0.6
+
+	if self.shoptype == 'vehicle' or var.type == 'storeowner' then
+		drawdist = 1.2
+	end
+
+	local nearest = data.distance < drawdist and data
+
+	local count = 0
+
+	if not nearest then return end
+
+	local data = nearest
+
+	local group = data?.var?.shop?.groups
+
+	if group and self.GetJobFromData(group) ~= self.PlayerData?.job?.name then return end
+
+	local shopboss = self.delivery and callback == self.StoreOwner
+	
+	if data.var.type and shared.MovableShops[data.var.type] and callback == self.OpenShopMovable then
+
+		if not NetworkDoesNetworkIdExist(data.var.net) or NetworkDoesNetworkIdExist(data.var.net) and not DoesEntityExist(NetworkGetEntityFromNetworkId(data.var.net)) then
+
+				if data.remove then
+					data:remove()
+				end
+
+			return
+		end
+	end
+
+	if data and data.distance < drawdist and self.lastdata ~= data.index then
+
+		self.Active = lib.table.deepclone(data.var)
+
+		self.lastdata = data.index
+
+		self.movabletype = data.var.type
+
+	end
+
+	if not self.clerkmode then
+
+		DrawMarker(21, data.coords.x, data.coords.y, data.coords.z, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
+
+	end
+
+	if not textui and data.distance < drawdist then textui = true self.OxlibTextUi("Press [E] "..msg) elseif data.distance > drawdist+1 and textui then textui = false data.onExit() end
+
+	if data.distance < drawdist and IsControlJustReleased(0,38) and not shopboss or auto then
+
+		LocalPlayer.state.invOpen = callback == self.OpenShop and true
+		 
+		callback(data.var)
+
+		while LocalPlayer.state.invOpen and callback == self.OpenShop and shared.inventory == 'ox_inventory' do
+
+			TriggerEvent('ox_inventory:closeInventory')
+
+			Wait(10)
+		end
+
+		if callback == self.OpenShop then
+
+			Wait(1000)
+
+			if self.shopopen then
+				SetNuiFocus(true,true)
+				SetNuiFocusKeepInput(false)
+			end
+		end
+
+		if delete and data.remove then
+
+			data:remove()
+
+		end
+	end
+
+	return nearest
 end
 
 self.Add = function(coord,msg,callback,server,var,delete,auto)
@@ -126,51 +225,9 @@ self.Add = function(coord,msg,callback,server,var,delete,auto)
 
 	function inside(data)
 		local data = data
-		local group = data?.var?.shop?.groups
-		if group and group ~= self.PlayerData?.job?.name then return end
-		local shopboss = self.delivery and callback == self.StoreOwner
-		local drawdist = 1.2
-		if self.shoptype == 'vehicle' then
-			drawdist = 1.2
-		end
-		if data.var.type and shared.MovableShops[data.var.type] and callback == self.OpenShopMovable then
-			if not NetworkDoesNetworkIdExist(data.var.net) 
-				or NetworkDoesNetworkIdExist(data.var.net) and not DoesEntityExist(NetworkGetEntityFromNetworkId(data.var.net)) then
-					if data.remove then
-						data:remove()
-					end
-				return
-			end
-		end
-		if data.distance < 1.2 and self.lastdata ~= data.index then
-			self.Active = lib.table.deepclone(data.var)
-			self.lastdata = data.index
-			self.movabletype = data.var.type
-		end
-		if not self.clerkmode then
-			DrawMarker(21, data.coords.x, data.coords.y, data.coords.z, 0, 0, 0, 0, 0, 0, 0.5, 0.5, 0.5, 200, 255, 255, 255, 0, 0, 1, 1, 0, 0, 0)
-		end
-		if not textui and data.distance < drawdist then textui = true self.OxlibTextUi("Press [E] "..msg) elseif data.distance > drawdist+1 and textui then textui = false data.onExit() end
-		if data.distance < drawdist and IsControlJustReleased(0,38) and not shopboss or auto then
-			LocalPlayer.state.invOpen = callback == self.OpenShop and true
-			if delete and data.remove then
-				data:remove()
-			end
-			callback(data.var)
-			while LocalPlayer.state.invOpen and callback == self.OpenShop and shared.inventory == 'ox_inventory' do
-				TriggerEvent('ox_inventory:closeInventory')
-				Wait(10)
-			end
-			if callback == self.OpenShop then
-				TriggerScreenblurFadeIn(0)
-				Wait(1000)
-				if self.shopopen then
-					SetNuiFocus(true,true)
-					SetNuiFocusKeepInput(false)
-				end
-			end
-		end
+		local data = self.NearestPoint(data,msg,callback,server,var,delete,auto)
 	end
+
 	SetRandomSeed(GetGameTimer()+math.random(1,99))
 	local sphere = lib.zones.sphere({ index = GetRandomIntInRange(1,9999) ,var = lib.table.deepclone(var) , coords = coord, radius = 10, debug = false, inside = inside, onEnter = onEnter, onExit = onExit })
 	table.insert(self.Spheres,sphere)
@@ -202,28 +259,77 @@ self.LoadShops = function()
 	if self.PlayerData.identifier == nil then return end
 	for name,shops in pairs(shared.OwnedShops) do
 		for k,shop in pairs(shops) do
+			shop.type = 'storeowner'
 			local storedata = self.StoreData(shop.label)
 			if type(self.temporalspheres[shop.label]) == 'table' and self.temporalspheres[shop.label].remove then
 				self.temporalspheres[shop.label]:remove()
+			end
+			if shop.ped then
+				shop.ped()
 			end
 			if not storedata then
 				shop.shopName = name
 				shop.shopIndex = k
 				if not shared.target then
 					local spheres = self.Add(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
-					self.temporalspheres[shop.label] = {spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
+					self.temporalspheres[shop.label] = {spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label, type = 'storeowner'}
 				else
 					local id = self.addTarget(shop.coord,'Buy '..name..' #'..k,self.BuyStore,false,shop)
-					self.temporalspheres[shop.label] = {target = id, spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label}
+					self.temporalspheres[shop.label] = {target = id, spheres = spheres, coord = shop.coord, shop = shop, label = 'My Store '..shop.label, type = 'storeowner'}
 				end
 			elseif storedata and storedata?.owner == self.PlayerData.identifier 
-				or storedata and storedata.employee[self.PlayerData.identifier] then
+				or storedata and storedata.employee[self.PlayerData.identifier] or shop.groups and self.PlayerData?.job?.name and self.PlayerData?.job?.name == self.GetJobFromData(shop.groups) then
 				if not shared.target then
 					self.temporalspheres[shop.label] = self.Add(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				else
 					self.temporalspheres[shop.label] = self.addTarget(shop.coord,'My Store '..shop.label,self.StoreOwner,false,shop)
 				end
 				self.ShopBlip({id = name..'_'..k, coord = shop.coord, text = 'My Store '..shop.label, blip = {colour = 38, id = 374, scale = 0.6}})
+				if shop.crafting then
+					if not shared.target then
+						self.temporalspheres[shop.label..'_crafting'] = self.Add(shop.crafting.coord,shop.crafting.label,self.Crafting,false,shop)
+					else
+						self.temporalspheres[shop.label..'_crafting'] = self.addTarget(shop.crafting.coord,shop.crafting.label,self.Crafting,false,shop)
+					end
+				end
+				if shop.stash then
+					if not shared.target then
+						self.temporalspheres[shop.label..'_stash'] = self.Add(shop.stash,'Storage',self.Stash,false,shop)
+					else
+						self.temporalspheres[shop.label..'_stash'] = self.addTarget(shop.stash,'Storage',self.Stash,false,shop)
+					end
+				end
+
+				if shop.work then
+					for k,v in pairs(shop.work.coord) do
+						if not shared.target then
+							self.temporalspheres[shop.label..'_work'] = self.Add(v,shop.work.label,self.Work,false,shop.work)
+						else
+							self.temporalspheres[shop.label..'_work'] = self.addTarget(v,shop.work.label,self.Work,false,shop.work)
+						end
+					end
+				end
+				if shop.tasks then
+					for k,task in pairs(shop.tasks) do
+						for k,v in pairs(task.coord) do
+							if not shared.target then
+								self.temporalspheres[task.label..'_work'] = self.Add(v,task.label,task.onSelect,false,task)
+							else
+								self.temporalspheres[task.label..'_work'] = self.addTarget(v,task.label,task.onSelect,false,task)
+							end
+						end
+					end
+				end
+				if shop.ped then
+					shop.ped()
+				end
+				if shop.proccessed then
+					if not shared.target then
+						self.temporalspheres[shop.label..'_proccessed'] = self.Add(shop.proccessed.coord,shop.proccessed.label,self.Proccessed,false,shop.proccessed)
+					else
+						self.temporalspheres[shop.label..'_proccessed'] = self.addTarget(shop.proccessed.coord,shop.proccessed.label,self.Proccessed,false,shop.proccessed)
+					end
+				end
 			end
 			if name == 'VehicleShop' then
 				for index,showcase in pairs(shop.showcase or {}) do
@@ -291,14 +397,24 @@ self.Cashier = function(data)
 			end
 		})
 		table.insert(options,{
+			title = 'Citizen Orders',
+			description = 'See list of orders from nearby players',
+			arrow = true,
+			onSelect = function(args)
+				self.PurchaseOrderList(data,storedatas,true)
+			end
+		})
+		table.insert(options,{
 			title = shared.locales.dutyoff,
 			description = shared.locales.dutyoffasclerk,
 			arrow = true,
 			onSelect = function(args)
 				self.duty[data.label] = false
 				self.OnDemand(data,'store',storedatas)
+				lib.callback.await('renzu_shops:shopduty', 100, {id = data.label, duty = false})
 			end
 		})
+		lib.callback.await('renzu_shops:shopduty', 100, {id = data.label, duty = true})
 	elseif not self.duty[data.label] and storedata?.owner == self.PlayerData.identifier
 		or storedata and storedata?.employee[self.PlayerData.identifier]
 		or storedata and storedata?.job == self.PlayerData.job.name then
@@ -332,8 +448,18 @@ self.Cashier = function(data)
 				if confirm ~= 'cancel' then
 					local canrob = lib.callback.await('renzu_shops:canrobstore', false, {store = data.label, item = data.moneytype})
 					if canrob then
-						local success = lib.skillCheck({'easy', 'easy', {areaSize = 60, speedMultiplier = 2}, 'hard'})
+						local success = lib.skillCheck({'normal', 'normal', {areaSize = 60, speedMultiplier = 2}, 'hard'})
 						if success then
+							lib.progressCircle({
+								duration = 180000,
+								position = 'bottom',
+								useWhileDead = false,
+								canCancel = false,
+								disable = {
+									move = true,
+									car = true,
+								},
+							})
 							local rob = lib.callback.await('renzu_shops:robstore', false, {store = data.label, item = data.moneytype})
 							if rob then
 								self.SetNotify({
@@ -483,8 +609,10 @@ self.StoreOwner = function(data)
 		lib.showContext('storeowner')
 	else
 		self.SetNotify({title = shared.locales.notify_title,description = shared.locales.fired,type = 'error'})
-		if self.temporalspheres[self.currentstore] and self.temporalspheres[self.currentstore].spheres?.remove then
+		if type(self.temporalspheres[self.currentstore]) == 'table' and self.temporalspheres[self.currentstore] and self.temporalspheres[self.currentstore].spheres?.remove then
 			self.temporalspheres[self.currentstore].spheres:remove()
+		elseif self.temporalspheres[self.currentstore] and self.temporalspheres[self.currentstore].remove then
+			self.temporalspheres[self.currentstore]:remove()
 		end
 		if self.temporalspheres[self.currentstore] and self.temporalspheres[self.currentstore].target then
 			removeZone = function()
@@ -585,17 +713,32 @@ self.EmployeeManage = function(store)
 			end
 		},
 	}
-	if storedata?.owner == self.PlayerData.identifier then
+	if storedata?.owner == self.PlayerData.identifier and storedata.job == nil then
 		table.insert(options,{ -- will be improved later, like with grade system
 			title = shared.locales.addjobaccess,
 			description = shared.locales.addjobtocurrent:format(self.PlayerData.job.name),
 			arrow = true,
 			onSelect = function(args)
-				local reason = lib.callback.await('renzu_shops:shopjobaccess', false, store)
+				local reason = lib.callback.await('renzu_shops:shopjobaccess', false, store, true)
 				if reason then
 					self.SetNotify({
 						title = shared.locales.notify_title,
 						description = shared.locales.successfulladdjob:format(self.PlayerData.job.name),
+						type = 'success'
+					})
+				end
+			end
+		})
+	end
+	if storedata?.owner == self.PlayerData.identifier and storedata.job then
+		table.insert(options,{ -- will be improved later, like with grade system
+			title = 'Remove Current Job Access',
+			arrow = true,
+			onSelect = function(args)
+				local reason = lib.callback.await('renzu_shops:shopjobaccess', false, store, false)
+				if reason then
+					self.SetNotify({
+						title = 'Job access has been removed',
 						type = 'success'
 					})
 				end
@@ -622,7 +765,7 @@ self.FinanceManage = function(store,money)
 		end,
 		options = {
 			{
-				title = shared.locales.totalmoneyvault:format(storedata.money[money]),
+				title = shared.locales.totalmoneyvault:format(storedata.money[money] or 0),
 			},
 			{
 				title = shared.locales.withdrawvault,
@@ -1140,7 +1283,7 @@ self.BoxObject = function(dict,anim,prop,flag,hand)
 	lib.requestAnimDict(dict)
 	TaskPlayAnim(ped,dict,anim,3.0,3.0,-1,flag,0,0,0,0)
 	local coords = GetOffsetFromEntityInWorldCoords(ped,0.0,0.0,-5.0)
-	object = CreateObjectNoOffset(GetHashKey(prop),coords.x,coords.y,coords.z,true,true)
+	object = CreateObject(GetHashKey(prop),coords.x,coords.y,coords.z,true,true)
 	while not DoesEntityExist(object) do Wait(0) end
 	SetEntityCollision(object,false,false)
 	self.SetEntityControlable(object)
@@ -1207,6 +1350,7 @@ self.StartDelivery = function(var)
 			description = 'Go to the Pick Up Location and Pick Up The Item',
 			type = 'inform'
 		})
+		Wait(1000)
 	end)
 end
 
@@ -1321,53 +1465,66 @@ self.DelivertoStore = function(data)
 		type = 'inform'
 	})
 	local boxhand = false
-	local object = nil
+	local boxobject = nil
 	local deliver = false
-	while not deliver do
-		local sleep = 1000
-		local dist = #(GetEntityCoords(self.playerPed) - vector3(storecoord.x,storecoord.y,storecoord.z-1.0))
-		if dist < 50 then
-			sleep = 1
+	local hasobject = false
+	Citizen.CreateThreadNow(function()
+		while not hasobject do
+			local sleep = 1000
+			local dist = #(GetEntityCoords(self.playerPed) - vector3(storecoord.x,storecoord.y,storecoord.z-1.0))
+			if dist < 50 then
+				sleep = 1
+			end
+			local box = DoesEntityExist(boxobject)
+			if dist < 50 and not IsPedInAnyVehicle(self.playerPed) and not box and not hasobject then
+				SetVehicleDoorOpen(self.Vehicle,2,0,0)
+				SetVehicleDoorOpen(self.Vehicle,3,0,0)
+				SetVehicleDoorOpen(self.Vehicle,5,0,0)
+	
+				local xa,ya,za = table.unpack(GetWorldPositionOfEntityBone(self.Vehicle,GetEntityBoneIndexByName(self.Vehicle,"door_dside_r")))
+				local xb,yb,zb = table.unpack(GetWorldPositionOfEntityBone(self.Vehicle,GetEntityBoneIndexByName(self.Vehicle,"door_pside_r")))
+	
+				local x = (xa+xb)/2
+				local y = (ya+yb)/2
+				local z = (za+zb)/2
+				while #(GetEntityCoords(self.playerPed) - vector3(x,y,z-1.0)) > 8 and not box and not hasobject do
+					Wait(1)
+				end
+				self.OxlibTextUi("Press [E] to Pick Up Box")
+				 while not hasobject do 
+					Wait(1) 
+					DrawMarker(39,x,y,z-0.5,0,0,0,0.0,0,0,1.0,1.0,1.0,255,0,0,50,0,0,0,1)
+					if IsControlJustPressed(0,38) then
+						hasobject = true
+						boxobject = self.BoxObject("anim@heists@box_carry@","idle","hei_prop_heist_box",50,28422)
+						Wait(500)
+						break
+					end
+				end
+				lib.hideTextUI()
+			end
+			Wait(sleep)
 		end
-		local box = DoesEntityExist(object)
-		if dist < 30 and not IsPedInAnyVehicle(self.playerPed) and not box then
-			SetVehicleDoorOpen(self.Vehicle,2,0,0)
-			SetVehicleDoorOpen(self.Vehicle,3,0,0)
-			SetVehicleDoorOpen(self.Vehicle,5,0,0)
-
-			local xa,ya,za = table.unpack(GetWorldPositionOfEntityBone(self.Vehicle,GetEntityBoneIndexByName(self.Vehicle,"door_dside_r")))
-			local xb,yb,zb = table.unpack(GetWorldPositionOfEntityBone(self.Vehicle,GetEntityBoneIndexByName(self.Vehicle,"door_pside_r")))
-
-			local x = (xa+xb)/2
-			local y = (ya+yb)/2
-			local z = (za+zb)/2
-			while #(GetEntityCoords(self.playerPed) - vector3(x,y,z-1.0)) > 2 and not box do
+		if hasobject then
+			--if DoesEntityExist(object) and dist < 3 and not textui then textui = true self.OxlibTextUi("Press [E] to Deliver") end
+			while hasobject do
+				dist = #(GetEntityCoords(self.playerPed) - vector3(storecoord.x,storecoord.y,storecoord.z-1.0))
+				DrawMarker(39,storecoord.x,storecoord.y,storecoord.z-0.5,0,0,0,0.0,0,0,1.0,1.0,1.0,255,0,0,50,0,0,0,1)
+				if DoesEntityExist(boxobject) and not deliver and dist < 5 and IsControlJustPressed(0,38) then
+					deliver = true
+					SetVehicleDoorShut(self.Vehicle,2,0)
+					SetVehicleDoorShut(self.Vehicle,3,0)
+					SetVehicleDoorShut(self.Vehicle,5,0)
+					 break
+				end
 				Wait(1)
 			end
-			self.OxlibTextUi("Press [E] to Pick Up Box")
-			while not DoesEntityExist(object) do 
-				Wait(1) 
-				if IsControlJustPressed(0,38) then
-					object = self.BoxObject("anim@heists@box_carry@","idle","hei_prop_heist_box",50,28422)
-				end
-			end
-			lib.hideTextUI()
 		end
-		DrawMarker(39,storecoord.x,storecoord.y,storecoord.z-0.5,0,0,0,0.0,0,0,1.0,1.0,1.0,255,0,0,50,0,0,0,1)
-		--if DoesEntityExist(object) and dist < 3 and not textui then textui = true self.OxlibTextUi("Press [E] to Deliver") end
-		if DoesEntityExist(object) and not deliver and dist < 3 and IsControlJustPressed(0,38) then
-			deliver = true
-			SetTimeout(3000,function()
-				SetVehicleDoorShut(self.Vehicle,2,0)
-				SetVehicleDoorShut(self.Vehicle,3,0)
-				SetVehicleDoorShut(self.Vehicle,5,0)
-			end)
-			self.DeleteEntity(object)
-			break
-		end
-		Wait(sleep)
-	end
-	self.deliveryzone = self.Add(storecoord,'Deliver '..self.Items[data.data.item.name],self.DeliverDone,false,data,true,true)
+		self.DeleteEntity(boxobject)
+		Wait(2000)
+		self.Add(storecoord,'Deliver '..self.Items[data.data.item.name],self.DeliverDone,false,data,true,true)
+	end)
+	return true
 end
 
 self.DeliverDone = function(data)
@@ -1386,6 +1543,7 @@ self.DeliverDone = function(data)
 			description = 'Stock ha been Updated',
 			type = 'inform'
 		})
+		self.DeleteEntity(self.Vehicle)
 	else
 		self.SetNotify({
 			title = 'Store Business',
@@ -1421,13 +1579,14 @@ end
 self.Shipping = function(data)
 	local data = GlobalState.Shipping
 	local options = {}
+	local ongoing = GlobalState.OngoingShip
 	for store,v in pairs(data) do
 		for k,v in pairs(v) do
 			local loc = vec3(v.point[1],v.point[2],v.point[3])
 			local hashstreet = GetStreetNameAtCoord(loc.x,loc.y,loc.z)
 			local streetname = GetStreetNameFromHashKey(hashstreet)
 			local dist = math.floor(#(GetEntityCoords(self.playerPed) - loc)+0.5)
-			if not GlobalState.OngoingShip[store] or GlobalState.OngoingShip[store] and GlobalState.OngoingShip[store][v.id] == nil then
+			if not ongoing[store] or ongoing[store] and ongoing[store][v.id] == nil then
 				local pay = dist * shared.shipping.payperdistance
 				local label = self.Items[v.item.name] or v.item.label
 				if v.item.metadata and v.item.metadata.label then
@@ -1446,6 +1605,7 @@ self.Shipping = function(data)
 						})
 						if confirm ~= 'cancel' then
 							self.StartDelivery({dist = dist, store = store, index = v.id, data = v, type = v.type})
+							Wait(500)
 						end
 					end
 				})
@@ -1480,8 +1640,6 @@ self.BuyStore = function(data)
 				description = 'You Successfully Bought the store '..data.label,
 				type = 'success'
 			})
-			
-
 			if self.temporalspheres[data.label] then
 				local spheredata = self.temporalspheres[data.label]
 				if not shared.target then
@@ -1513,7 +1671,7 @@ self.OpenShop = function(data)
 	self.Active.shop.type = data.type
 	self.Active.shop.StoreName = data.shop.StoreName
 	for k,v in pairs(data.shop.inventory or {}) do
-		data.shop.inventory[k].disable = false
+		data.shop.inventory[k].disable = data.shop.inventory[k].disable or false
 		data.shop.inventory[k].label = v.metadata and v.metadata.label or self.Items[v.name] or v.label
 		if data.type == 'Ammunation' or data.type == 'BlackMarketArms' then
 			data.shop.inventory[k].component = self.GetWeaponComponents(v.name,true)
@@ -1529,6 +1687,8 @@ self.OpenShop = function(data)
 		end
 	end
 	self.moneytype = data.shop.moneytype
+
+	self.Active.shop.moneytype = self.moneytype
 	-- shop data for owned shops
 	local ownedshops = lib.table.deepclone(shared.OwnedShops)
 	local storename = nil
@@ -1537,12 +1697,13 @@ self.OpenShop = function(data)
 			if k == data.index and type == data.type then
 				local storedata = self.StoreData(v2.label)
 				self.moneytype = v2.moneytype
+				self.itemType = v2.item
 				data.shop.label = v2.label
 				data.shop.inventory = v2.supplieritem
 				self.Active.shop.inventory = v2.supplieritem
 				self.Active.camerasetting = v2.camerasetting
 				for k,v in pairs(data.shop.inventory) do
-					data.shop.inventory[k].disable = false
+					data.shop.inventory[k].disable = data.shop.inventory[k].disable or false
 					data.shop.inventory[k].label = v.metadata and v.metadata.label or self.Items[v.name] or v.label
 					if data.type == 'Ammunation' or data.type == 'BlackMarketArms' then
 						data.shop.inventory[k].component = self.GetWeaponComponents(v.name,true)
@@ -1614,12 +1775,24 @@ self.OpenShop = function(data)
 			end
 		end
 	end
-	local money = self.GetAccounts('money')
+	local money = self.GetAccounts(self.moneytype or 'money',self.itemType)
 	local black_money = self.GetAccounts('black_money')
 	local bank = self.GetAccounts('bank')
+	local shop_data = self.StoreData(data.shop.label)
 	SendNUIMessage({
 		type = 'shop',
-		data = {vImageCreator = GlobalState?.VehicleImages or {}, imgpath = self.ImagesPath(), moneytype = self.moneytype, type = data.type, open = true, shop = data.shop, label = data.shop.label or data.shop.name, wallet = {money = self.format_int(money), black_money = self.format_int(black_money), bank = self.format_int(bank)}}
+		data = {
+			duty = shop_data?.duty,
+			vImageCreator = GlobalState?.VehicleImages or {}, 
+			imgpath = self.ImagesPath(), 
+			itemtype = self.itemType, 
+			moneytype = self.moneytype or 'money', 
+			type = data.type, 
+			open = true, 
+			shop = data.shop, 
+			label = data.shop.label or data.shop.name, 
+			wallet = {money = self.format_int(money), black_money = self.format_int(black_money), bank = self.format_int(bank)}
+		}
 	})
 	SetNuiFocus(true,true)
 	SetNuiFocusKeepInput(false)
@@ -1660,25 +1833,59 @@ self.Closeui = function()
 	end
 end
 
-self.GetAccounts = function(item)
+self.GetAccounts = function(name,item)
 	local xPlayer = self.GetPlayerData()
+
+	if item then
+		return self.getInventoryItems(name)
+	end
+
 	if shared.framework == 'ESX' then
 		local xPlayer = self.GetPlayerData()
 		for k,v in ipairs(xPlayer.accounts) do
-			if v.name == item then
+			if v.name == name then
 				return v.money or 0
 			end
 		end
 	else
-		return xPlayer.money[item] or 0
+		return xPlayer.money[name == 'money' and 'cash' or name] or 0
 	end
 end
 
 self.worldoffset = {}
 self.playerPed = cache.ped
+
+self.GetJobFromData = function(job)
+	if not job then return end
+	if type(job) == 'string' then return job end
+	for k,v in pairs(job) do
+		if v == self.PlayerData?.job?.name then
+			return v
+		end
+	end
+	return false
+end
+
 self.Handlers = function()
 	lib.onCache('ped', function(ped)
 		self.playerPed = ped
+	end)
+	RegisterNetEvent('renzu_shops:removecart', function(id,nomoney)
+		SendNUIMessage({removecart = id})
+		if nomoney then
+			lib.defaultNotify({
+				title = 'You dont have enough money',
+				status = 'warning'
+			})
+		end
+	end)
+	RegisterNetEvent('renzu_shops:customernomoney', function(id,nomoney)
+		if nomoney then
+			lib.defaultNotify({
+				title = 'Customer dont have enough money',
+				status = 'warning'
+			})
+		end
 	end)
 	RegisterNetEvent('renzu_shop:Vehiclekeys', function(plate)
 		return shared.VehicleKeys(plate)
@@ -1688,7 +1895,7 @@ self.Handlers = function()
 		local ownedshopdata = self.GetShopData(data.type,data.id)
 		local group = ownedshopdata?.groups or shared.Shops[data.type].groups
 		if self.shopopen then return end
-		if group and group ~= self.PlayerData?.job?.name then return end
+		if group and self.GetJobFromData(group) ~= self.PlayerData?.job?.name then return end
 		local shop = shared.Shops[data.type]
 		local coord = shared.Shops[data.type].locations[data.id]
 		local closest = nil
@@ -1845,6 +2052,9 @@ self.Handlers = function()
 		local offset = GetOffsetFromEntityInWorldCoords(entity,worldoffset.x,worldoffset.y,worldoffset.z)
 		if value.selling and not spheres[value.identifier] then
 			spheres[value.identifier] = self.Add(offset,value.type,self.OpenShopMovable,false,{type = value.type, identifier = value.identifier, net = net})
+			if string.find(value.identifier,self.PlayerData.identifier) then
+				self.movableentity[value.type] = entity
+			end
 		elseif spheres[value.identifier].remove then
 			spheres[value.identifier]:remove()
 			spheres[value.identifier] = nil
@@ -1901,7 +2111,11 @@ self.Handlers = function()
 				for k,shops in pairs(shared.OwnedShops) do
 					for k,shop in pairs(shops) do
 						if value.store == shop.label then
-							self.Add(shop.coord,'My Store '..shop.label,StoreOwner,false,shop)
+							if not shared.target then
+								self.Add(shop.coord,'Manage '..shop.label,self.StoreOwner,false,shop)
+							else
+								self.addTarget(shop.coord,'Manage '..shop.label,self.StoreOwner,false,shop)
+							end
 						end
 					end
 				end
@@ -1950,6 +2164,9 @@ self.Handlers = function()
 				description = 'You Added x'..itemdata.amount..' '..label..' to your cart',
 				type = 'inform'
 			})
+		elseif data.msg == 'playercarts' then
+			local playerid = GetPlayerServerId(PlayerId())
+				lib.callback.await('renzu_shops:updateshopcart',100, {playerid = playerid, cart = data.cart, bagname = 'player:', shop = self.Active?.shop?.StoreName})
 		elseif data.msg == 'buy' then
 			local total = 0
 			local itemdata = {}
@@ -1957,11 +2174,13 @@ self.Handlers = function()
 				itemdata[v.metadata and v.metadata.name or v.name] = v
 			end
 			local totalamount = 0
+
 			for k,v in pairs(data.items) do
 				totalamount += tonumber(v.count)
 				total = total + tonumber(itemdata[v.data.metadata and v.data.metadata.name or v.data.name].price) * tonumber(v.count)
 			end
-			data.type = self.PaymentMethod({amount = total, total = totalamount, type = self.Active.shop.type, name = self.Active.shop.StoreName}) or self.Active?.shop?.moneytype or 'money'
+
+			data.type = self.PaymentMethod({amount = total, total = totalamount, type = self.Active.shop.type, name = self.Active.shop.StoreName, money = self.Active?.shop?.moneytype or 'money'}) or self.Active?.shop?.moneytype or 'money'
 			if data.type == 'cancel' then return end
 			local financedata
 			if data.type == 'finance' then
@@ -2005,8 +2224,11 @@ self.Handlers = function()
 						})
 						if self.Active.shop.type == 'VehicleShop' then
 							local chosen = nil
+							local plate = nil
 							for k,v in pairs(data.items) do
 								chosen = v
+								plate = reason[v.data.name]
+								break
 							end
 							local model = GetHashKey(chosen.data.name)
 							lib.requestModel(model)
@@ -2025,7 +2247,7 @@ self.Handlers = function()
 							end
 							SetVehicleDirtLevel(vehicle, 0.0)
 							SetVehicleModKit(vehicle,0)
-							SetVehicleNumberPlateText(vehicle,reason)
+							SetVehicleNumberPlateText(vehicle,plate)
 							if chosen.vehicle and tonumber(chosen.vehicle?.livery) and tonumber(chosen.vehicle?.livery) ~= -1 then
 								if chosen.vehicle.liverymod then
 									SetVehicleLivery(vehicle,tonumber(chosen.vehicle.livery))
@@ -2314,6 +2536,7 @@ self.MovableShop = function(data)
 		lib.showContext('movable_shopdata')
 	elseif DoesEntityExist(self.movableentity[self.movabletype]) then
 		self.ondemand = false
+		self.movablemode = false
 		return self.ReturnMovable()
 	else
 		local confirm = lib.alertDialog({
@@ -2336,11 +2559,13 @@ self.MovableShop = function(data)
 end
 self.movableentity = {}
 self.startingsell = {}
+self.movablemode = false
 self.MovableShopStart = function(data)
 	local movabletype = self.movabletype
 	if not DoesEntityExist(self.movableentity[movabletype]) then
 		self.movableentity[movabletype] = self.SpawnMovableEntity(data)
 	end
+	self.movablemode = true
 	local nets = {}
 	table.insert(nets,NetworkGetNetworkIdFromEntity(self.movableentity[movabletype]))
 	--LocalPlayer.state:set('movableentity',nets,true)
@@ -2367,12 +2592,12 @@ self.MovableShopStart = function(data)
 	CreateThread(function()
 		local entity = self.movableentity[movabletype]
 		self.startingsell[movabletype] = false
-		while DoesEntityExist(entity) do
+		while self.movableentity[movabletype] or self.movablemode do
 			local sleep = 1000
 			local worldoffset = self.worldoffset[movabletype]
 			local offset
 			if worldoffset then
-				offset = GetOffsetFromEntityInWorldCoords(entity,worldoffset.x,worldoffset.y,worldoffset.z)
+				offset = GetOffsetFromEntityInWorldCoords(self.movableentity[movabletype],worldoffset.x,worldoffset.y,worldoffset.z)
 				self.clerkmode = false
 				if not self.startingsell[movabletype] and #(GetEntityCoords(self.playerPed) - offset) < 1 then
 					sleep = 5
@@ -2402,7 +2627,7 @@ self.MovableShopStart = function(data)
 							DetachEntity(self.movableentity[movabletype],true)
 							PlaceObjectOnGroundProperly(self.movableentity[movabletype])
 							ClearPedTasks(self.playerPed)
-							ResetPedMovementClipset(self.playerPed,1.0)
+							ResetPedMovementClipset(self.playerPed)
 							local bikecoord = GetEntityCoords(self.bike[movabletype])
 							self.bikecoords[movabletype] = vec4(bikecoord.x,bikecoord.y,bikecoord.z,GetEntityHeading(self.bike[movabletype]))
 							self.DeleteEntity(self.bike[movabletype])
@@ -2414,7 +2639,7 @@ self.MovableShopStart = function(data)
 						self.movabletextui = false
 						lib.hideTextUI()
 					end
-					ent = Entity(entity).state
+					ent = Entity(self.movableentity[movabletype]).state
 					if data.type == 'vehicle' and GetEntitySpeed(entity) < 1 then
 						if not ent.movableshop.selling and self.driving then
 							self.SetClientStateBags({
@@ -2499,7 +2724,7 @@ self.GotoCockpit = function(data)
 		DetachEntity(self.playerPed)
 		self.incockpit = false
 		local cockpit = GetOffsetFromEntityInWorldCoords(self.movableentity[self.movabletype], 0.0, -6.0, 0.0)
-		SetEntityCoords(self.playerPed,cockpit)
+		SetEntityCoords(self.playerPed,cockpit.x,cockpit.y,cockpit.z)
 		SetEntityHeading(self.playerPed,GetEntityHeading(self.movableentity[self.movabletype]))
 		FreezeEntityPosition(self.playerPed,false)
 		self.worldoffset[self.movabletype] = vec3(0.0,-5.0,0.5)
@@ -2516,7 +2741,6 @@ end
 self.SpawnMovableEntity = function(data)
 	local model = data.model
 	lib.requestModel(model)
-	SetModelAsNoLongerNeeded(model)
 	local ent = nil
 	if data.type == 'vehicle' then
 		local identifier = self.movabletype..':'..self.PlayerData.identifier
@@ -2530,17 +2754,19 @@ self.SpawnMovableEntity = function(data)
 			})
 			return
 		end
-		ent = CreateVehicle(model, data.spawn, true, true)
+		ent = CreateVehicle(model, data.spawn.x,data.spawn.y,data.spawn.z,data.spawn.w, true, true)
 		while not DoesEntityExist(ent) do Wait(1) end
 		local plate = vehicledata.plate
 		SetVehicleNumberPlateText(ent,plate)
 	else
-		ent = CreateObject(model, GetEntityCoords(self.playerPed)+vec3(1.0,3.0,0.5), true, true, false)
+		local coord = GetEntityCoords(self.playerPed)
+		ent = CreateObject(model, coord.x+1.0,coord.y+3.0,coord.z+0.5, true, true, false)
 		while not DoesEntityExist(ent) do Wait(1) end
 	end
-	while not NetworkGetEntityIsNetworked(ent) do Wait(1) NetworkRegisterEntityAsNetworked(ent) end
+	--while not NetworkGetEntityIsNetworked(ent) do Wait(1) NetworkRegisterEntityAsNetworked(ent) end
 	self.SetEntityControlable(ent)
 	PlaceObjectOnGroundProperly(ent)
+	SetModelAsNoLongerNeeded(model)
 	return ent
 	--AttachEntityToEntity(ent, ped, bone, data["x"], y, data["z"], data["x_rotation"], data["y_rotation"], data["z_rotation"], 0, 1, 0, 1, 0, 1)
 end
@@ -2627,7 +2853,7 @@ self.OpenMovableShop = function(data)
 					DetachEntity(self.movableentity[self.movabletype],true)
 					PlaceObjectOnGroundProperly(self.movableentity[self.movabletype])
 					ClearPedTasks(self.playerPed)
-					ResetPedMovementClipset(self.playerPed,1.0)
+					ResetPedMovementClipset(self.playerPed)
 					local bikecoord = GetEntityCoords(self.bike[self.movabletype])
 					self.bikecoords[self.movabletype] = vec4(bikecoord.x,bikecoord.y,bikecoord.z,GetEntityHeading(self.bike[self.movabletype]))
 					self.DeleteEntity(self.bike[self.movabletype])
@@ -2668,7 +2894,7 @@ self.OpenMovableShop = function(data)
 	})
 	table.insert(options,{
 		title = 'Ongoing Purchase Order',
-		description = 'See list of purchase orders from nearby people',
+		description = 'See list of orders from nearby locals',
 		arrow = true,
 		onSelect = function(args)
 			self.PurchaseOrderList(data)
@@ -2692,30 +2918,31 @@ self.PlayAnim = function(data)
 	TaskPlayAnim(self.playerPed,data.dict,data.anim,3.0,3.0,-1,48,0,0,0,0)
 end
 
-self.ServePurchaseOrder = function(var,i,storedata)
+self.ServePurchaseOrder = function(var,i,storedata,player)
+	if self.ongoingpack then return end
+	self.ongoingpack = true
 	if not var.ingredients then
 		local items = {}
-		table.insert(items,{name = var.name, count = 1})
+		table.insert(items,{name = var.name, count = var.count or 1})
 		local type = self.movabletype
 		if storedata then
 			type = storedata.type
 		end
-		local removed = lib.callback.await('renzu_shops:removestock', false, {type = type, name = var.name, count = 1, price = var.data.price, metadata = var.data.metadata, index = storedata and storedata.index, money = storedata and storedata.money})
+		lib.progressBar({
+			duration = 4000,
+			label = 'Packing '..var.label,
+			useWhileDead = false,
+			canCancel = true,
+			disable = {
+				car = true,
+			},
+			anim = {
+				dict = 'creatures@rottweiler@tricks@',
+				clip = 'petting_franklin' 
+			}
+		})
+		local removed = lib.callback.await('renzu_shops:removestock', false, {serialid = var.serialid, type = type, name = var.name, count = var.count or 1, price = var.data.price, metadata = var.data.metadata, index = storedata and storedata.index, money = storedata and storedata.money, customer = player and var.customer})
 		if removed then
-			self.PlayAnim({dict = 'creatures@rottweiler@tricks@', anim = 'petting_franklin'})
-			lib.progressBar({
-				duration = 4000,
-				label = 'Packing '..var.label,
-				useWhileDead = false,
-				canCancel = true,
-				disable = {
-					car = true,
-				},
-				anim = {
-					dict = 'creatures@rottweiler@tricks@',
-					clip = 'petting_franklin' 
-				}
-			})
 			lib.progressBar({
 				duration = 1000,
 				label = 'Giving '..var.label,
@@ -2735,9 +2962,11 @@ self.ServePurchaseOrder = function(var,i,storedata)
 					bone = 57005,
 				},
 			})
+			self.PlayAnim({dict = 'creatures@rottweiler@tricks@', anim = 'petting_franklin'})
 			lib.requestModel(`prop_food_bag1`)
-			if not self.foodbox or not DoesEntityExist(self.foodbox) then
-				self.foodbox = CreateObject(`prop_food_bag1`,GetEntityCoords(self.playerPed),true,true)
+			if not self.foodbox or not DoesEntityExist(self.foodbox) and not player then
+				local coord = GetEntityCoords(self.playerPed)
+				self.foodbox = CreateObject(`prop_food_bag1`,coord.x,coord.y,coord.z,true,true)
 				while not DoesEntityExist(self.foodbox) do Wait(0) end
 				self.SetEntityControlable(self.foodbox)
 				AttachEntityToEntity(self.foodbox, self.currentcustomer, GetPedBoneIndex(self.currentcustomer, 57005), 0.3800, 0.0, -0.0300, 0.0017365, -79.9999997, 110.0651988, true, true,
@@ -2749,12 +2978,14 @@ self.ServePurchaseOrder = function(var,i,storedata)
 				type = 'inform'
 			})
 			self.purchaseorder[i] = nil
+			self.ongoingpack = false
 		else
 			self.SetNotify({
 				title = 'Store Business',
 				description = 'You dont have enough stock for '..var.label,
 				type = 'inform'
 			})
+			self.ongoingpack = false
 		end
 	elseif var.ingredients then
 		local identifier = self.movabletype..':'..self.PlayerData.identifier
@@ -2766,12 +2997,14 @@ self.ServePurchaseOrder = function(var,i,storedata)
 				description = 'You Serve '..var.label..' to '..var.customer,
 				type = 'inform'
 			})
+			self.ongoingpack = false
 		else
 			self.SetNotify({
 				title = 'Store Business',
 				description = 'You dont have enough stock for '..var.label,
 				type = 'inform'
 			})
+			self.ongoingpack = false
 		end
 	else
 		self.SetNotify({
@@ -2779,20 +3012,51 @@ self.ServePurchaseOrder = function(var,i,storedata)
 			description = 'You dont have enough stock for '..var.label,
 			type = 'error'
 		})
+		self.ongoingpack = false
 	end
 end
 
-self.PurchaseOrderList = function(data,storedata)
+self.ongoingpack = false
+self.PurchaseOrderList = function(data,storedata,player)
 	local options = {}
-	for k,v in pairs(self.purchaseorder) do
-		table.insert(options,{
-			title = v.label..' : Customer - '..v.customer,
-			description = v.customer..' Wants a 1x of '..v.label,
-			arrow = true,
-			onSelect = function(args)
-				self.ServePurchaseOrder(v,k,storedata)
-			end
-		})
+	if not player then
+		for k,v in pairs(self.purchaseorder) do
+			table.insert(options,{
+				title = v.label..' : Customer - '..v.customer,
+				description = v.customer..' Wants a 1x of '..v.label,
+				arrow = true,
+				onSelect = function(args)
+					self.ServePurchaseOrder(v,k,storedata)
+				end
+			})
+		end
+	else
+		local playercarts = GlobalState.ShopCarts
+		local cart = {}
+		local shopname = self.GetShopData(storedata.type,storedata.index).label
+		local shopdata = playercarts[shopname]
+		for k,v in pairs(shopdata?.cart or {}) do
+			local data = v.data
+			local img = data.metadata?.image or data.name
+			local name = data.metadata and data.metadata.name or data.name or data.name
+			local label = data.metadata and data.metadata.label or data.label or self.Items[data.name] or data.name
+			data.label = label
+			local category = data.category or k
+			table.insert(cart,{serialid = v.serialid, data = data, img = img, name = name, count = v.count, label = label, customer = shopdata.playerid, shop = shopname, type = type})
+		end
+
+		for k,v in pairs(cart) do
+			local amount = v.count or 1
+			local name = IsPedAPlayer(GetPlayerPed(GetPlayerFromServerId(tonumber(v.customer) or 0))) and GetPlayerName(GetPlayerFromServerId(tonumber(v.customer) or 0)) or v.customer
+			table.insert(options,{
+				title = v.label..' : Customer - '..name,
+				description = name..' Wants a '..amount..'x of '..v.label,
+				arrow = true,
+				onSelect = function(args)
+					self.ServePurchaseOrder(v,k,storedata,true)
+				end
+			})
+		end
 	end
 	lib.registerContext({
 		id = 'purchase_orders',
@@ -2991,7 +3255,7 @@ self.CookMenu = function(data)
 	lib.showContext('cookmenu')
 end
 
-self.StartCook = function(data,item,title,dontreceive,identifier)
+self.StartCook = function(data,item,title,dontreceive,identifier,storeitems)
 	local cancook = data.ingredients and true
 	local items = {}
 	for k,v in pairs(data.ingredients or {}) do
@@ -3042,7 +3306,7 @@ self.StartCook = function(data,item,title,dontreceive,identifier)
 			SetEntityCoordsNoOffset(self.playerPed,GetEntityCoords(self.playerPed))
 		end
 		if not success then return end
-		local item = lib.callback.await('renzu_shops:craftitem', false, {metadata = data.metadata, item = item, type = self.movabletype, menu = title, shop = 'movableshop', dontreceive = dontreceive, stash = true})
+		local item = lib.callback.await('renzu_shops:craftitem', false, {identifier = identifier, items = storeitems, metadata = data.metadata, item = item, type = self.movabletype, menu = title, shop = 'movableshop', dontreceive = dontreceive, stash = true})
 		self.SetNotify({
 			title = 'Store Business',
 			description = 'Successfully Cooked a '..data.label,
@@ -3066,10 +3330,25 @@ self.StartCook = function(data,item,title,dontreceive,identifier)
 	end
 end
 
-self.CookMenuList = function(items,title,data)
+self.Stash = function(data)
+	local identifier = data.label..'_storage'
+	if shared.inventory == 'ox_inventory' then
+		TriggerEvent('ox_inventory:openInventory', 'stash', {id = identifier, name = 'Storage', slots = 80, weight = 200000, coords = GetEntityCoords(cache.ped)})
+	elseif shared.inventory == 'qb-inventory' then
+		TriggerServerEvent('inventory:server:OpenInventory', 'stash', identifier, {})
+		TriggerServerEvent("InteractSound_SV:PlayOnSource", "StashOpen", 0.4)
+		TriggerEvent("inventory:client:SetCurrentStash", identifier)
+	end
+end
+
+self.Crafting = function(data)
+	self.CookMenuList(data.supplieritem, data.label..' Cook',data,true)
+end
+
+self.CookMenuList = function(items,title,data,store)
 	local options = {}
-	local identifier = self.movabletype..':'..self.PlayerData.identifier
-	local itemdata = lib.callback.await('renzu_shops:getStashData', false, {items = items, type = self.movabletype, identifier = identifier})
+	local identifier = not store and self.movabletype..':'..self.PlayerData.identifier or data.label..'_storage'
+	local itemdata = lib.callback.await('renzu_shops:getStashData', false, {items = items, identifier = identifier})
 	local movabledata = GlobalState.MovableShops[identifier]
 	for k,v in pairs(items) do
 		local item = v.name
@@ -3084,16 +3363,18 @@ self.CookMenuList = function(items,title,data)
 		for k,v in pairs(v.ingredients or {}) do
 			ingredients[self.Items[k]] = 'x'..v
 		end
-		v.label = label
-		table.insert(options,{
-			title = label,
-			description = 'Available : '..amount,
-			arrow = true,
-			metadata = ingredients,
-			onSelect = function(args)
-				self.StartCook(v,item,title,false,identifier)
-			end
-		})
+		if v.ingredients then
+			v.label = label
+			table.insert(options,{
+				title = label,
+				description = 'Available : '..amount,
+				arrow = true,
+				metadata = ingredients,
+				onSelect = function(args)
+					self.StartCook(v,item,title,false,identifier,items)
+				end
+			})
+		end
 	end
 	lib.registerContext({
 		id = 'cooklist',
@@ -3131,7 +3412,7 @@ self.OpenShopMovable = function(data)
 	end
 	data.shop.inventory = inventory
 	self.Active.shop.inventory = inventory
-	local money = self.GetAccounts('money')
+	local money = self.GetAccounts(self.moneytype or 'money')
 	local black_money = self.GetAccounts('black_money')
 	local bank = self.GetAccounts('bank')
 	SendNUIMessage({
@@ -3172,7 +3453,7 @@ self.OpenShopBooth = function(data)
 	end
 	data.shop.inventory = inventory
 	self.Active.shop.inventory = inventory
-	local money = self.GetAccounts('money')
+	local money = self.GetAccounts(self.moneytype or 'money')
 	local black_money = self.GetAccounts('black_money')
 	local bank = self.GetAccounts('bank')
 	self.Owner = GlobalState.Booths[data.identifier].owner
@@ -3439,10 +3720,10 @@ self.PaymentMethod = function(data)
 	local dropdownmenu = {
 		{ value = 'money', label = 'Cash' }
 	}
-	if data.type ~= 'BlackMarketArms' then
+	if data.money == 'money' or data.money == nil then
 		table.insert(dropdownmenu,{ value = 'bank', label = 'Bank' })
 	else
-		dropdownmenu[1] = { value = 'black_money', label = 'Black Money' }
+		dropdownmenu[1] = { value = data.money, label = self.Items[data.money] or data.money }
 	end
 	if data.amount >= shared.FinanceMinimum and data.type ~= 'BlackMarketArms' and self.StoreData(data.name) then
 		table.insert(dropdownmenu, { value = 'finance', label = 'Finance' })
@@ -3690,6 +3971,15 @@ self.SpawnedSpotProducts = function(data)
 end
 
 self.MenuCallback = function(selected, scrollIndex, args, data, owner, edit)
+	lib.progressCircle({
+		duration = 2000,
+		position = 'bottom',
+		useWhileDead = false,
+		canCancel = true,
+		disable = {
+			car = true,
+		},
+	})
 	if owner then
 		local purchase = false
 		if not self.DoesItemExistinSpot(data, args[scrollIndex].name) then
@@ -3794,6 +4084,15 @@ self.MenuCallback = function(selected, scrollIndex, args, data, owner, edit)
 end
 
 self.ShowCase = function(data,owner,edit)
+	lib.progressCircle({
+		duration = 2000,
+		position = 'bottom',
+		useWhileDead = false,
+		canCancel = true,
+		disable = {
+			car = true,
+		},
+	})
 	local lists = {}
 	local vehicles = {}
 	local args = {}
@@ -3861,4 +4160,44 @@ self.GetVehicleStats = function(vehicle)
     return data
 end
 
-return self
+self.Work = function(data)
+	if GetResourceState('ox_target') then
+		exports.ox_target:disableTargeting(true)
+
+		ExecuteCommand('-ox_target')
+	end
+	Citizen.CreateThread(function()
+		Wait(500)
+		local success = lib.skillCheck({'easy', 'easy', 'easy', 'easy'})
+		if success then
+			lib.progressBar({
+				duration = 2000,
+				label = data.label,
+				useWhileDead = false,
+				canCancel = false,
+				disable = {
+					car = true,
+				},
+				anim = {
+					dict = data.animation.dict,
+					clip = data.animation.clip
+				}
+			})
+			lib.callback.await('renzu_shops:work',100, data)
+		end
+		exports.ox_target:disableTargeting(false)
+	end)
+end
+
+self.Proccessed = function(data)
+	lib.progressBar({
+		duration = 2000,
+		label = data.label,
+		useWhileDead = false,
+		canCancel = false,
+		disable = {
+			car = true,
+		}
+	})
+	lib.callback.await('renzu_shops:proccessed',100, data)
+end

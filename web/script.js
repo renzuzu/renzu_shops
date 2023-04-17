@@ -32,7 +32,10 @@ var content = {}
 let lastshop = ''
 let vImageCreator = undefined
 window.addEventListener('message', function (table) {
-    let event = table.data;
+    let event = table.data
+    if (event.removecart) {
+        remove(event.removecart.cartid,event.removecart.slotid)
+    }
     if (event.displaybuy) {
         buydisplay({name : event.displaybuy.name, price: event.displaybuy.price, label: event.displaybuy.label})
     }
@@ -70,6 +73,7 @@ window.addEventListener('message', function (table) {
         delete content[event.data.id]
     }
     if (event.data?.open) {
+        getEl('pay').style.display = event.data.duty && 'none' || 'block'
         vImageCreator = event.data.vImageCreator
         getEl('shop').style.display = 'block'
         uiopen = true
@@ -79,7 +83,9 @@ window.addEventListener('message', function (table) {
         lastshop = event.data.label
         moneytype = event.data.moneytype || 'money'
         getEl('metadatas').style.display = 'none'
-        getEl('money').innerHTML = event.data.wallet[moneytype]
+        getEl('moneytype').innerHTML = moneytype
+        getEl('moneyimage').innerHTML = `${event.data.itemtype ? `<img src="${imgpath}${moneytype}.png" style="height:30px;">` : '<i class="fas fa-wallet" aria-hidden="true"></i>'}`
+        getEl('money').innerHTML = event.data.wallet['money']
         getEl('bank').innerHTML = event.data.wallet['bank']
 
         shoptype = event.data.type
@@ -144,6 +150,7 @@ function remove(cartid,item) {
     cart[cartid] = undefined
     delete cart[cartid];
     totalitem()
+    SendData({cart:cart, msg : 'playercarts'})
 }
 
 function removeall(item) {
@@ -152,6 +159,7 @@ function removeall(item) {
     getEl('totalamount').innerHTML = totalamount
     cart = {}
     totalitem()
+    SendData({cart:cart, msg : 'playercarts'})
 }
 
 function minus(cartid,item) {
@@ -162,6 +170,7 @@ function minus(cartid,item) {
     totalamount -= items[item].price
     getEl('totalamount').innerHTML = totalamount
     totalitem()
+    SendData({cart:cart, msg : 'playercarts'})
 }
 
 function plus(cartid,item) {
@@ -171,6 +180,7 @@ function plus(cartid,item) {
     totalamount += items[item].price
     getEl('totalamount').innerHTML = totalamount
     totalitem()
+    SendData({cart:cart, msg : 'playercarts'})
 }
 
 function pay() {
@@ -353,7 +363,7 @@ async function AddtoCart(item,qty) {
         cart[cartid].count += parseInt(amount)
         amount = cart[cartid].count
     } else {
-        cart[cartid] = {slotid: item, count : parseInt(amount), data : items[item], vehicle: {livery: liveryid, color: colorid, liverymod: liverymod}, metadatas: metadatas}
+        cart[cartid] = {serialid: {slotid : item, cartid: cartid}, slotid: item, count : parseInt(amount), data : items[item], vehicle: {livery: liveryid, color: colorid, liverymod: liverymod}, metadatas: metadatas}
     }
     var totalprice = items[item].price * parseInt(cart[cartid].count)
     totalamount = totalitemprice(item)
@@ -409,6 +419,7 @@ async function AddtoCart(item,qty) {
      `
     getEl('cart').insertAdjacentHTML("beforeend", ui)
     SendData({item:cart[cartid].data.name, amount:amount, msg : 'cart'})
+    SendData({cart:cart, msg : 'playercarts'})
     return amount
 }
 
@@ -571,7 +582,7 @@ async function ShopItems(shop, cat) {
                 <span>
                 ${addons}
                 ${component}
-                <img class="aso" onclick="ItemCallback('${data.name}','${i}')" id="${iddiv}_img" src="${image}" onerror="this.src=VehicleImage('${imgname}','${items[i].hash || ''}');this.onerror = defaultimg(this,'${imgname}');">
+                <img class="aso" onclick="ItemCallback('${data.name}','${i}')" id="${iddiv}_img" src="${image}" onerror="this.src=VehicleImage('${imgname}','${items[i].hash || ''}');this.onerror = defaultimg(this);">
                     <h2>
                     ${label}
                     </h2>
@@ -585,9 +596,12 @@ async function ShopItems(shop, cat) {
                     <input id="amount" name="amount" placeholder="1" style="
                     width: 2.2vw;
                     text-align: center;
-                    background: #4e5866;
+                    background: #3e4246;
                     color: #fff !important;
-                    border-style: none;" type="number" max="${stock}" min="1">
+                    border-style: none;
+                    border-radius: 7px;
+                    border-style: ridge;
+                    border-color: #6d737c;" type="number" max="${stock}" min="1">
                     <button onclick="event.preventDefault();AddtoCart('${i}')"><i class="fas fa-shopping-cart" aria-hidden="true"></i>Add</button>
                     </form>
                 </span>

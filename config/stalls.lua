@@ -324,7 +324,7 @@ else
 		local player = Shops.GetPlayerData()
 		if not value then return end
 		local net = tonumber(bagName:gsub('entity:', ''), 10)
-		gazebo[value.boothid] = entity
+		gazebo[value.boothid] = NetworkGetEntityFromNetworkId(net)
 		if player.identifier == value.owner then
 			local entity = NetworkGetEntityFromNetworkId(net)
 			Shops.SetEntityControlable(entity)
@@ -551,6 +551,7 @@ else
 		PlaceObjectOnGroundProperly(appliance)
 		FreezeEntityPosition(appliance, true)
 		SetEntityAlpha(appliance, 200, true)
+		print(gazebo[data.id],DoesEntityExist(gazebo[data.id]))
 		local gazebocoord = GetEntityCoords(gazebo[data.id])
 		while appliance ~= nil do
 			Citizen.Wait(1)

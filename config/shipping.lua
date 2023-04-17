@@ -8,7 +8,7 @@ shared.shipping = {
 	},
 	payperdistance = 5.45, -- in example its 10.05 $ per 1 distance
 	label = 'Fedex Express',
-	coord = vec3(68.41,125.93,79.189),
+	coord = vec3(69.42121887207,127.94171142578,79.455070495605),
 	spawn = vec4(76.887245178223,97.579162597656,79.158805847168,68.240699768066),
 	model = {
 		['vehicle'] = `hauler`,

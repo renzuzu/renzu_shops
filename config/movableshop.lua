@@ -4,12 +4,12 @@ return {
 		type = 'object',
 		vehicle = `cruiser`,
 		model = `prop_hotdogstand_01`,
-		coord = vec3(40.149337768555,-1000.8768920898,29.408),
+		coord = vec3(40.893291473389,-1000.8212890625,29.597059249878),
 		price = 500000,
 		menu = {
 			Food = {
-				[1] = {name = 'hotdogsandwich', price = 50, metadata = {}, ingredients = {hotdog = 1, bread = 1, tomatosauce = 1}},
-				[2] = {name = 'hotdogsandwich', price = 80, ingredients = {hotdog = 1, bread = 1, cheese = 1, tomatosauce = 1}, metadata = {name = 'cheesedogsandwich', hunger = 150000, label = 'Cheese Dog  Sandwich', image = 'hotdog'}},
+				[1] = {name = 'hotdogsandwich', price = 75, metadata = {}, ingredients = {hotdog = 1, bread = 1, tomatosauce = 1}},
+				[2] = {name = 'hotdogsandwich', price = 100, ingredients = {hotdog = 1, bread = 1, cheese = 1, tomatosauce = 1}, metadata = {name = 'cheesedogsandwich', hunger = 150000, label = 'Cheese Dog  Sandwich', image = 'hotdog'}},
 				[3] = {name = 'hotdogsandwich', price = 120, ingredients = {hotdog = 2, bread = 1, tomatosauce = 1}, metadata = {name = 'jumbohotdogsandwich', hunger = 350000, label = 'Jumbo Hot Dog Sandwich', image = 'hotdog'}},
 			},
 			Drinks = {
@@ -30,7 +30,7 @@ return {
 		type = 'object',
 		model = `prop_burgerstand_01`,
 		vehicle = `cruiser`,
-		coord = vec3(369.01425170898,-371.02331542969,46.757801055908),
+		coord = vec3(375.15383911133,-347.04486083984,47.043800354004),
 		price = 500000,
 		menu = {
 			Food = {
@@ -55,7 +55,7 @@ return {
 		type = 'vehicle', -- declare type of movable shop. Object is spawnable object, while vehicle is a automobile.
 		model = `taco`, -- model name
 		modelname = 'taco', -- qbcore compat
-		coord = vec3(21.721435546875,-1600.9423828125,29.282648086), -- buying coordinates
+		coord = vec3(19.154211044312,-1599.3975830078,29.728910446167), -- buying coordinates
 		spawn = vec4(25.488815307617,-1590.5723876953,29.102367401123,227.42039489746), -- spawn location of vehicle
 		price = 500000,
 		menu = { -- products . Food and Drinks are automatically assign as Category
@@ -83,7 +83,7 @@ return {
 		vehicle = `bison`,
 		truck = true,
 		model = `prop_food_van_01`,
-		coord = vector3(49.34, -1000.36, 29.36),
+		coord = vector3(48.607223510742,-1000.4696655273,29.723598480225),
 		price = 500000,
 		menu = {
 			Food = {
@@ -111,7 +111,7 @@ return {
 		vehicle = `bison`,
 		truck = true,
 		model = `prop_food_van_02`,
-		coord = vector3(-228.92, 286.29, 92.19),
+		coord = vector3(-241.92083740234,280.1262512207,92.286407470703),
 		price = 500000,
 		menu = {
 			Food = {

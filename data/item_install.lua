@@ -81,6 +81,10 @@ return {
 		label = 'Lettuce',
 		weight = 50
 	},
+	['lettuce'] = {
+		label = 'Lettuce',
+		weight = 50
+	},
 	['tomato'] = {
 		label = 'Tomato',
 		weight = 50
