@@ -168,7 +168,7 @@ return {
 			{ lvl = 2, name = 'armour', category = 'Tools', price = 200, metadata = { description = 'pang pakunat' } },
 
 		}, locations = {
-			vec3(436.74884033203,-989.70672607422,32.475814819336)
+			vec3(454.99395751953,-983.08898925781,30.689611434)
 		}
 	},
 

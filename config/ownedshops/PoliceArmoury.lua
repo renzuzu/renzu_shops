@@ -2,8 +2,9 @@ return {
 	[1] = {
 		groups = 'police',
 		moneytype = 'policecredit',
+		item = true,
 		label = 'PoliceArmoury 1', -- identifier for each stores. do not rename once player already buy this store
-		coord = vec3(440.82601928711,-987.30114746094,32.107872009277), -- owner manage coord
+		coord = vec3(456.69717407227,-983.07543945313,30.689611434), -- owner manage coord
 		--cashier = vec3(-1194.4945068359,-895.02117919922,13.97), -- cashier coord for robbing or onduty ondemand
 		price = 1000000,
 		supplieritem = shared.Storeitems.PoliceArmoury,
