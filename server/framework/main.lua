@@ -3,8 +3,13 @@ if shared.framework == 'ESX' then
 	vehicletable = 'owned_vehicles'
 	vehiclemod = 'vehicle'
 	garage = 'Garage A'
-	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`'
-	values = '?, ?, ?, ?, ?'
+	owner = 'owner'
+	stored = 'stored'
+	playertable = 'users'
+	playeridentifier = 'identifier'
+	playeraccounts = 'accounts'
+	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`, `type`'
+	values = '?, ?, ?, ?, ?, ?'
 elseif shared.framework == 'QBCORE' then
 	vehicletable = 'player_vehicles'
 	vehiclemod = 'mods'
@@ -16,8 +21,8 @@ elseif shared.framework == 'QBCORE' then
 	playeridentifier = 'citizenid'
 	playeraccounts = 'money'
 	garage = 'pillboxgarage'
-	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`, `citizenid`, `hash`, `garage`, `vehicle`'
-	values = '?, ?, ?, ?, ?, ?, ?, ?, ?'
+	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`, `citizenid`, `hash`, `garage`, `vehicle`, `type`'
+	values = '?, ?, ?, ?, ?, ?, ?, ?, ?, ?'
 end
 
 function GetPlayerFromIdentifier(identifier)

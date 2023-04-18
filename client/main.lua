@@ -1698,6 +1698,7 @@ self.OpenShop = function(data)
 				local storedata = self.StoreData(v2.label)
 				self.moneytype = v2.moneytype
 				self.itemType = v2.item
+				self.vehicletype = v2.vehicletype
 				data.shop.label = v2.label
 				data.shop.inventory = v2.supplieritem
 				self.Active.shop.inventory = v2.supplieritem
@@ -1779,6 +1780,7 @@ self.OpenShop = function(data)
 	local black_money = self.GetAccounts('black_money')
 	local bank = self.GetAccounts('bank')
 	local shop_data = self.StoreData(data.shop.label)
+
 	SendNUIMessage({
 		type = 'shop',
 		data = {
@@ -2264,7 +2266,18 @@ self.Handlers = function()
 						end
 						cb(true)
 					end
-				end,{owner = self.Owner, groups = self.Active?.shop?.groups, finance = financedata, items = data.items, data = itemdata, index = self.Active.index, type = data.type, shop = self.Active.shop.type or self.shopidentifier, moneytype = self.moneytype})
+				end,{
+					vehicletype = self.vehicletype,
+					owner = self.Owner, 
+					groups = self.Active?.shop?.groups, 
+					finance = financedata, 
+					items = data.items, 
+					data = itemdata, 
+					index = self.Active.index, 
+					type = data.type, 
+					shop = self.Active.shop.type or self.shopidentifier, 
+					moneytype = self.moneytype
+				})
 				self.Owner = nil
 			end
 		elseif data.msg == 'close' then

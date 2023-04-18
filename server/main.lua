@@ -1,31 +1,6 @@
 Inventory = setmetatable({},{})
 local Items = {}
 local purchaseorders = {}
-if shared.framework == 'ESX' then
-	vehicletable = 'owned_vehicles'
-	vehiclemod = 'vehicle'
-	garage = 'Garage A'
-	owner = 'owner'
-	stored = 'stored'
-	playertable = 'users'
-	playeridentifier = 'identifier'
-	playeraccounts = 'accounts'
-	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`'
-	values = '?, ?, ?, ?, ?'
-elseif shared.framework == 'QBCORE' then
-	vehicletable = 'player_vehicles'
-	vehiclemod = 'mods'
-	owner = 'license'
-	stored = 'state'
-	garage_id = 'garage'
-	type_ = 'vehicle'
-	playertable = 'players'
-	playeridentifier = 'citizenid'
-	playeraccounts = 'money'
-	garage = 'pillboxgarage'
-	columns = '`plate`, `'..vehiclemod..'`, `'..owner..'`, `'..stored..'`, `job`, `citizenid`, `hash`, `garage`, `vehicle`'
-	values = '?, ?, ?, ?, ?, ?, ?, ?, ?'
-end
 sql = {}
 
 local canregister = false
@@ -111,6 +86,10 @@ CreateThread(function()
 		local success, result = pcall(MySQL.scalar.await,'SELECT `job` FROM `'..vehicletable..'`') -- check if job column is exist
 		if not success then
 			SqlFunc('oxmysql','execute','ALTER TABLE `'..vehicletable..'` ADD COLUMN `job` VARCHAR(32) NULL') -- add job column
+		end
+		local success, result = pcall(MySQL.scalar.await,'SELECT `type` FROM `'..vehicletable..'`') -- check if job column is exist
+		if not success then
+			SqlFunc('oxmysql','execute','ALTER TABLE `'..vehicletable..'` ADD COLUMN `type` VARCHAR(32) NULL') -- add job column
 		end
 	end)
 end)
@@ -767,13 +746,20 @@ lib.callback.register('renzu_shops:buyitem', function(source,data)
 					local plate = GenPlate()
 					callback[v.data.name] = plate
 					local group = data.groups and xPlayer?.job?.name and GetJobFromData(data.groups,xPlayer) == xPlayer.job.name and xPlayer.job.name
-					local sqldata = {plate,json.encode({model = GetHashKey(v.data.name), plate = plate, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),xPlayer.identifier,1,group or 'civ'}
+					local sqldata = {
+						plate,
+						json.encode({model = GetHashKey(v.data.name), plate = plate, modLivery = tonumber(v.vehicle?.livery or -1), color1 = tonumber(v.vehicle?.color or 0)}),
+						xPlayer.identifier,
+						1,
+						group or 'civ'
+					}
 					if shared.framework == 'QBCORE' then
 						table.insert(sqldata,xPlayer.citizenid)
 						table.insert(sqldata,joaat(v.data.name))
 						table.insert(sqldata,'pillboxgarage')
 						table.insert(sqldata,v.data.name)
 					end
+					table.insert(sqldata,data.vehicletype)
 					MySQL.insert.await(insertstr:format(vehicletable,columns,values),sqldata)
 					Wait(100)
 					shared.VehicleKeys(plate,source)
@@ -1330,12 +1316,13 @@ AddMovableShopToPlayer = function(data,source)
 	local movable = GlobalState.MovableShops
 	if data.shop.type == 'vehicle' then
 		plate = GenPlate()
-		local sqldata = {plate,json.encode({model = data.shop.model, plate = plate, modLivery = -1}),data.owner,1,'civ'}
+		local sqldata = {plate,json.encode({model = data.shop.model, plate = plate, modLivery = -1}),data.owner,1,'civ','car'}
 		if shared.framework == 'QBCORE' then
 			table.insert(sqldata,data.citizenid)
 			table.insert(sqldata,data.shop.model)
 			table.insert(sqldata,'pillboxgarage')
 			table.insert(sqldata,data.shop.modelname)
+			table.insert(sqldata,'car')
 		end
 		MySQL.insert.await(insertstr:format(vehicletable,columns,values),sqldata)
 	end
